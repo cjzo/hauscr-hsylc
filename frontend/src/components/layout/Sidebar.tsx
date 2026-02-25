@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Database, CheckSquare, ChevronLeft, ChevronRight, LogOut, Shield } from 'lucide-react';
+import { Home, Database, CheckSquare, ChevronLeft, LogOut, Shield } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useAuth } from '../../context/AuthContext';
+import logoUrl from '../../assets/logo.svg';
 
 const navItems = [
     { icon: Home, label: 'Dashboard', to: '/dashboard' },
@@ -40,14 +41,27 @@ export function Sidebar() {
 
     return (
         <div className={cn("border-r border-border bg-surface h-screen flex flex-col transition-all duration-300", isCollapsed ? "w-16" : "w-64")}>
-            <div className={cn("h-16 flex items-center px-4 border-b border-border", isCollapsed ? "justify-center" : "justify-between")}>
-                {!isCollapsed && <span className="font-semibold text-lg tracking-tight text-primary truncate">HSYLC System</span>}
-                <button
-                    onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="p-1 rounded-md text-secondary hover:text-primary hover:bg-surfaceHover transition-colors"
-                >
-                    {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
-                </button>
+            <div className={cn("h-16 flex items-center gap-2 px-4 border-b border-border", isCollapsed ? "justify-center" : "justify-between")}>
+                {isCollapsed ? (
+                    <button
+                        onClick={() => setIsCollapsed(false)}
+                        className="p-1 rounded-md hover:bg-surfaceHover transition-colors flex items-center justify-center"
+                        title="Expand sidebar"
+                    >
+                        <img src={logoUrl} alt="HSYLC" className="w-9 h-9 shrink-0 object-contain" />
+                    </button>
+                ) : (
+                    <>
+                        <img src={logoUrl} alt="HSYLC" className="w-9 h-9 shrink-0 object-contain" />
+                        <span className="font-semibold text-lg tracking-tight text-primary truncate">HSYLC System</span>
+                        <button
+                            onClick={() => setIsCollapsed(true)}
+                            className="p-1 rounded-md text-secondary hover:text-primary hover:bg-surfaceHover transition-colors"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
+                    </>
+                )}
             </div>
             <div className="flex-1 py-6 px-3 flex flex-col gap-1">
                 {navItems.map((item) => (

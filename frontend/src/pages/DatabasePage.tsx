@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { useConfirm } from '../components/ui/ConfirmModal';
 import { standardizeCategory } from '../utils/categories';
+import { useAuth } from '../context/AuthContext';
 import {
     Search,
     CheckCircle,
@@ -14,7 +18,8 @@ import {
     MapPin,
     Loader2,
     Star,
-    X
+    X,
+    ExternalLink
 } from 'lucide-react';
 
 export function DatabasePage() {
@@ -23,6 +28,11 @@ export function DatabasePage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'waitlisted' | 'rejected'>('pending');
     const [selectedCandidate, setSelectedCandidate] = useState<any | null>(null);
+    const [settingCurrentId, setSettingCurrentId] = useState<string | null>(null);
+    const confirmModal = useConfirm();
+    const navigate = useNavigate();
+    const { role } = useAuth();
+    const isAdmin = role === 'admin';
 
     useEffect(() => {
         async function fetchCandidates() {
@@ -68,6 +78,63 @@ export function DatabasePage() {
     ];
 
     const closeDetails = () => setSelectedCandidate(null);
+
+    const setAsCurrentForDeliberation = async (candidateId: string, goToDeliberation = false) => {
+        setSettingCurrentId(candidateId);
+        try {
+            const { error } = await supabase
+                .from('system_state')
+                .update({ current_candidate_id: candidateId })
+                .eq('id', 1);
+            if (error) throw error;
+            if (goToDeliberation) {
+                navigate('/deliberate');
+            }
+        } catch (err) {
+            console.error('Failed to set current candidate:', err);
+        } finally {
+            setSettingCurrentId(null);
+        }
+    };
+
+    const updateDecision = async (candidateId: string, decision: 'pending' | 'approved' | 'waitlisted' | 'rejected') => {
+        if (!isAdmin) return;
+        const actionText = decision === 'approved'
+            ? 'Approve'
+            : decision === 'rejected'
+                ? 'Reject'
+                : decision === 'waitlisted'
+                    ? 'Waitlist'
+                    : 'Move to Undecided';
+        const isConfirmed = await confirmModal.confirm({
+            title: 'Confirm Decision Change',
+            message: `Are you sure you want to ${actionText.toLowerCase()} this candidate?`,
+            confirmText: actionText,
+            destructive: decision === 'rejected',
+        });
+
+        if (!isConfirmed) return;
+
+        try {
+            const { data, error } = await supabase
+                .from('candidates')
+                .update({ deliberation_status: decision })
+                .eq('id', candidateId)
+                .select('id, deliberation_status')
+                .single();
+
+            if (error) throw error;
+
+            setCandidates(prev =>
+                prev.map(c => (c.id === candidateId ? { ...c, deliberation_status: data.deliberation_status } : c)),
+            );
+            setSelectedCandidate(prev =>
+                prev && prev.id === candidateId ? { ...prev, deliberation_status: data.deliberation_status } : prev,
+            );
+        } catch (err) {
+            console.error('Failed to update deliberation decision:', err);
+        }
+    };
 
     if (isLoading) {
         return (
@@ -200,12 +267,29 @@ export function DatabasePage() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <button
-                                                    className="text-xs font-medium text-accent hover:text-accent/80 transition-colors opacity-0 group-hover:opacity-100 flex items-center gap-1 ml-auto"
-                                                    onClick={() => setSelectedCandidate(cand)}
-                                                >
-                                                    View Details <ChevronDown className="w-3 h-3 -rotate-90" />
-                                                </button>
+                                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {isAdmin && (
+                                                        <button
+                                                            className="text-xs font-medium text-accent hover:text-accent/80 transition-colors flex items-center gap-1 disabled:opacity-50"
+                                                            onClick={() => setAsCurrentForDeliberation(cand.id, true)}
+                                                            disabled={settingCurrentId === cand.id}
+                                                            title="Set as current candidate and open Deliberation"
+                                                        >
+                                                            {settingCurrentId === cand.id ? (
+                                                                <Loader2 className="w-3 h-3 animate-spin" />
+                                                            ) : (
+                                                                <ExternalLink className="w-3 h-3" />
+                                                            )}
+                                                            Open in deliberation
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        className="text-xs font-medium text-accent hover:text-accent/80 transition-colors flex items-center gap-1"
+                                                        onClick={() => setSelectedCandidate(cand)}
+                                                    >
+                                                        View Details <ChevronDown className="w-3 h-3 -rotate-90" />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </motion.tr>
                                     ))
@@ -233,16 +317,74 @@ export function DatabasePage() {
                                     {selectedCandidate.school} &middot; Class of {selectedCandidate.class_year} &middot; {selectedCandidate.major}
                                 </p>
                             </div>
-                            <button
-                                onClick={closeDetails}
-                                className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-secondary hover:text-primary transition-colors"
-                                aria-label="Close details"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center gap-2">
+                                {isAdmin && (
+                                    <Button
+                                        variant="primary"
+                                        size="sm"
+                                        onClick={() => {
+                                            setAsCurrentForDeliberation(selectedCandidate.id, true);
+                                            closeDetails();
+                                        }}
+                                        disabled={settingCurrentId === selectedCandidate.id}
+                                    >
+                                        {settingCurrentId === selectedCandidate.id ? (
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                                        ) : (
+                                            <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                                        )}
+                                        Open in deliberation
+                                    </Button>
+                                )}
+                                <button
+                                    onClick={closeDetails}
+                                    className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-secondary hover:text-primary transition-colors"
+                                    aria-label="Close details"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
 
                         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+                            <div className="flex flex-wrap items-center gap-3">
+                                <span className="text-xs font-semibold text-muted uppercase tracking-wider">Decision</span>
+                                <span className="px-2 py-1 rounded-full text-xs font-semibold bg-surfaceHover text-secondary">
+                                    {selectedCandidate.deliberation_status || 'pending'}
+                                </span>
+                                {isAdmin && (
+                                    <div className="flex flex-wrap items-center gap-2 ml-auto">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => updateDecision(selectedCandidate.id, 'pending')}
+                                        >
+                                            Undecided
+                                        </Button>
+                                        <Button
+                                            variant="danger"
+                                            size="sm"
+                                            onClick={() => updateDecision(selectedCandidate.id, 'rejected')}
+                                        >
+                                            Reject
+                                        </Button>
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            onClick={() => updateDecision(selectedCandidate.id, 'waitlisted')}
+                                        >
+                                            Waitlist
+                                        </Button>
+                                        <Button
+                                            variant="primary"
+                                            size="sm"
+                                            onClick={() => updateDecision(selectedCandidate.id, 'approved')}
+                                        >
+                                            Approve
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <p className="text-xs font-semibold text-muted uppercase tracking-wider">Email</p>

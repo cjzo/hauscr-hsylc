@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -158,90 +158,101 @@ export function DeliberationPage() {
         return raw;
     };
 
-    useEffect(() => {
-        async function fetchCandidates() {
-            try {
-                const { data, error } = await supabase
-                    .from('candidates')
-                    .select('*, interviews(*)')
-                    .eq('deliberation_status', 'pending')
-                    .eq('candidate_type', 'New');
+    const fetchCandidates = useCallback(async (options?: { preserveId?: string; showLoader?: boolean }) => {
+        const { preserveId, showLoader } = options || {};
+        if (showLoader) setIsLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('candidates')
+                .select('*, interviews(*)')
+                .eq('deliberation_status', 'pending')
+                .eq('candidate_type', 'New');
 
-                if (error) throw error;
+            if (error) throw error;
 
-                if (data && data.length > 0) {
-                    const mappedData = data.map(cand => ({
-                        id: cand.id,
-                        name: cand.full_name || `${cand.first_name} ${cand.last_name}`,
-                        email: cand.email,
-                        school: cand.school,
-                        major: cand.major,
-                        year: cand.class_year,
-                        nationality: cand.nationality,
-                        candidateType: cand.candidate_type || 'New',
+            if (data && data.length > 0) {
+                const mappedData = data.map(cand => ({
+                    id: cand.id,
+                    name: cand.full_name || `${cand.first_name} ${cand.last_name}`,
+                    email: cand.email,
+                    school: cand.school,
+                    major: cand.major,
+                    year: cand.class_year,
+                    nationality: cand.nationality,
+                    candidateType: cand.candidate_type || 'New',
 
-                        seminarTitle: cand.seminar_title,
-                        seminarCategory: standardizeCategory(cand.seminar_category || cand.seminar_title),
-                        seminarDescription: cand.seminar_description || (cand.seminar_title?.includes('\n') ? cand.seminar_title : cand.seminar_title),
-                        finalProduct: cand.final_product,
-                        moreTopics: cand.more_topics,
+                    seminarTitle: cand.seminar_title,
+                    seminarCategory: standardizeCategory(cand.seminar_category || cand.seminar_title),
+                    seminarDescription: cand.seminar_description || (cand.seminar_title?.includes('\n') ? cand.seminar_title : cand.seminar_title),
+                    finalProduct: cand.final_product,
+                    moreTopics: cand.more_topics,
 
-                        interestReason: cand.interest_reason,
-                        teachingExp: cand.teaching_exp,
-                        advice: cand.advice,
-                        selfIntro: cand.self_intro,
+                    interestReason: cand.interest_reason,
+                    teachingExp: cand.teaching_exp,
+                    advice: cand.advice,
+                    selfIntro: cand.self_intro,
 
-                        grader: cand.grader_name || 'Not Available',
-                        tier: cand.tier_level || 'N/A',
-                        sensitiveIssues: cand.sensitive_issues,
-                        flyFrom: cand.fly_from,
-                        flyTo: cand.fly_to,
-                        availability: cand.availability,
-                        scores: {
-                            writtenInterest: cand.written_score_interest || 0,
-                            writtenTeaching: cand.written_score_teaching || 0,
-                            writtenSeminar: cand.written_score_seminar || 0,
-                            writtenPersonal: cand.written_score_personal || 0,
+                    grader: cand.grader_name || 'Not Available',
+                    tier: cand.tier_level || 'N/A',
+                    sensitiveIssues: cand.sensitive_issues,
+                    flyFrom: cand.fly_from,
+                    flyTo: cand.fly_to,
+                    availability: cand.availability,
+                    scores: {
+                        writtenInterest: cand.written_score_interest || 0,
+                        writtenTeaching: cand.written_score_teaching || 0,
+                        writtenSeminar: cand.written_score_seminar || 0,
+                        writtenPersonal: cand.written_score_personal || 0,
 
-                            understanding: cand.score_understanding || 0,
-                            enthusiasm: cand.score_enthusiasm || 0,
-                            quality: cand.score_quality || 0,
-                            teaching: cand.score_teaching || 0,
-                            interestEngaging: cand.score_interest || 0,
-                            overall: cand.score_overall !== null && cand.score_overall !== undefined ? cand.score_overall : (() => {
-                                const s = (cand.interviews || []).map((i: any) => i.score_overall).filter((v: any) => typeof v === 'number');
-                                return s.length ? s.reduce((a: number, b: number) => a + b, 0) / s.length : 0;
-                            })()
-                        },
-                        interviewNotes: (cand.interviews || []).map((note: any) => ({
-                            interviewer: note.interviewer_name,
-                            notes_why_sl: note.notes_why_sl,
-                            notes_seminar: note.notes_seminar,
-                            notes_extracurricular: note.notes_extracurricular,
-                            notes_teach_me: note.notes_teach_me,
-                            notes_commitment: note.notes_commitment,
-                            notes_comments: note.notes_comments,
-                            score_enthusiasm: note.score_enthusiasm,
-                            score_quality: note.score_quality,
-                            score_teaching: note.score_teaching,
-                            score_interest: note.score_interest,
-                            score_overall: note.score_overall
-                        }))
-                    }));
-                    setCandidates(mappedData);
-                } else {
-                    console.warn("No pending candidates found in Supabase.");
-                    setCandidates([]);
+                        understanding: cand.score_understanding || 0,
+                        enthusiasm: cand.score_enthusiasm || 0,
+                        quality: cand.score_quality || 0,
+                        teaching: cand.score_teaching || 0,
+                        interestEngaging: cand.score_interest || 0,
+                        overall: cand.score_overall !== null && cand.score_overall !== undefined ? cand.score_overall : (() => {
+                            const s = (cand.interviews || []).map((i: any) => i.score_overall).filter((v: any) => typeof v === 'number');
+                            return s.length ? s.reduce((a: number, b: number) => a + b, 0) / s.length : 0;
+                        })()
+                    },
+                    interviewNotes: (cand.interviews || []).map((note: any) => ({
+                        interviewer: note.interviewer_name,
+                        notes_why_sl: note.notes_why_sl,
+                        notes_seminar: note.notes_seminar,
+                        notes_extracurricular: note.notes_extracurricular,
+                        notes_teach_me: note.notes_teach_me,
+                        notes_commitment: note.notes_commitment,
+                        notes_comments: note.notes_comments,
+                        score_enthusiasm: note.score_enthusiasm,
+                        score_quality: note.score_quality,
+                        score_teaching: note.score_teaching,
+                        score_interest: note.score_interest,
+                        score_overall: note.score_overall
+                    }))
+                }));
+                setCandidates(mappedData);
+                if (preserveId) {
+                    const idx = mappedData.findIndex(c => c.id === preserveId);
+                    setCurrentIndex(idx >= 0 ? idx : 0);
+                } else if (currentIndex >= mappedData.length) {
+                    setCurrentIndex(0);
                 }
-            } catch (err) {
-                console.error("Failed to fetch candidates from Supabase.", err);
+            } else {
+                console.warn("No pending candidates found in Supabase.");
                 setCandidates([]);
-            } finally {
-                setIsLoading(false);
+                setCurrentIndex(0);
             }
+        } catch (err) {
+            console.error("Failed to fetch candidates from Supabase.", err);
+            setCandidates([]);
+            setCurrentIndex(0);
+        } finally {
+            if (showLoader) setIsLoading(false);
         }
-        fetchCandidates();
-    }, []);
+    }, [currentIndex]);
+
+    useEffect(() => {
+        fetchCandidates({ showLoader: true });
+    }, [fetchCandidates]);
 
     // Real-time synchronization
     useEffect(() => {
@@ -327,11 +338,19 @@ export function DeliberationPage() {
             try {
                 if (candidate.id && !candidate.id.startsWith('CAND-')) {
                     const status = decision === 'approve' ? 'approved' : decision === 'reject' ? 'rejected' : 'waitlisted';
-                    const { error } = await supabase
+                    const { data, error } = await supabase
                         .from('candidates')
                         .update({ deliberation_status: status })
-                        .eq('id', candidate.id);
+                        .eq('id', candidate.id)
+                        .eq('deliberation_status', 'pending')
+                        .select('id, deliberation_status');
                     if (error) throw error;
+
+                    if (!data || data.length === 0) {
+                        console.warn("Decision skipped: candidate already decided by another conductor.");
+                        await fetchCandidates({ preserveId: candidate.id });
+                        return;
+                    }
                 }
 
                 setCandidates(prev => prev.filter((_, i) => i !== currentIndex));

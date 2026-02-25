@@ -11,7 +11,12 @@ import {
     PieChart,
     Pie,
     Cell,
-    Legend
+    Legend,
+    LineChart,
+    Line,
+    AreaChart,
+    Area,
+    ReferenceLine
 } from 'recharts';
 
 import { useState, useEffect } from 'react';
@@ -38,6 +43,11 @@ export function DashboardPage() {
     const [writtenTeachingDist, setWrittenTeachingDist] = useState<{ scoreRange: string, count: number }[]>([]);
     const [writtenSeminarDist, setWrittenSeminarDist] = useState<{ scoreRange: string, count: number }[]>([]);
     const [writtenPersonalDist, setWrittenPersonalDist] = useState<{ scoreRange: string, count: number }[]>([]);
+    // Continuous PMF/CDF: score (midpoint), count, proportion (pmf), cdf
+    const [summedWrittenData, setSummedWrittenData] = useState<{ score: number; count: number; proportion: number; cdf: number }[]>([]);
+    const [overallInterviewData, setOverallInterviewData] = useState<{ score: number; count: number; proportion: number; cdf: number }[]>([]);
+    // Cohort filter for category & class distribution: default accepted, or entire cohort
+    const [cohortFilter, setCohortFilter] = useState<'accepted' | 'all'>('accepted');
 
     useEffect(() => {
         async function fetchData() {
@@ -61,14 +71,6 @@ export function DashboardPage() {
                         { label: 'Rejected', value: rejected, trend: '', icon: XCircle, color: 'text-rose-500', bgColor: 'bg-rose-500/10' },
                     ]);
 
-                    // Update Seminar Distribution
-                    const catCounts: Record<string, number> = {};
-                    data.forEach(c => {
-                        const stdCat = standardizeCategory(c.seminar_category || c.seminar_title);
-                        catCounts[stdCat] = (catCounts[stdCat] || 0) + 1;
-                    });
-                    setSeminarDist(Object.entries(catCounts).map(([name, value]) => ({ name, value })));
-
                     // Reviewer List (for written PMFs)
                     const graderNames = Array.from(
                         new Set(
@@ -78,14 +80,6 @@ export function DashboardPage() {
                         )
                     ).sort();
                     setReviewers(graderNames);
-
-                    // Update Class Year Distribution
-                    const yearCounts: Record<string, number> = {};
-                    data.forEach(c => {
-                        const yr = c.class_year ? c.class_year.trim() : 'Unknown';
-                        yearCounts[yr] = (yearCounts[yr] || 0) + 1;
-                    });
-                    setClassYearDist(Object.entries(yearCounts).map(([name, applicants]) => ({ name, applicants })));
 
                     // Update Score Function (PMF)
                     const tempScoreDist: Record<string, number> = {
@@ -113,12 +107,40 @@ export function DashboardPage() {
         fetchData();
     }, []);
 
+    // Seminar & class year distributions: filtered by cohort (accepted vs entire)
+    useEffect(() => {
+        if (!candidates.length) {
+            setSeminarDist([]);
+            setClassYearDist([]);
+            return;
+        }
+        const subset = cohortFilter === 'accepted'
+            ? candidates.filter((c: any) => c.deliberation_status === 'approved')
+            : candidates;
+
+        const catCounts: Record<string, number> = {};
+        subset.forEach((c: any) => {
+            const stdCat = standardizeCategory(c.seminar_category || c.seminar_title);
+            catCounts[stdCat] = (catCounts[stdCat] || 0) + 1;
+        });
+        setSeminarDist(Object.entries(catCounts).map(([name, value]) => ({ name, value })));
+
+        const yearCounts: Record<string, number> = {};
+        subset.forEach((c: any) => {
+            const yr = c.class_year ? c.class_year.trim() : 'Unknown';
+            yearCounts[yr] = (yearCounts[yr] || 0) + 1;
+        });
+        setClassYearDist(Object.entries(yearCounts).map(([name, applicants]) => ({ name, applicants })));
+    }, [candidates, cohortFilter]);
+
     useEffect(() => {
         if (!candidates.length) {
             setWrittenInterestDist([]);
             setWrittenTeachingDist([]);
             setWrittenSeminarDist([]);
             setWrittenPersonalDist([]);
+            setSummedWrittenData([]);
+            setOverallInterviewData([]);
             return;
         }
 
@@ -164,6 +186,55 @@ export function DashboardPage() {
         setWrittenTeachingDist(binsToArray(teachingBins));
         setWrittenSeminarDist(binsToArray(seminarBins));
         setWrittenPersonalDist(binsToArray(personalBins));
+
+        // Summed written (0–20): PMF + CDF, filtered by reviewer
+        const writtenSumCounts: number[] = Array(21).fill(0);
+        dataset.forEach((c: any) => {
+            const sum =
+                (Number(c.written_score_interest) || 0) +
+                (Number(c.written_score_teaching) || 0) +
+                (Number(c.written_score_seminar) || 0) +
+                (Number(c.written_score_personal) || 0);
+            const bin = Math.min(20, Math.max(0, Math.round(sum)));
+            writtenSumCounts[bin] += 1;
+        });
+        const writtenTotal = writtenSumCounts.reduce((a, b) => a + b, 0);
+        let writtenCum = 0;
+        setSummedWrittenData(
+            writtenSumCounts.map((count, i) => {
+                writtenCum += count;
+                return {
+                    score: i,
+                    count,
+                    proportion: writtenTotal > 0 ? count / writtenTotal : 0,
+                    cdf: writtenTotal > 0 ? writtenCum / writtenTotal : 0,
+                };
+            })
+        );
+
+        // Overall interview (0–10): PMF + CDF, all candidates, bin by 0.5
+        const interviewBinCounts: number[] = Array(21).fill(0); // 0, 0.5, ..., 10
+        candidates.forEach((c: any) => {
+            const s = c.score_overall;
+            if (s !== null && s !== undefined && !Number.isNaN(Number(s))) {
+                const v = Math.max(0, Math.min(10, Number(s)));
+                const bin = Math.min(20, Math.round(v * 2)); // 0->0, 0.5->1, ..., 10->20
+                interviewBinCounts[bin] += 1;
+            }
+        });
+        const interviewTotal = interviewBinCounts.reduce((a, b) => a + b, 0);
+        let interviewCum = 0;
+        setOverallInterviewData(
+            interviewBinCounts.map((count, i) => {
+                interviewCum += count;
+                return {
+                    score: i * 0.5,
+                    count,
+                    proportion: interviewTotal > 0 ? count / interviewTotal : 0,
+                    cdf: interviewTotal > 0 ? interviewCum / interviewTotal : 0,
+                };
+            })
+        );
     }, [candidates, selectedReviewer]);
 
     if (isLoading) {
@@ -207,21 +278,33 @@ export function DashboardPage() {
             </div>
 
             {/* Charts Row */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="space-y-4">
+                <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-sm text-secondary">Category & class distributions:</span>
+                    <select
+                        value={cohortFilter}
+                        onChange={(e) => setCohortFilter(e.target.value as 'accepted' | 'all')}
+                        className="border border-border rounded-md px-3 py-1.5 bg-surface text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent/40"
+                    >
+                        <option value="accepted">Accepted only</option>
+                        <option value="all">Entire cohort</option>
+                    </select>
+                </div>
 
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 {/* Seminar Category Distribution */}
-                <Card className="p-6 flex flex-col min-h-[540px]">
+                <Card className="p-6 flex flex-col">
                     <div className="mb-6">
                         <h3 className="text-lg font-semibold text-primary">Seminar Category Distribution</h3>
                         <p className="text-sm text-secondary">Breakdown of proposed seminars by category.</p>
                     </div>
-                    <div className="flex-1 w-full relative">
+                    <div className="w-full" style={{ height: 420 }}>
                         <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
+                            <PieChart margin={{ bottom: 48 }}>
                                 <Pie
                                     data={seminarDist}
                                     cx="50%"
-                                    cy="50%"
+                                    cy="45%"
                                     innerRadius={80}
                                     outerRadius={120}
                                     paddingAngle={5}
@@ -238,7 +321,7 @@ export function DashboardPage() {
                                 />
                                 <Legend
                                     verticalAlign="bottom"
-                                    height={36}
+                                    height={40}
                                     iconType="circle"
                                     wrapperStyle={{ fontSize: '14px' }}
                                 />
@@ -329,6 +412,95 @@ export function DashboardPage() {
                                 />
                             </BarChart>
                         </ResponsiveContainer>
+                    </div>
+                </Card>
+
+                {/* Summed Written Score (0–20): PMF + CDF */}
+                <Card className="p-6 flex flex-col min-h-[380px] xl:col-span-2">
+                    <div className="mb-4">
+                        <h3 className="text-lg font-semibold text-primary">Summed Written Score (PMF & CDF)</h3>
+                        <p className="text-sm text-secondary">
+                            Distribution of total written score (Interest + Teaching + Seminar + Personal, 0–20). Filtered by reviewer when selected above.
+                        </p>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div>
+                            <p className="text-xs font-semibold text-muted mb-2">PMF</p>
+                            <div className="h-48 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={summedWrittenData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                        <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                        <YAxis
+                                            domain={[0, (dataMax: number) => Math.max(dataMax * 1.15, 0.05)]}
+                                            tick={{ fill: '#6B7280', fontSize: 11 }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            width={28}
+                                            tickFormatter={(v) => v.toFixed(2)}
+                                        />
+                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number) => [v.toFixed(3), 'Proportion']} />
+                                        <Bar dataKey="proportion" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Proportion" />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                        <div>
+                            <p className="text-xs font-semibold text-muted mb-2">CDF</p>
+                            <div className="h-48 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={summedWrittenData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                        <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                        <YAxis domain={[0, 1]} tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} width={28} tickFormatter={(v) => v.toFixed(1)} />
+                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number) => [v.toFixed(3), 'CDF']} />
+                                        <ReferenceLine y={1} stroke="#9CA3AF" strokeDasharray="2 2" />
+                                        <Area type="monotone" dataKey="cdf" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.3} strokeWidth={2} name="CDF" />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+                </Card>
+
+                {/* Overall Interview Score (0–10): PMF + CDF */}
+                <Card className="p-6 flex flex-col min-h-[380px] xl:col-span-2">
+                    <div className="mb-4">
+                        <h3 className="text-lg font-semibold text-primary">Overall Interview Score (PMF & CDF)</h3>
+                        <p className="text-sm text-secondary">
+                            Distribution of overall interview score (0–10). Bins of 0.5.
+                        </p>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div>
+                            <p className="text-xs font-semibold text-muted mb-2">PMF</p>
+                            <div className="h-48 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={overallInterviewData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                        <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                        <YAxis tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} width={28} tickFormatter={(v) => v.toFixed(2)} />
+                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number) => [v.toFixed(3), 'Proportion']} />
+                                        <Bar dataKey="proportion" fill="#ec4899" radius={[4, 4, 0, 0]} name="Proportion" />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                        <div>
+                            <p className="text-xs font-semibold text-muted mb-2">CDF</p>
+                            <div className="h-48 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={overallInterviewData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                        <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                        <YAxis domain={[0, 1]} tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} width={28} tickFormatter={(v) => v.toFixed(1)} />
+                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number) => [v.toFixed(3), 'CDF']} />
+                                        <ReferenceLine y={1} stroke="#9CA3AF" strokeDasharray="2 2" />
+                                        <Area type="monotone" dataKey="cdf" stroke="#f97316" fill="#f97316" fillOpacity={0.3} strokeWidth={2} name="CDF" />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
                     </div>
                 </Card>
 
@@ -513,6 +685,7 @@ export function DashboardPage() {
                     </div>
                 </Card>
 
+                </div>
             </div>
         </div>
     );
