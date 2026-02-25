@@ -11,138 +11,6 @@ import { supabase } from '../lib/supabase';
 import { standardizeCategory } from '../utils/categories';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
-// Comprehensive Mock Data structured according to the Example.xlsx schema
-const MOCK_CANDIDATES = [
-    {
-        id: 'CAND-001',
-        name: 'Alex Johnson',
-        email: 'alex.j@example.com',
-        school: 'Harvard University',
-        major: 'Computer Science & Economics',
-        year: 'Junior',
-        nationality: 'USA',
-        candidateType: 'New',
-
-        // Seminar Details
-        seminarTitle: 'Introduction to Modern Web Architecture',
-        seminarCategory: 'Data, Engineering, & Technology',
-        seminarDescription: 'A comprehensive journey into building distributed data-intensive applications, focusing on architectural patterns that scale. Students will learn the building blocks of the modern internet.',
-        finalProduct: 'A functioning full-stack web application deployed to the cloud, using a React frontend and Node.js backend. Materials needed: laptops with internet access.',
-        moreTopics: 'Algorithms, Machine Learning Basics, Product Management',
-
-        // Written Responses
-        interestReason: 'I am passionate about cross-cultural exchange and believe that empowering high school students with modern technical skills can bridge gaps in global understanding.',
-        teachingExp: 'I was a teaching fellow for CS50 last semester and have tutored high school math for 3 years.',
-        advice: 'Never be afraid to ask for help; the most successful people are those who build strong support networks.',
-        selfIntro: 'Hi! I am Alex, a junior at Harvard studying CS and Econ. I am the captain of the ultimate frisbee team and love building software that helps people.',
-
-        // Interview Info & Scores (Normalized)
-        scores: {
-            writtenInterest: 9.0,
-            writtenTeaching: 8.5,
-            writtenSeminar: 9.0,
-            writtenPersonal: 9.5,
-            understanding: 9.0,
-            enthusiasm: 10.0,
-            quality: 8.5,
-            teaching: 9.0,
-            interestEngaging: 9.5,
-            overall: 9.1
-        },
-        sensitiveIssues: 'No',
-        flyFrom: 'BOS',
-        flyTo: 'PVG',
-        availability: 'Available from Aug 11 - 21',
-        interviewNotes: [
-            {
-                interviewer: 'David Bae',
-                notes_why_sl: 'Very articulate about wanting to mentor younger students. Clearly understands the mission.',
-                notes_seminar: 'Solid technical background. The final product might be a bit ambitious for 9 days, but they are willing to adapt.',
-                notes_extracurricular: 'Excited to lead sports activities and college prep panels.',
-                notes_teach_me: 'Taught me how to solve a Rubik\'s cube in 2 minutes. Very patient and clear.',
-                notes_commitment: 'Says he can fully commit to the spring and summer deliverables.',
-                notes_comments: 'Strong candidate. Recommend accepting.',
-                score_enthusiasm: 10.0,
-                score_quality: 8.5,
-                score_teaching: 9.0,
-                score_interest: 9.5,
-                score_overall: 9.25
-            },
-            {
-                interviewer: 'Alice Wang',
-                notes_why_sl: 'Passionate and ready to commit.',
-                notes_seminar: 'We discussed adjusting the final product scope, and he was very receptive.',
-                notes_extracurricular: 'Can definitely lead the ultimate frisbee club.',
-                notes_teach_me: 'Great presentation.',
-                notes_commitment: 'Seems highly organized, confident he can meet deadlines.',
-                notes_comments: 'I agree with David, solid accept.',
-                score_enthusiasm: 9.5,
-                score_quality: 9.0,
-                score_teaching: 8.5,
-                score_interest: 9.5,
-                score_overall: 9.125
-            }
-        ]
-    },
-    {
-        id: 'CAND-002',
-        name: 'Sarah Chen',
-        email: 'schen@example.edu',
-        school: 'Stanford University',
-        major: 'Symbolic Systems',
-        year: 'Senior',
-        nationality: 'Canada',
-        candidateType: 'Returning',
-
-        // Seminar Details
-        seminarTitle: 'The Ethics of Artificial Intelligence',
-        seminarCategory: 'Human Behavior and Ethics',
-        seminarDescription: 'Exploring the moral implications of deploying large language models in healthcare and education contexts.',
-        finalProduct: 'A policy brief proposing ethical guidelines for AI use in a specific industry. Materials needed: notebooks, laptops for research.',
-        moreTopics: 'Cognitive Science, Bioethics, Creative Writing',
-
-        // Written Responses
-        interestReason: 'Having attended a similar summit in high school, I know how transformative these experiences are. I want to pay it forward.',
-        teachingExp: 'Led debate camps for high schoolers for the past two summers.',
-        advice: 'Your major does not define your career. Follow your curiosity.',
-        selfIntro: 'I am Sarah! I love debating, philosophy, and hiking. I am currently researching AI alignment at Stanford.',
-
-        // Interview Info & Scores (Normalized)
-        scores: {
-            writtenInterest: 9.5,
-            writtenTeaching: 10.0,
-            writtenSeminar: 9.0,
-            writtenPersonal: 9.5,
-            understanding: 8.0,
-            enthusiasm: 9.5,
-            quality: 10.0,
-            teaching: 9.5,
-            interestEngaging: 8.5,
-            overall: 9.2
-        },
-        sensitiveIssues: 'Yes, mentions sensitive political topics. Needs review.',
-        flyFrom: 'SFO',
-        flyTo: 'PEK',
-        availability: 'Available from Aug 13 - 21',
-        interviewNotes: [
-            {
-                interviewer: 'Alice Wang',
-                notes_why_sl: 'Wants to inspire critical thinking about technology. Very passionate.',
-                notes_seminar: 'Fascinating topic, highly relevant. She has great discussion questions prepared.',
-                notes_extracurricular: 'Interested in hosting debate workshops and philosophy cafes.',
-                notes_teach_me: 'Explained the Trolley Problem variants clearly and engagingly.',
-                notes_commitment: 'She might have an internship, but says she can juggle the work.',
-                notes_comments: 'Excellent communicator. Will be a fantastic SL.',
-                score_enthusiasm: 9.5,
-                score_quality: 10.0,
-                score_teaching: 9.5,
-                score_interest: 8.5,
-                score_overall: 9.375
-            }
-        ]
-    }
-];
-
 export function DeliberationPage() {
     const [candidates, setCandidates] = useState<any[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -152,23 +20,98 @@ export function DeliberationPage() {
     const confirmModal = useConfirm();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-    const formatClassYear = (year: string) => {
-        if (!year) return 'Other';
-        const yearLower = String(year).toLowerCase();
-        if (yearLower.includes('freshman')) return `${year} (Freshman)`;
-        if (yearLower.includes('sophomore')) return `${year} (Sophomore)`;
-        if (yearLower.includes('junior')) return `${year} (Junior)`;
-        if (yearLower.includes('senior')) return `${year} (Senior)`;
+    // Conductor Mode / Admin Check
+    // For now, simple URL parameter check: ?admin=true
+    const isAdmin = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('admin') === 'true';
 
-        const match = String(year).match(/\b(202[0-9]|203[0-9])\b/);
-        if (match) {
-            const num = parseInt(match[1], 10);
-            if (num === 2026) return `${year} (Senior)`;
-            if (num === 2027) return `${year} (Junior)`;
-            if (num === 2028) return `${year} (Sophomore)`;
-            if (num === 2029) return `${year} (Freshman)`;
+    const formatClassYear = (input: string | null | undefined) => {
+        if (!input) return 'Other';
+
+        const raw = String(input).trim();
+        if (!raw) return 'Other';
+
+        const lower = raw.toLowerCase();
+
+        const extractStandingFromText = () => {
+            if (lower.includes('freshman')) return 'Freshman';
+            if (lower.includes('sophomore')) return 'Sophomore';
+            if (lower.includes('junior')) return 'Junior';
+            if (lower.includes('senior')) return 'Senior';
+            return null;
+        };
+
+        const extractYearFromString = () => {
+            // Look for a 4-digit graduation year first (e.g. 2026)
+            const fourDigit = raw.match(/\b(202[0-9]|203[0-9])\b/);
+            if (fourDigit) {
+                return parseInt(fourDigit[1], 10);
+            }
+
+            // Handle shortened formats like '26 or 26, mapping to 2026–2029
+            const twoDigit = raw.match(/'?(\d{2})\b/);
+            if (twoDigit) {
+                const num = parseInt(twoDigit[1], 10);
+                if (num >= 26 && num <= 29) {
+                    return 2000 + num; // 2026–2029
+                }
+            }
+
+            return null;
+        };
+
+        const standingFromYear = (year: number | null) => {
+            if (!year) return null;
+            if (year === 2026) return 'Senior';
+            if (year === 2027) return 'Junior';
+            if (year === 2028) return 'Sophomore';
+            if (year === 2029) return 'Freshman';
+            return null;
+        };
+
+        const yearFromStanding = (standing: string | null) => {
+            if (!standing) return null;
+            if (standing === 'Senior') return 2026;
+            if (standing === 'Junior') return 2027;
+            if (standing === 'Sophomore') return 2028;
+            if (standing === 'Freshman') return 2029;
+            return null;
+        };
+
+        const textStanding = extractStandingFromText();
+        let yearNum = extractYearFromString();
+        let standing = textStanding;
+
+        // If we have a year but no standing, infer standing from year
+        if (!standing && yearNum) {
+            standing = standingFromYear(yearNum);
         }
-        return `${year} (Other)`;
+
+        // If we have a standing but no year, optionally infer year
+        if (!yearNum && standing) {
+            yearNum = yearFromStanding(standing);
+        }
+
+        const gradYear = yearNum ? String(yearNum) : null;
+
+        if (gradYear && standing) {
+            // Standard format: "2026 (Senior)"
+            return `${gradYear} (${standing})`;
+        }
+
+        if (gradYear) {
+            return gradYear;
+        }
+
+        if (standing) {
+            // Avoid "Junior (Junior)" — just show the standing
+            return standing;
+        }
+
+        // Sensible fallback for "Other" or unknown formats
+        if (lower.includes('other')) return 'Other';
+
+        // If we can't confidently parse, return the raw string
+        return raw;
     };
 
     useEffect(() => {
@@ -176,7 +119,7 @@ export function DeliberationPage() {
             try {
                 const { data, error } = await supabase
                     .from('candidates')
-                    .select('*')
+                    .select('*, interviews(*)')
                     .eq('deliberation_status', 'pending');
 
                 if (error) throw error;
@@ -221,49 +164,33 @@ export function DeliberationPage() {
                             teaching: cand.score_teaching || 0,
                             interestEngaging: cand.score_interest || 0,
                             overall: cand.score_overall !== null && cand.score_overall !== undefined ? cand.score_overall : (() => {
-                                const s = [cand.interviewer1_score_overall, cand.interviewer2_score_overall].filter(v => typeof v === 'number');
-                                return s.length ? s.reduce((a, b) => a + b, 0) / s.length : 0;
+                                const s = (cand.interviews || []).map((i: any) => i.score_overall).filter((v: any) => typeof v === 'number');
+                                return s.length ? s.reduce((a: number, b: number) => a + b, 0) / s.length : 0;
                             })()
                         },
-                        interviewNotes: [
-                            ...(cand.interviewer1_name ? [{
-                                interviewer: cand.interviewer1_name,
-                                notes_why_sl: cand.interviewer1_notes_why_sl,
-                                notes_seminar: cand.interviewer1_notes_seminar,
-                                notes_extracurricular: cand.interviewer1_notes_extracurricular,
-                                notes_teach_me: cand.interviewer1_notes_teach_me,
-                                notes_commitment: cand.interviewer1_notes_commitment,
-                                notes_comments: cand.interviewer1_notes_comments,
-                                score_enthusiasm: cand.interviewer1_score_enthusiasm,
-                                score_quality: cand.interviewer1_score_quality,
-                                score_teaching: cand.interviewer1_score_teaching,
-                                score_interest: cand.interviewer1_score_interest,
-                                score_overall: cand.interviewer1_score_overall,
-                            }] : []),
-                            ...(cand.interviewer2_name ? [{
-                                interviewer: cand.interviewer2_name,
-                                notes_why_sl: cand.interviewer2_notes_why_sl,
-                                notes_seminar: cand.interviewer2_notes_seminar,
-                                notes_extracurricular: cand.interviewer2_notes_extracurricular,
-                                notes_teach_me: cand.interviewer2_notes_teach_me,
-                                notes_commitment: cand.interviewer2_notes_commitment,
-                                notes_comments: cand.interviewer2_notes_comments,
-                                score_enthusiasm: cand.interviewer2_score_enthusiasm,
-                                score_quality: cand.interviewer2_score_quality,
-                                score_teaching: cand.interviewer2_score_teaching,
-                                score_interest: cand.interviewer2_score_interest,
-                                score_overall: cand.interviewer2_score_overall,
-                            }] : [])
-                        ]
+                        interviewNotes: (cand.interviews || []).map((note: any) => ({
+                            interviewer: note.interviewer_name,
+                            notes_why_sl: note.notes_why_sl,
+                            notes_seminar: note.notes_seminar,
+                            notes_extracurricular: note.notes_extracurricular,
+                            notes_teach_me: note.notes_teach_me,
+                            notes_commitment: note.notes_commitment,
+                            notes_comments: note.notes_comments,
+                            score_enthusiasm: note.score_enthusiasm,
+                            score_quality: note.score_quality,
+                            score_teaching: note.score_teaching,
+                            score_interest: note.score_interest,
+                            score_overall: note.score_overall
+                        }))
                     }));
                     setCandidates(mappedData);
                 } else {
-                    console.warn("No pending candidates found in Supabase. Using MOCK data.");
-                    setCandidates(MOCK_CANDIDATES);
+                    console.warn("No pending candidates found in Supabase.");
+                    setCandidates([]);
                 }
             } catch (err) {
-                console.error("Failed to fetch candidates. Falling back to mock data.", err);
-                setCandidates(MOCK_CANDIDATES);
+                console.error("Failed to fetch candidates from Supabase.", err);
+                setCandidates([]);
             } finally {
                 setIsLoading(false);
             }
@@ -271,21 +198,74 @@ export function DeliberationPage() {
         fetchCandidates();
     }, []);
 
+    // Real-time synchronization
+    useEffect(() => {
+        if (candidates.length === 0) return;
+
+        // 1. Fetch initial state
+        const fetchInitialState = async () => {
+            const { data } = await supabase.from('system_state').select('current_candidate_id').eq('id', 1).single();
+            if (data?.current_candidate_id) {
+                const idx = candidates.findIndex(c => c.id === data.current_candidate_id);
+                if (idx !== -1) setCurrentIndex(idx);
+            }
+        };
+        fetchInitialState();
+
+        // 2. Subscribe to changes
+        const channel = supabase
+            .channel('system_state_changes')
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'system_state'
+            }, payload => {
+                const newId = payload.new.current_candidate_id;
+                if (newId) {
+                    const idx = candidates.findIndex(c => c.id === newId);
+                    if (idx !== -1 && idx !== currentIndex) {
+                        setDirection(idx > currentIndex ? 1 : -1);
+                        setCurrentIndex(idx);
+                        setActiveTab('seminar');
+                    }
+                }
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [candidates]);
+
+    // Update global state when candidate changes (if admin)
+    const syncCurrentCandidateId = async (id: string) => {
+        if (!isAdmin) return;
+        try {
+            await supabase.from('system_state').update({ current_candidate_id: id }).eq('id', 1);
+        } catch (err) {
+            console.error("Failed to sync system state:", err);
+        }
+    };
+
     const candidate = candidates[currentIndex];
 
     const nextCandidate = () => {
         if (currentIndex < candidates.length - 1) {
+            const nextIdx = currentIndex + 1;
             setDirection(1);
-            setCurrentIndex(i => i + 1);
-            setActiveTab('seminar'); // Reset tab on change
+            setCurrentIndex(nextIdx);
+            setActiveTab('seminar');
+            syncCurrentCandidateId(candidates[nextIdx].id);
         }
     };
 
     const prevCandidate = () => {
         if (currentIndex > 0) {
+            const prevIdx = currentIndex - 1;
             setDirection(-1);
-            setCurrentIndex(i => i - 1);
-            setActiveTab('seminar'); // Reset tab on change
+            setCurrentIndex(prevIdx);
+            setActiveTab('seminar');
+            syncCurrentCandidateId(candidates[prevIdx].id);
         }
     };
 
@@ -366,6 +346,31 @@ export function DeliberationPage() {
         { subject: 'Extracurriculars', A: candidate.scores.interestEngaging, fullMark: 10 }
     ];
 
+    const writtenScores = [
+        candidate.scores.writtenInterest,
+        candidate.scores.writtenTeaching,
+        candidate.scores.writtenSeminar,
+        candidate.scores.writtenPersonal
+    ];
+    const hasWrittenScores = writtenScores.some(s => s && s > 0);
+    const writtenOverall = hasWrittenScores
+        ? writtenScores.reduce((sum, val) => sum + (val || 0), 0) / writtenScores.length
+        : null;
+
+    const interviewOverallScores = (candidate.interviewNotes || [])
+        .map((note: any) => (typeof note.score_overall === 'number' ? note.score_overall : null))
+        .filter((v: number | null): v is number => v !== null);
+
+    const hasInterviewOverall = interviewOverallScores.length > 0;
+    const interviewOverallAvg = hasInterviewOverall
+        ? interviewOverallScores.reduce((sum, val) => sum + val, 0) / interviewOverallScores.length
+        : null;
+
+    const formatScore = (val: number | null | undefined) => {
+        if (val === null || val === undefined) return 'N/A';
+        return val.toFixed(1);
+    };
+
     return (
         <div className="h-full flex flex-col gap-6">
             <div className="flex items-center justify-between shrink-0">
@@ -375,17 +380,23 @@ export function DeliberationPage() {
                         {isSidebarOpen ? 'Collapse' : 'Expand'}
                     </Button>
                     <div>
-                        <h1 className="text-2xl font-bold text-primary tracking-tight">Application Review</h1>
+                        <h1 className="text-2xl font-bold text-primary tracking-tight">
+                            Application Review {isAdmin && <span className="ml-2 px-2 py-0.5 bg-accent/20 text-accent text-[10px] uppercase rounded border border-accent/30">Conductor</span>}
+                        </h1>
                         <p className="text-sm text-secondary mt-1">Reviewing candidate {currentIndex + 1} of {candidates.length}</p>
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="secondary" size="sm" onClick={prevCandidate} disabled={currentIndex === 0}>
-                        <ChevronLeft className="w-4 h-4 mr-1" /> Previous
-                    </Button>
-                    <Button variant="secondary" size="sm" onClick={nextCandidate} disabled={currentIndex === candidates.length - 1}>
-                        Next <ChevronRight className="w-4 h-4 ml-1" />
-                    </Button>
+                    {isAdmin && (
+                        <>
+                            <Button variant="secondary" size="sm" onClick={prevCandidate} disabled={currentIndex === 0}>
+                                <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+                            </Button>
+                            <Button variant="secondary" size="sm" onClick={nextCandidate} disabled={currentIndex === candidates.length - 1}>
+                                Next <ChevronRight className="w-4 h-4 ml-1" />
+                            </Button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -461,10 +472,39 @@ export function DeliberationPage() {
                                     </Card>
 
                                     <Card className="flex-1 flex flex-col mb-4">
-                                        <div className="flex items-center justify-between mb-2 shrink-0">
-                                            <h3 className="text-sm font-semibold text-primary">Assessment Scores</h3>
-                                            <div className="text-xs px-2 py-1 bg-accent/10 text-accent rounded font-bold">
-                                                Overall: {candidate.scores.overall.toFixed(1)}
+                                        <div className="mb-4 shrink-0">
+                                            <p className="text-[11px] font-semibold text-muted uppercase tracking-wider">
+                                                Overall Evaluation
+                                            </p>
+                                            <div className="mt-1 flex items-baseline gap-2">
+                                                <span className="text-3xl font-semibold text-primary">
+                                                    {candidate.scores.overall.toFixed(1)}
+                                                </span>
+                                                <span className="text-xs text-secondary">/ 10</span>
+                                            </div>
+                                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                                                {hasWrittenScores && (
+                                                    <div className="text-[11px] px-2 py-1 rounded-full bg-surfaceHover text-secondary font-semibold">
+                                                        Written Avg {writtenOverall?.toFixed(2)}/5
+                                                    </div>
+                                                )}
+                                                {hasInterviewOverall && (
+                                                    <div className="text-[11px] px-2 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-200 font-semibold">
+                                                        Interview Avg {interviewOverallAvg?.toFixed(2)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1 mb-4">
+                                            <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Written Scores (out of 5)</p>
+                                            {renderProgressBar('Interest', candidate.scores.writtenInterest, 5)}
+                                            {renderProgressBar('Teaching', candidate.scores.writtenTeaching, 5)}
+                                            {renderProgressBar('Seminar', candidate.scores.writtenSeminar, 5)}
+                                            {renderProgressBar('Personal', candidate.scores.writtenPersonal, 5)}
+
+                                            <div className="mt-3 pt-3 border-t border-border">
+                                                <p className="text-xs font-semibold text-muted mb-1">Graded By: {candidate.grader}</p>
                                             </div>
                                         </div>
 
@@ -494,18 +534,6 @@ export function DeliberationPage() {
                                                     />
                                                 </RadarChart>
                                             </ResponsiveContainer>
-                                        </div>
-
-                                        <div className="space-y-1 mt-4 pt-4 border-t border-border">
-                                            <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Written Scores</p>
-                                            {renderProgressBar('Interest', candidate.scores.writtenInterest)}
-                                            {renderProgressBar('Teaching', candidate.scores.writtenTeaching)}
-                                            {renderProgressBar('Seminar', candidate.scores.writtenSeminar)}
-                                            {renderProgressBar('Personal', candidate.scores.writtenPersonal)}
-
-                                            <div className="mt-4 pt-4 border-t border-border">
-                                                <p className="text-xs font-semibold text-muted mb-1">Graded By: {candidate.grader}</p>
-                                            </div>
                                         </div>
                                     </Card>
                                 </div>
@@ -543,7 +571,10 @@ export function DeliberationPage() {
                                                 <div className="inline-block px-2.5 py-1 bg-accent/10 text-accent rounded-full text-xs font-semibold tracking-wide mb-3">
                                                     {candidate.seminarCategory}
                                                 </div>
-                                                <h2 className="text-2xl font-bold text-primary">{candidate.seminarTitle}</h2>
+                                                {/* <h2 className="text-2xl font-bold text-primary">{candidate.seminarTitle}</h2> */}
+                                                <h2 className="text-2xl font-bold text-primary truncate max-w-[60ch]">
+                                                {candidate.seminarTitle}
+                                                </h2>
                                             </div>
 
                                             <div>
@@ -614,32 +645,20 @@ export function DeliberationPage() {
                                             ) : (
                                                 <div className={`grid ${candidate.interviewNotes.length === 1 ? 'grid-cols-1' : candidate.interviewNotes.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3'} gap-0 md:gap-8 divide-y md:divide-y-0 md:divide-x divide-border`}>
                                                     {candidate.interviewNotes.map((note: any, index: number) => (
-                                                        <div key={index} className="first:pl-0 last:pr-0 md:px-6 md:first:px-0 md:last:px-0 pt-6 first:pt-0 md:pt-0 pb-6 md:pb-0">
-                                                            <div className="flex items-center gap-2 mb-6">
-                                                                <User className="w-4 h-4 text-accent" />
-                                                                <span className="font-semibold text-primary">{note.interviewer || 'Unknown Interviewer'}</span>
-                                                            </div>
-
-                                                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                                                                <div className="p-3 rounded-lg border border-border bg-surface text-center">
-                                                                    <div className="text-xs text-muted mb-1">Enthusiasm</div>
-                                                                    <div className="font-bold text-accent">{note.score_enthusiasm ?? 'N/A'}</div>
+                                                        <div key={index} className="first:pl-0 last:pr-0 md:px-6 md:first:px-3 md:last:px-3 pt-6 first:pt-0 md:pt-0 pb-6 md:pb-0">
+                                                            <div className="flex items-center justify-between gap-3 mb-4">
+                                                                <div className="flex items-center gap-2">
+                                                                    <User className="w-4 h-4 text-accent" />
+                                                                    <span className="font-semibold text-primary">{note.interviewer || 'Unknown Interviewer'}</span>
                                                                 </div>
-                                                                <div className="p-3 rounded-lg border border-border bg-surface text-center">
-                                                                    <div className="text-xs text-muted mb-1">Quality</div>
-                                                                    <div className="font-bold text-accent">{note.score_quality ?? 'N/A'}</div>
-                                                                </div>
-                                                                <div className="p-3 rounded-lg border border-border bg-surface text-center">
-                                                                    <div className="text-xs text-muted mb-1">Teaching</div>
-                                                                    <div className="font-bold text-accent">{note.score_teaching ?? 'N/A'}</div>
-                                                                </div>
-                                                                <div className="p-3 rounded-lg border border-border bg-surface text-center">
-                                                                    <div className="text-xs text-muted mb-1">Interest</div>
-                                                                    <div className="font-bold text-accent">{note.score_interest ?? 'N/A'}</div>
-                                                                </div>
-                                                                <div className="p-3 rounded-lg border border-accent/20 bg-accent/5 text-center">
-                                                                    <div className="text-xs text-accent font-semibold mb-1">Overall</div>
-                                                                    <div className="font-bold text-accent">{note.score_overall ?? 'N/A'}</div>
+                                                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-secondary">
+                                                                    <span>Enth <span className="font-semibold text-primary">{formatScore(note.score_enthusiasm)}</span></span>
+                                                                    <span>Qual <span className="font-semibold text-primary">{formatScore(note.score_quality)}</span></span>
+                                                                    <span>Teach <span className="font-semibold text-primary">{formatScore(note.score_teaching)}</span></span>
+                                                                    <span>Int <span className="font-semibold text-primary">{formatScore(note.score_interest)}</span></span>
+                                                                    <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent font-semibold">
+                                                                        Overall {formatScore(note.score_overall)}
+                                                                    </span>
                                                                 </div>
                                                             </div>
 
@@ -689,15 +708,23 @@ export function DeliberationPage() {
                     Make a final decision for <span className="text-primary font-bold">{candidate.name}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Button variant="danger" onClick={() => handleDecision('reject')}>
-                        <ThumbsDown className="w-4 h-4 mr-2" /> Reject
-                    </Button>
-                    <Button variant="secondary" onClick={() => handleDecision('waitlist')}>
-                        <Clock className="w-4 h-4 mr-2" /> Waitlist
-                    </Button>
-                    <Button variant="primary" onClick={() => handleDecision('approve')}>
-                        <ThumbsUp className="w-4 h-4 mr-2" /> Approve
-                    </Button>
+                    {isAdmin ? (
+                        <>
+                            <Button variant="danger" onClick={() => handleDecision('reject')}>
+                                <ThumbsDown className="w-4 h-4 mr-2" /> Reject
+                            </Button>
+                            <Button variant="secondary" onClick={() => handleDecision('waitlist')}>
+                                <Clock className="w-4 h-4 mr-2" /> Waitlist
+                            </Button>
+                            <Button variant="primary" onClick={() => handleDecision('approve')}>
+                                <ThumbsUp className="w-4 h-4 mr-2" /> Approve
+                            </Button>
+                        </>
+                    ) : (
+                        <div className="px-4 py-2 bg-surfaceHover text-secondary text-sm italic rounded-lg border border-border">
+                            Awaiting conductor decision...
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
