@@ -12,8 +12,6 @@ import {
     Pie,
     Cell,
     Legend,
-    LineChart,
-    Line,
     AreaChart,
     Area,
     ReferenceLine
@@ -439,7 +437,7 @@ export function DashboardPage() {
                                             width={28}
                                             tickFormatter={(v) => v.toFixed(2)}
                                         />
-                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number) => [v.toFixed(3), 'Proportion']} />
+                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? v.toFixed(3) : '—', 'Proportion']} />
                                         <Bar dataKey="proportion" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Proportion" />
                                     </BarChart>
                                 </ResponsiveContainer>
@@ -453,7 +451,7 @@ export function DashboardPage() {
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                                         <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
                                         <YAxis domain={[0, 1]} tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} width={28} tickFormatter={(v) => v.toFixed(1)} />
-                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number) => [v.toFixed(3), 'CDF']} />
+                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? v.toFixed(3) : '—', 'CDF']} />
                                         <ReferenceLine y={1} stroke="#9CA3AF" strokeDasharray="2 2" />
                                         <Area type="monotone" dataKey="cdf" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.3} strokeWidth={2} name="CDF" />
                                     </AreaChart>
@@ -480,7 +478,7 @@ export function DashboardPage() {
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                                         <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
                                         <YAxis tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} width={28} tickFormatter={(v) => v.toFixed(2)} />
-                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number) => [v.toFixed(3), 'Proportion']} />
+                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? v.toFixed(3) : '—', 'Proportion']} />
                                         <Bar dataKey="proportion" fill="#ec4899" radius={[4, 4, 0, 0]} name="Proportion" />
                                     </BarChart>
                                 </ResponsiveContainer>
@@ -494,7 +492,7 @@ export function DashboardPage() {
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                                         <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
                                         <YAxis domain={[0, 1]} tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} width={28} tickFormatter={(v) => v.toFixed(1)} />
-                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number) => [v.toFixed(3), 'CDF']} />
+                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? v.toFixed(3) : '—', 'CDF']} />
                                         <ReferenceLine y={1} stroke="#9CA3AF" strokeDasharray="2 2" />
                                         <Area type="monotone" dataKey="cdf" stroke="#f97316" fill="#f97316" fillOpacity={0.3} strokeWidth={2} name="CDF" />
                                     </AreaChart>

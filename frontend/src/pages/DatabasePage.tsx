@@ -128,7 +128,7 @@ export function DatabasePage() {
             setCandidates(prev =>
                 prev.map(c => (c.id === candidateId ? { ...c, deliberation_status: data.deliberation_status } : c)),
             );
-            setSelectedCandidate(prev =>
+            setSelectedCandidate((prev: any | null) =>
                 prev && prev.id === candidateId ? { ...prev, deliberation_status: data.deliberation_status } : prev,
             );
         } catch (err) {
