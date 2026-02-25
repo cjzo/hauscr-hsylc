@@ -7,11 +7,13 @@ import { DashboardPage } from './pages/DashboardPage';
 import { DatabasePage } from './pages/DatabasePage';
 import { LoginPage } from './pages/LoginPage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
+import { UserManagementPage } from './pages/UserManagementPage';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, role, loading } = useAuth();
 
-  if (loading) {
+  // While we're still resolving auth or role, keep showing the loader
+  if (loading || (user && role === null)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -49,6 +51,7 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/deliberate" element={<DeliberationPage />} />
               <Route path="/data" element={<DatabasePage />} />
+              <Route path="/admin/users" element={<UserManagementPage />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
           </Routes>

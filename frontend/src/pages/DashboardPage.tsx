@@ -210,7 +210,7 @@ export function DashboardPage() {
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
                 {/* Seminar Category Distribution */}
-                <Card className="p-6 flex flex-col min-h-[460px]">
+                <Card className="p-6 flex flex-col min-h-[540px]">
                     <div className="mb-6">
                         <h3 className="text-lg font-semibold text-primary">Seminar Category Distribution</h3>
                         <p className="text-sm text-secondary">Breakdown of proposed seminars by category.</p>

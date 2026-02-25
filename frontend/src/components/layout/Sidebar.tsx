@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Database, CheckSquare, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
+import { Home, Database, CheckSquare, ChevronLeft, ChevronRight, LogOut, Shield } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useAuth } from '../../context/AuthContext';
 
@@ -69,6 +69,24 @@ export function Sidebar() {
                         {!isCollapsed && <span className="text-sm font-medium truncate">{item.label}</span>}
                     </NavLink>
                 ))}
+                {role === 'admin' && (
+                    <NavLink
+                        to="/admin/users"
+                        className={({ isActive }) =>
+                            cn(
+                                "mt-4 flex items-center gap-3 px-3 py-2 rounded-md transition-colors duration-150 text-xs",
+                                isActive
+                                    ? "bg-accent/10 text-accent dark:bg-accent/20"
+                                    : "text-secondary hover:text-primary hover:bg-surfaceHover",
+                                isCollapsed ? "justify-center" : "justify-start"
+                            )
+                        }
+                        title={isCollapsed ? "Admin" : undefined}
+                    >
+                        <Shield className="w-4 h-4 shrink-0" />
+                        {!isCollapsed && <span className="font-medium truncate">Admin</span>}
+                    </NavLink>
+                )}
             </div>
             <div className="p-4 border-t border-border">
                 <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-3")}>

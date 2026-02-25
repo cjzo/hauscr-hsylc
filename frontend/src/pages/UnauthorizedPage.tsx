@@ -1,8 +1,23 @@
+import { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ShieldX, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export function UnauthorizedPage() {
-  const { user, signOut } = useAuth();
+  const { user, role, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  // If the user gets promoted while viewing this page, send them into the app
+  useEffect(() => {
+    if (role === 'member' || role === 'admin') {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [role, navigate]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -21,7 +36,7 @@ export function UnauthorizedPage() {
             Contact an administrator to get access.
           </p>
           <button
-            onClick={signOut}
+            onClick={handleSignOut}
             className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-surface hover:bg-surfaceHover text-primary font-medium text-sm transition-colors duration-150"
           >
             <LogOut className="w-4 h-4" />

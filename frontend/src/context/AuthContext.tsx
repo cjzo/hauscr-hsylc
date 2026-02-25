@@ -20,15 +20,28 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
 });
 
-async function fetchRole(userId: string): Promise<Role | null> {
-  const { data, error } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', userId)
-    .single();
+async function fetchRole(userId: string, userEmail?: string | null): Promise<Role | null> {
+  try {
+    // Prefer RPC so that admin_emails are applied (pre-assign admin by email before sign-up).
+    if (userEmail) {
+      const { data, error } = await supabase.rpc('get_role_for_user', {
+        p_user_id: userId,
+        p_email: userEmail,
+      });
+      if (!error && data != null) return data as Role;
+    }
+    // Fallback: direct read (e.g. before running admin_emails_setup.sql).
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
 
-  if (error || !data) return null;
-  return data.role as Role;
+    if (error || !data) return null;
+    return data.role as Role;
+  } catch {
+    return null;
+  }
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -41,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setRole(null);
       return;
     }
-    const r = await fetchRole(u.id);
+    const r = await fetchRole(u.id, u.email ?? undefined);
     setRole(r);
   }, []);
 
@@ -49,13 +62,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let ignore = false;
 
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (ignore) return;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (ignore) return;
 
-      const u = session?.user ?? null;
-      setUser(u);
-      await loadRole(u);
-      setLoading(false);
+        const u = session?.user ?? null;
+        setUser(u);
+        // Don't block loading on role fetch – fire and forget
+        loadRole(u);
+      } catch {
+        if (ignore) return;
+        setUser(null);
+        setRole(null);
+      } finally {
+        if (!ignore) setLoading(false);
+      }
     }
 
     init();
@@ -64,9 +85,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async (_event, session) => {
         const u = session?.user ?? null;
         setUser(u);
-        await loadRole(u);
+        // Again, don't block loading on role fetch
+        loadRole(u);
         setLoading(false);
-      }
+      },
     );
 
     return () => {

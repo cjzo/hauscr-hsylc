@@ -5,11 +5,42 @@ import { Button } from '../components/ui/Button';
 import { useConfirm } from '../components/ui/ConfirmModal';
 import {
     User, Mail, GraduationCap, ChevronRight, ChevronLeft,
-    ThumbsUp, ThumbsDown, Loader2, FileText, MessageSquare, PanelLeft, Clock
+    ThumbsUp, ThumbsDown, Loader2, FileText, MessageSquare, Clock, BarChart2
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { standardizeCategory } from '../utils/categories';
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import {
+    Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip,
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, AreaChart, Area, ReferenceLine
+} from 'recharts';
+
+/** Gaussian KDE: returns smoothed density points for charting. */
+function kernelDensity(samples: number[], domainMin: number, domainMax: number, step: number, bandwidth: number): { x: number; density: number }[] {
+    if (samples.length === 0) return [];
+    const gaussian = (u: number) => (1 / Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * u * u);
+    const h = bandwidth;
+    const n = samples.length;
+    const points: { x: number; density: number }[] = [];
+    for (let x = domainMin; x <= domainMax; x += step) {
+        let sum = 0;
+        for (const xi of samples) {
+            sum += gaussian((x - xi) / h);
+        }
+        const density = sum / (n * h);
+        points.push({ x: Math.round(x * 100) / 100, density });
+    }
+    const maxD = Math.max(...points.map(p => p.density));
+    if (maxD > 0) {
+        points.forEach(p => { p.density = p.density / maxD; });
+    }
+    return points;
+}
+
+function percentile(samples: number[], value: number): number {
+    if (samples.length === 0) return 0;
+    const countBelow = samples.filter(s => s < value).length;
+    return Math.round((100 * countBelow) / samples.length);
+}
 import { useAuth } from '../context/AuthContext';
 
 export function DeliberationPage() {
@@ -17,7 +48,7 @@ export function DeliberationPage() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [direction, setDirection] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'seminar' | 'written' | 'interview'>('seminar');
+    const [activeTab, setActiveTab] = useState<'seminar' | 'written' | 'interview' | 'visualizations'>('seminar');
     const confirmModal = useConfirm();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
@@ -355,7 +386,7 @@ export function DeliberationPage() {
     ];
     const hasWrittenScores = writtenScores.some(s => s && s > 0);
     const writtenOverall = hasWrittenScores
-        ? writtenScores.reduce((sum, val) => sum + (val || 0), 0) / writtenScores.length
+        ? writtenScores.reduce((sum: number, val: number | undefined) => sum + (val || 0), 0) / writtenScores.length
         : null;
 
     const interviewOverallScores = (candidate.interviewNotes || [])
@@ -364,7 +395,7 @@ export function DeliberationPage() {
 
     const hasInterviewOverall = interviewOverallScores.length > 0;
     const interviewOverallAvg = hasInterviewOverall
-        ? interviewOverallScores.reduce((sum, val) => sum + val, 0) / interviewOverallScores.length
+        ? interviewOverallScores.reduce((sum: number, val: number) => sum + val, 0) / interviewOverallScores.length
         : null;
 
     const formatScore = (val: number | null | undefined) => {
@@ -372,20 +403,55 @@ export function DeliberationPage() {
         return val.toFixed(1);
     };
 
+    // Chart data for Visualizations tab
+    const writtenBarData = [
+        { name: 'Interest', score: candidate.scores.writtenInterest ?? 0, fullMark: 5 },
+        { name: 'Teaching', score: candidate.scores.writtenTeaching ?? 0, fullMark: 5 },
+        { name: 'Seminar', score: candidate.scores.writtenSeminar ?? 0, fullMark: 5 },
+        { name: 'Personal', score: candidate.scores.writtenPersonal ?? 0, fullMark: 5 },
+    ];
+    const interviewBarData = [
+        { name: 'Understanding', score: candidate.scores.understanding ?? 0, fullMark: 10 },
+        { name: 'Enthusiasm', score: candidate.scores.enthusiasm ?? 0, fullMark: 10 },
+        { name: 'Seminar Quality', score: candidate.scores.quality ?? 0, fullMark: 10 },
+        { name: 'Teaching', score: candidate.scores.teaching ?? 0, fullMark: 10 },
+        { name: 'Interest', score: candidate.scores.interestEngaging ?? 0, fullMark: 10 },
+    ];
+    const interviewNotes = candidate.interviewNotes || [];
+    const multiInterviewerChartData = interviewNotes.length >= 2
+        ? (['Enthusiasm', 'Quality', 'Teaching', 'Interest', 'Overall'] as const).map(dim => {
+            const key = dim === 'Overall' ? 'score_overall' : dim === 'Enthusiasm' ? 'score_enthusiasm' : dim === 'Quality' ? 'score_quality' : dim === 'Teaching' ? 'score_teaching' : 'score_interest';
+            const point: Record<string, string | number> = { dimension: dim };
+            interviewNotes.forEach((note: any, i: number) => {
+                const label = note.interviewer || `Interviewer ${i + 1}`;
+                point[label] = typeof (note as any)[key] === 'number' ? (note as any)[key] : 0;
+            });
+            return point;
+        })
+        : [];
+
+    const INTERVIEWER_COLORS = ['#8b5cf6', '#059669', '#d97706', '#dc2626'];
+
+    // Cohort distributions for percentile / PMF charts (all pending candidates)
+    const cohortOverallScores = candidates.map(c => c.scores?.overall).filter((v: unknown): v is number => typeof v === 'number');
+    const cohortWrittenSums = candidates.map(c =>
+        (c.scores?.writtenInterest ?? 0) + (c.scores?.writtenTeaching ?? 0) + (c.scores?.writtenSeminar ?? 0) + (c.scores?.writtenPersonal ?? 0)
+    ).filter(s => s > 0);
+    const currentOverall = candidate.scores?.overall;
+    const currentWrittenSum = (candidate.scores?.writtenInterest ?? 0) + (candidate.scores?.writtenTeaching ?? 0) + (candidate.scores?.writtenSeminar ?? 0) + (candidate.scores?.writtenPersonal ?? 0);
+    const overallKdeData = kernelDensity(cohortOverallScores, 0, 10, 0.2, 0.5);
+    const writtenSumKdeData = kernelDensity(cohortWrittenSums, 0, 20, 0.25, 0.8);
+    const overallPercentile = typeof currentOverall === 'number' ? percentile(cohortOverallScores, currentOverall) : null;
+    const writtenSumPercentile = currentWrittenSum > 0 && cohortWrittenSums.length > 0 ? percentile(cohortWrittenSums, currentWrittenSum) : null;
+
     return (
         <div className="h-full flex flex-col gap-6">
             <div className="flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-4">
-                    <Button variant="secondary" size="sm" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-                        <PanelLeft className="w-4 h-4 mr-1" />
-                        {isSidebarOpen ? 'Collapse' : 'Expand'}
-                    </Button>
-                    <div>
-                        <h1 className="text-2xl font-bold text-primary tracking-tight">
-                            Application Review {isAdmin && <span className="ml-2 px-2 py-0.5 bg-accent/20 text-accent text-[10px] uppercase rounded border border-accent/30">Conductor</span>}
-                        </h1>
-                        <p className="text-sm text-secondary mt-1">Reviewing candidate {currentIndex + 1} of {candidates.length}</p>
-                    </div>
+                <div>
+                    <h1 className="text-2xl font-bold text-primary tracking-tight">
+                        Application Review {isAdmin && <span className="ml-2 px-2 py-0.5 bg-accent/20 text-accent text-[10px] uppercase rounded border border-accent/30">Conductor</span>}
+                    </h1>
+                    <p className="text-sm text-secondary mt-1">Reviewing candidate {currentIndex + 1} of {candidates.length}</p>
                 </div>
                 <div className="flex gap-2">
                     {isAdmin && (
@@ -417,7 +483,17 @@ export function DeliberationPage() {
 
                             {/* Left Column: Candidate Profile & Standardized Scores */}
                             {isSidebarOpen && (
-                                <div className="lg:col-span-3 flex flex-col gap-6 h-full overflow-y-auto pr-1">
+                                <div className="lg:col-span-3 flex flex-col gap-6 h-full overflow-y-auto pr-1 relative">
+                                    {/* Collapse handle: attached to right edge of sidebar */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsSidebarOpen(false)}
+                                        className="absolute top-6 right-0 z-10 w-6 h-10 flex items-center justify-center rounded-l-md border border-r-0 border-border bg-surface hover:bg-surfaceHover text-muted hover:text-primary shadow-sm transition-colors"
+                                        title="Collapse panel"
+                                        aria-label="Collapse panel"
+                                    >
+                                        <ChevronLeft className="w-3.5 h-3.5" />
+                                    </button>
                                     <Card className="flex flex-col shrink-0">
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center gap-3">
@@ -541,7 +617,19 @@ export function DeliberationPage() {
                             )}
 
                             {/* Right Column: Detailed Context Tabs */}
-                            <div className={`${isSidebarOpen ? 'lg:col-span-9' : 'lg:col-span-12'} flex flex-col h-full bg-white dark:bg-surface border border-border rounded-xl shadow-sm overflow-hidden transition-all duration-300`}>
+                            <div className={`${isSidebarOpen ? 'lg:col-span-9' : 'lg:col-span-12'} flex flex-col h-full bg-white dark:bg-surface border border-border rounded-xl shadow-sm overflow-hidden transition-all duration-300 relative`}>
+                                {/* Expand handle when sidebar is collapsed */}
+                                {!isSidebarOpen && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsSidebarOpen(true)}
+                                        className="absolute top-6 left-0 z-10 w-6 h-10 flex items-center justify-center rounded-r-md border border-l-0 border-border bg-surface hover:bg-surfaceHover text-muted hover:text-primary shadow-sm transition-colors"
+                                        title="Expand panel"
+                                        aria-label="Expand panel"
+                                    >
+                                        <ChevronRight className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
                                 {/* Tab Navigation */}
                                 <div className="flex border-b border-border px-2 pt-2 bg-surface/50 dark:bg-surfaceHover/30">
                                     <button
@@ -561,6 +649,12 @@ export function DeliberationPage() {
                                         className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'interview' ? 'border-accent text-accent' : 'border-transparent text-secondary hover:text-primary hover:border-border'}`}
                                     >
                                         <User className="w-4 h-4" /> Interview Notes
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveTab('visualizations')}
+                                        className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'visualizations' ? 'border-accent text-accent' : 'border-transparent text-secondary hover:text-primary hover:border-border'}`}
+                                    >
+                                        <BarChart2 className="w-4 h-4" /> Visualizations
                                     </button>
                                 </div>
 
@@ -691,6 +785,174 @@ export function DeliberationPage() {
                                                             </div>
                                                         </div>
                                                     ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'visualizations' && (
+                                        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                            {/* Written vs Interview summary */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div className="p-4 rounded-xl border border-border bg-surface/50 dark:bg-surfaceHover/30">
+                                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Written application (avg)</p>
+                                                    <div className="flex items-baseline gap-2">
+                                                        <span className="text-2xl font-bold text-primary">{writtenOverall != null ? writtenOverall.toFixed(2) : '—'}</span>
+                                                        <span className="text-sm text-secondary">/ 5</span>
+                                                    </div>
+                                                    {hasWrittenScores && (
+                                                        <div className="mt-2 h-2 w-full bg-surfaceHover rounded-full overflow-hidden">
+                                                            <div className="h-full bg-violet-500 rounded-full" style={{ width: `${((writtenOverall ?? 0) / 5) * 100}%` }} />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="p-4 rounded-xl border border-border bg-surface/50 dark:bg-surfaceHover/30">
+                                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Interview (avg overall)</p>
+                                                    <div className="flex items-baseline gap-2">
+                                                        <span className="text-2xl font-bold text-primary">{interviewOverallAvg != null ? interviewOverallAvg.toFixed(2) : '—'}</span>
+                                                        <span className="text-sm text-secondary">/ 10</span>
+                                                    </div>
+                                                    {hasInterviewOverall && (
+                                                        <div className="mt-2 h-2 w-full bg-surfaceHover rounded-full overflow-hidden">
+                                                            <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${((interviewOverallAvg ?? 0) / 10) * 100}%` }} />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Overall score distribution (cohort PMF) + percentile */}
+                                            {cohortOverallScores.length > 0 && (
+                                                <div>
+                                                    <h3 className="text-sm font-semibold text-primary mb-1">Overall score distribution (cohort)</h3>
+                                                    <p className="text-xs text-secondary mb-3">
+                                                        Smoothed distribution of overall scores across all {candidates.length} candidates.
+                                                        {typeof currentOverall === 'number' && overallPercentile != null && (
+                                                            <span className="ml-1 font-medium text-primary">
+                                                                {candidate.name} is at <span className="text-accent">{overallPercentile}th percentile</span> (score {currentOverall.toFixed(1)}).
+                                                            </span>
+                                                        )}
+                                                    </p>
+                                                    <div className="h-56">
+                                                        <ResponsiveContainer width="100%" height="100%">
+                                                            <AreaChart data={overallKdeData} margin={{ top: 8, right: 16, left: 8, bottom: 24 }}>
+                                                                <defs>
+                                                                    <linearGradient id="overallKdeFill" x1="0" y1="0" x2="0" y2="1">
+                                                                        <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.4} />
+                                                                        <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
+                                                                    </linearGradient>
+                                                                </defs>
+                                                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                <XAxis dataKey="x" type="number" domain={[0, 10]} tick={{ fontSize: 10, fill: '#6B7280' }} />
+                                                                <YAxis hide domain={[0, 1.1]} />
+                                                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => ['density', v != null ? v.toFixed(3) : '—']} labelFormatter={(l: unknown) => `Score ${l}`} />
+                                                                <Area type="monotone" dataKey="density" stroke="#8b5cf6" strokeWidth={2} fill="url(#overallKdeFill)" />
+                                                                {typeof currentOverall === 'number' && (
+                                                                    <ReferenceLine x={currentOverall} stroke="#dc2626" strokeWidth={2} strokeDasharray="4 2" label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }} />
+                                                                )}
+                                                            </AreaChart>
+                                                        </ResponsiveContainer>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Written score sum distribution (cohort PMF) + percentile */}
+                                            {cohortWrittenSums.length > 0 && (
+                                                <div>
+                                                    <h3 className="text-sm font-semibold text-primary mb-1">Written score sum distribution (cohort)</h3>
+                                                    <p className="text-xs text-secondary mb-3">
+                                                        Smoothed distribution of written dimension sum (max 20) across candidates with written scores.
+                                                        {currentWrittenSum > 0 && writtenSumPercentile != null && (
+                                                            <span className="ml-1 font-medium text-primary">
+                                                                {candidate.name} is at <span className="text-accent">{writtenSumPercentile}th percentile</span> (sum {currentWrittenSum.toFixed(1)}/20).
+                                                            </span>
+                                                        )}
+                                                    </p>
+                                                    <div className="h-56">
+                                                        <ResponsiveContainer width="100%" height="100%">
+                                                            <AreaChart data={writtenSumKdeData} margin={{ top: 8, right: 16, left: 8, bottom: 24 }}>
+                                                                <defs>
+                                                                    <linearGradient id="writtenSumKdeFill" x1="0" y1="0" x2="0" y2="1">
+                                                                        <stop offset="0%" stopColor="#059669" stopOpacity={0.4} />
+                                                                        <stop offset="100%" stopColor="#059669" stopOpacity={0} />
+                                                                    </linearGradient>
+                                                                </defs>
+                                                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                <XAxis dataKey="x" type="number" domain={[0, 20]} tick={{ fontSize: 10, fill: '#6B7280' }} />
+                                                                <YAxis hide domain={[0, 1.1]} />
+                                                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => ['density', v != null ? v.toFixed(3) : '—']} labelFormatter={(l: unknown) => `Sum ${l}`} />
+                                                                <Area type="monotone" dataKey="density" stroke="#059669" strokeWidth={2} fill="url(#writtenSumKdeFill)" />
+                                                                {currentWrittenSum > 0 && (
+                                                                    <ReferenceLine x={currentWrittenSum} stroke="#dc2626" strokeWidth={2} strokeDasharray="4 2" label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }} />
+                                                                )}
+                                                            </AreaChart>
+                                                        </ResponsiveContainer>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Written dimensions bar chart */}
+                                            {hasWrittenScores && (
+                                                <div>
+                                                    <h3 className="text-sm font-semibold text-primary mb-3">Written application dimensions (out of 5)</h3>
+                                                    <div className="h-64">
+                                                        <ResponsiveContainer width="100%" height="100%">
+                                                            <BarChart data={writtenBarData} layout="vertical" margin={{ top: 4, right: 16, left: 60, bottom: 4 }}>
+                                                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 11, fill: '#6B7280' }} />
+                                                                <YAxis type="category" dataKey="name" width={56} tick={{ fontSize: 11, fill: '#374151' }} />
+                                                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? `${v.toFixed(1)} / 5` : '—', 'Score']} />
+                                                                <Bar dataKey="score" radius={[0, 4, 4, 0]} fill="#8b5cf6" />
+                                                            </BarChart>
+                                                        </ResponsiveContainer>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Interview dimensions bar chart (average) */}
+                                            {(hasInterviewOverall || interviewBarData.some(d => d.score > 0)) && (
+                                                <div>
+                                                    <h3 className="text-sm font-semibold text-primary mb-3">Interview dimensions — average (out of 10)</h3>
+                                                    <div className="h-64">
+                                                        <ResponsiveContainer width="100%" height="100%">
+                                                            <BarChart data={interviewBarData} layout="vertical" margin={{ top: 4, right: 16, left: 80, bottom: 4 }}>
+                                                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                <XAxis type="number" domain={[0, 10]} tick={{ fontSize: 11, fill: '#6B7280' }} />
+                                                                <YAxis type="category" dataKey="name" width={76} tick={{ fontSize: 11, fill: '#374151' }} />
+                                                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? `${v.toFixed(1)} / 10` : '—', 'Score']} />
+                                                                <Bar dataKey="score" radius={[0, 4, 4, 0]} fill="#059669" />
+                                                            </BarChart>
+                                                        </ResponsiveContainer>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Multi-interviewer comparison */}
+                                            {multiInterviewerChartData.length > 0 && (
+                                                <div>
+                                                    <h3 className="text-sm font-semibold text-primary mb-3">Interviewer comparison by dimension</h3>
+                                                    <div className="h-72">
+                                                        <ResponsiveContainer width="100%" height="100%">
+                                                            <BarChart data={multiInterviewerChartData} margin={{ top: 8, right: 16, left: 8, bottom: 24 }}>
+                                                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                <XAxis dataKey="dimension" tick={{ fontSize: 10, fill: '#374151' }} />
+                                                                <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: '#6B7280' }} />
+                                                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                                                <Legend />
+                                                                {interviewNotes.slice(0, 4).map((note: any, i: number) => {
+                                                                    const label = note.interviewer || `Interviewer ${i + 1}`;
+                                                                    return (
+                                                                        <Bar key={label} dataKey={label} fill={INTERVIEWER_COLORS[i % INTERVIEWER_COLORS.length]} radius={[2, 2, 0, 0]} />
+                                                                    );
+                                                                })}
+                                                            </BarChart>
+                                                        </ResponsiveContainer>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {!hasWrittenScores && !hasInterviewOverall && (
+                                                <div className="text-center text-secondary py-8">
+                                                    No written or interview scores yet. Charts will appear once scores are available.
                                                 </div>
                                             )}
                                         </div>
