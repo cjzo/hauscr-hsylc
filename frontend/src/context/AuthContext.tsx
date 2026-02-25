@@ -98,9 +98,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [loadRole]);
 
   const signInWithGoogle = useCallback(async () => {
+    // Use env override for Vercel/preview URLs; otherwise current origin (required for Supabase allowlist)
+    const redirectTo =
+      (import.meta.env.VITE_APP_URL as string | undefined)?.replace(/\/$/, '') ||
+      window.location.origin;
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo },
     });
   }, []);
 

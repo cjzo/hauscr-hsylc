@@ -246,6 +246,11 @@ export function UserManagementPage() {
         </div>
       </Card>
 
+      <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+        <strong>Auto-accept on sign-in:</strong> Emails in the lists below are only automatically accepted (and not blocked) if you have run{' '}
+        <span className="font-mono">hauscr-hsylc/supabase/admin_emails_setup.sql</span> in the Supabase SQL Editor once. Otherwise, new sign-ins are blocked until you assign a role by user ID above.
+      </div>
+
       <Card>
         <div className="p-6 space-y-4">
           <h2 className="text-lg font-semibold text-primary">
@@ -271,7 +276,10 @@ export function UserManagementPage() {
           {memberEmailMessage && <p className="text-sm text-green-600">{memberEmailMessage}</p>}
           {memberEmailError && memberEmails.length === 0 && (
             <p className="text-sm text-amber-600 dark:text-amber-500">
-              If the table is missing, run <span className="font-mono">supabase/admin_emails_setup.sql</span> in the Supabase SQL Editor.
+              If the table is missing, run{' '}
+              <span className="font-mono">hauscr-hsylc/supabase/admin_emails_setup.sql</span> in the
+              Supabase SQL Editor. That script is also required for emails in these lists to be{' '}
+              <strong>automatically accepted</strong> on sign-in (otherwise they are blocked until you assign a role below).
             </p>
           )}
           {memberEmails.length === 0 && !memberEmailError ? (
@@ -322,7 +330,10 @@ export function UserManagementPage() {
           {emailMessage && <p className="text-sm text-green-600">{emailMessage}</p>}
           {emailError && adminEmails.length === 0 && !loadingEmails && (
             <p className="text-sm text-amber-600 dark:text-amber-500">
-              If the table is missing, run <span className="font-mono">supabase/admin_emails_setup.sql</span> in the Supabase SQL Editor.
+              If the table is missing, run{' '}
+              <span className="font-mono">hauscr-hsylc/supabase/admin_emails_setup.sql</span> in the
+              Supabase SQL Editor. That script is also required for emails in these lists to be{' '}
+              <strong>automatically accepted</strong> on sign-in (otherwise they are blocked until you assign a role below).
             </p>
           )}
           {loadingEmails ? (
