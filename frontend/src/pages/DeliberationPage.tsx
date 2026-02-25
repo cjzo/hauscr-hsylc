@@ -21,6 +21,7 @@ const MOCK_CANDIDATES = [
         major: 'Computer Science & Economics',
         year: 'Junior',
         nationality: 'USA',
+        candidateType: 'New',
 
         // Seminar Details
         seminarTitle: 'Introduction to Modern Web Architecture',
@@ -91,6 +92,7 @@ const MOCK_CANDIDATES = [
         major: 'Symbolic Systems',
         year: 'Senior',
         nationality: 'Canada',
+        candidateType: 'Returning',
 
         // Seminar Details
         seminarTitle: 'The Ethics of Artificial Intelligence',
@@ -188,6 +190,7 @@ export function DeliberationPage() {
                         major: cand.major,
                         year: cand.class_year,
                         nationality: cand.nationality,
+                        candidateType: cand.candidate_type || 'New',
 
                         seminarTitle: cand.seminar_title,
                         seminarCategory: standardizeCategory(cand.seminar_category || cand.seminar_title),
@@ -405,7 +408,12 @@ export function DeliberationPage() {
                                 <div className="lg:col-span-3 flex flex-col gap-6 h-full overflow-y-auto pr-1">
                                     <Card className="flex flex-col shrink-0">
                                         <div className="flex items-center justify-between mb-2">
-                                            <h2 className="text-2xl font-bold text-primary">{candidate.name}</h2>
+                                            <div className="flex items-center gap-3">
+                                                <h2 className="text-2xl font-bold text-primary">{candidate.name}</h2>
+                                                <span className={`px-2 py-1 text-xs font-bold rounded-full ${candidate.candidateType === 'Returning' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'}`}>
+                                                    {candidate.candidateType}
+                                                </span>
+                                            </div>
                                         </div>
 
                                         <div className="space-y-2 mt-2">
