@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg-primary: #ffffff;
+    --color-bg-secondary: #f6f9fc;
+    --color-bg-tertiary: #e3e8ee;
+    --color-border: #e6ebf1;
+    --color-text-primary: #0a2540;
+    --color-text-secondary: #425466;
+    --color-text-muted: #8792a2;
+    --color-accent: #635bff;
+    --color-accent-hover: #544ada;
+  }
+  
+  :root.dark {
+    --color-bg-primary: #0a2540;
+    --color-bg-secondary: #102e4e;
+    --color-bg-tertiary: #1b3857;
+    --color-border: #233f5d;
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #a9b7cc;
+    --color-text-muted: #728096;
+    --color-accent: #635bff;
+    --color-accent-hover: #7b74fe;
+  }
+
+  body {
+    @apply bg-background text-primary antialiased font-sans;
+  }
+}
+
+@layer components {
+  .stripe-btn {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-all duration-200 ease-smooth disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .stripe-btn-primary {
+    @apply bg-accent text-white shadow-stripe hover:shadow-stripe-hover hover:-translate-y-[1px] hover:bg-accent-hover focus-visible:shadow-stripe-focus focus:outline-none;
+  }
+  .stripe-btn-secondary {
+    @apply bg-white text-primary border border-border shadow-sm hover:bg-surface focus-visible:shadow-stripe-focus focus:outline-none dark:bg-surface dark:border-border dark:hover:bg-surfaceHover;
+  }
+  .stripe-card {
+    @apply bg-white rounded-xl border border-border shadow-stripe p-6 dark:bg-surface;
+  }
+}
