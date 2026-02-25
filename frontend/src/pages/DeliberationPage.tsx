@@ -11,7 +11,7 @@ import { supabase } from '../lib/supabase';
 import { standardizeCategory } from '../utils/categories';
 import {
     Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip,
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, AreaChart, Area, ReferenceLine
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, AreaChart, Area, LineChart, Line, ReferenceLine
 } from 'recharts';
 
 /** Gaussian KDE: returns smoothed density points for charting. */
@@ -41,6 +41,18 @@ function percentile(samples: number[], value: number): number {
     const countBelow = samples.filter(s => s < value).length;
     return Math.round((100 * countBelow) / samples.length);
 }
+
+/** CDF at grid points: proportion of samples <= x. */
+function computeCdf(samples: number[], domainMin: number, domainMax: number, step: number): { x: number; cdf: number }[] {
+    if (samples.length === 0) return [];
+    const n = samples.length;
+    const points: { x: number; cdf: number }[] = [];
+    for (let x = domainMin; x <= domainMax; x += step) {
+        const count = samples.filter(s => s <= x).length;
+        points.push({ x: Math.round(x * 100) / 100, cdf: count / n });
+    }
+    return points;
+}
 import { useAuth } from '../context/AuthContext';
 
 export function DeliberationPage() {
@@ -51,6 +63,7 @@ export function DeliberationPage() {
     const [activeTab, setActiveTab] = useState<'seminar' | 'written' | 'interview' | 'visualizations'>('seminar');
     const confirmModal = useConfirm();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [distributionMode, setDistributionMode] = useState<'written' | 'interview'>('interview');
 
     const { role } = useAuth();
     const isAdmin = role === 'admin';
@@ -441,8 +454,12 @@ export function DeliberationPage() {
     const currentWrittenSum = (candidate.scores?.writtenInterest ?? 0) + (candidate.scores?.writtenTeaching ?? 0) + (candidate.scores?.writtenSeminar ?? 0) + (candidate.scores?.writtenPersonal ?? 0);
     const overallKdeData = kernelDensity(cohortOverallScores, 0, 10, 0.2, 0.5);
     const writtenSumKdeData = kernelDensity(cohortWrittenSums, 0, 20, 0.25, 0.8);
+    const overallCdfData = computeCdf(cohortOverallScores, 0, 10, 0.2);
+    const writtenSumCdfData = computeCdf(cohortWrittenSums, 0, 20, 0.25);
     const overallPercentile = typeof currentOverall === 'number' ? percentile(cohortOverallScores, currentOverall) : null;
     const writtenSumPercentile = currentWrittenSum > 0 && cohortWrittenSums.length > 0 ? percentile(cohortWrittenSums, currentWrittenSum) : null;
+
+    const chartTopMargin = 32;
 
     return (
         <div className="h-full flex flex-col gap-6">
@@ -820,73 +837,116 @@ export function DeliberationPage() {
                                                 </div>
                                             </div>
 
-                                            {/* Overall score distribution (cohort PMF) + percentile */}
-                                            {cohortOverallScores.length > 0 && (
+                                            {/* Cohort distribution: Written vs Interview toggle, PMF + CDF */}
+                                            {(cohortOverallScores.length > 0 || cohortWrittenSums.length > 0) && (
                                                 <div>
-                                                    <h3 className="text-sm font-semibold text-primary mb-1">Overall score distribution (cohort)</h3>
-                                                    <p className="text-xs text-secondary mb-3">
-                                                        Smoothed distribution of overall scores across all {candidates.length} candidates.
-                                                        {typeof currentOverall === 'number' && overallPercentile != null && (
-                                                            <span className="ml-1 font-medium text-primary">
-                                                                {candidate.name} is at <span className="text-accent">{overallPercentile}th percentile</span> (score {currentOverall.toFixed(1)}).
-                                                            </span>
-                                                        )}
-                                                    </p>
-                                                    <div className="h-56">
-                                                        <ResponsiveContainer width="100%" height="100%">
-                                                            <AreaChart data={overallKdeData} margin={{ top: 8, right: 16, left: 8, bottom: 24 }}>
-                                                                <defs>
-                                                                    <linearGradient id="overallKdeFill" x1="0" y1="0" x2="0" y2="1">
-                                                                        <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.4} />
-                                                                        <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
-                                                                    </linearGradient>
-                                                                </defs>
-                                                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                                                <XAxis dataKey="x" type="number" domain={[0, 10]} tick={{ fontSize: 10, fill: '#6B7280' }} />
-                                                                <YAxis hide domain={[0, 1.1]} />
-                                                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => ['density', v != null ? v.toFixed(3) : '—']} labelFormatter={(l: unknown) => `Score ${l}`} />
-                                                                <Area type="monotone" dataKey="density" stroke="#8b5cf6" strokeWidth={2} fill="url(#overallKdeFill)" />
-                                                                {typeof currentOverall === 'number' && (
-                                                                    <ReferenceLine x={currentOverall} stroke="#dc2626" strokeWidth={2} strokeDasharray="4 2" label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }} />
-                                                                )}
-                                                            </AreaChart>
-                                                        </ResponsiveContainer>
+                                                    <div className="flex flex-wrap items-center gap-3 mb-2">
+                                                        <h3 className="text-sm font-semibold text-primary">Score distribution (cohort)</h3>
+                                                        <div className="flex rounded-lg border border-border bg-surface/50 p-0.5">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setDistributionMode('written')}
+                                                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'written' ? 'bg-accent text-white' : 'text-secondary hover:text-primary'}`}
+                                                            >
+                                                                Written (sum)
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setDistributionMode('interview')}
+                                                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'interview' ? 'bg-accent text-white' : 'text-secondary hover:text-primary'}`}
+                                                            >
+                                                                Interview (avg overall)
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
+                                                    <p className="text-xs text-secondary mb-3">
+                                                        {distributionMode === 'interview'
+                                                            ? <>Smoothed distribution of interview overall score (average across interviewers) for all {candidates.length} candidates. {typeof currentOverall === 'number' && overallPercentile != null && (<span className="ml-1 font-medium text-primary">{candidate.name} is at <span className="text-accent">{overallPercentile}th percentile</span> (score {currentOverall.toFixed(1)}).</span>)}</>
+                                                            : <>Smoothed distribution of written dimension sum (max 20). {currentWrittenSum > 0 && writtenSumPercentile != null && (<span className="ml-1 font-medium text-primary">{candidate.name} is at <span className="text-accent">{writtenSumPercentile}th percentile</span> (sum {currentWrittenSum.toFixed(1)}/20).</span>)}</>
+                                                        }
+                                                    </p>
 
-                                            {/* Written score sum distribution (cohort PMF) + percentile */}
-                                            {cohortWrittenSums.length > 0 && (
-                                                <div>
-                                                    <h3 className="text-sm font-semibold text-primary mb-1">Written score sum distribution (cohort)</h3>
-                                                    <p className="text-xs text-secondary mb-3">
-                                                        Smoothed distribution of written dimension sum (max 20) across candidates with written scores.
-                                                        {currentWrittenSum > 0 && writtenSumPercentile != null && (
-                                                            <span className="ml-1 font-medium text-primary">
-                                                                {candidate.name} is at <span className="text-accent">{writtenSumPercentile}th percentile</span> (sum {currentWrittenSum.toFixed(1)}/20).
-                                                            </span>
-                                                        )}
-                                                    </p>
-                                                    <div className="h-56">
-                                                        <ResponsiveContainer width="100%" height="100%">
-                                                            <AreaChart data={writtenSumKdeData} margin={{ top: 8, right: 16, left: 8, bottom: 24 }}>
-                                                                <defs>
-                                                                    <linearGradient id="writtenSumKdeFill" x1="0" y1="0" x2="0" y2="1">
-                                                                        <stop offset="0%" stopColor="#059669" stopOpacity={0.4} />
-                                                                        <stop offset="100%" stopColor="#059669" stopOpacity={0} />
-                                                                    </linearGradient>
-                                                                </defs>
-                                                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                                                <XAxis dataKey="x" type="number" domain={[0, 20]} tick={{ fontSize: 10, fill: '#6B7280' }} />
-                                                                <YAxis hide domain={[0, 1.1]} />
-                                                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => ['density', v != null ? v.toFixed(3) : '—']} labelFormatter={(l: unknown) => `Sum ${l}`} />
-                                                                <Area type="monotone" dataKey="density" stroke="#059669" strokeWidth={2} fill="url(#writtenSumKdeFill)" />
-                                                                {currentWrittenSum > 0 && (
-                                                                    <ReferenceLine x={currentWrittenSum} stroke="#dc2626" strokeWidth={2} strokeDasharray="4 2" label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }} />
-                                                                )}
-                                                            </AreaChart>
-                                                        </ResponsiveContainer>
-                                                    </div>
+                                                    {distributionMode === 'interview' && cohortOverallScores.length > 0 && (
+                                                        <>
+                                                            <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">Density (KDE)</p>
+                                                            <div className="h-52 mb-2" style={{ marginTop: 4 }}>
+                                                                <ResponsiveContainer width="100%" height="100%">
+                                                                    <AreaChart data={overallKdeData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
+                                                                        <defs>
+                                                                            <linearGradient id="overallKdeFill" x1="0" y1="0" x2="0" y2="1">
+                                                                                <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.4} />
+                                                                                <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
+                                                                            </linearGradient>
+                                                                        </defs>
+                                                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                        <XAxis dataKey="x" type="number" domain={[0, 10]} tick={{ fontSize: 10, fill: '#6B7280' }} />
+                                                                        <YAxis hide domain={[0, 1.15]} />
+                                                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => ['density', v != null ? v.toFixed(3) : '—']} labelFormatter={(l: unknown) => `Score ${l}`} />
+                                                                        <Area type="monotone" dataKey="density" stroke="#8b5cf6" strokeWidth={2} fill="url(#overallKdeFill)" />
+                                                                        {typeof currentOverall === 'number' && (
+                                                                            <ReferenceLine x={currentOverall} stroke="#dc2626" strokeWidth={2} strokeDasharray="4 2" label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }} />
+                                                                        )}
+                                                                    </AreaChart>
+                                                                </ResponsiveContainer>
+                                                            </div>
+                                                            <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">CDF</p>
+                                                            <div className="h-52" style={{ marginTop: 4 }}>
+                                                                <ResponsiveContainer width="100%" height="100%">
+                                                                    <LineChart data={overallCdfData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
+                                                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                        <XAxis dataKey="x" type="number" domain={[0, 10]} tick={{ fontSize: 10, fill: '#6B7280' }} />
+                                                                        <YAxis domain={[0, 1]} tick={{ fontSize: 10, fill: '#6B7280' }} tickFormatter={(v) => `${Math.round(v * 100)}%`} />
+                                                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? `${(v * 100).toFixed(0)}%` : '—', 'CDF']} labelFormatter={(l: unknown) => `Score ${l}`} />
+                                                                        <Line type="monotone" dataKey="cdf" stroke="#8b5cf6" strokeWidth={2} dot={false} />
+                                                                        {typeof currentOverall === 'number' && (
+                                                                            <ReferenceLine x={currentOverall} stroke="#dc2626" strokeWidth={2} strokeDasharray="4 2" label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }} />
+                                                                        )}
+                                                                    </LineChart>
+                                                                </ResponsiveContainer>
+                                                            </div>
+                                                        </>
+                                                    )}
+
+                                                    {distributionMode === 'written' && cohortWrittenSums.length > 0 && (
+                                                        <>
+                                                            <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">Density (KDE)</p>
+                                                            <div className="h-52 mb-2" style={{ marginTop: 4 }}>
+                                                                <ResponsiveContainer width="100%" height="100%">
+                                                                    <AreaChart data={writtenSumKdeData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
+                                                                        <defs>
+                                                                            <linearGradient id="writtenSumKdeFill" x1="0" y1="0" x2="0" y2="1">
+                                                                                <stop offset="0%" stopColor="#059669" stopOpacity={0.4} />
+                                                                                <stop offset="100%" stopColor="#059669" stopOpacity={0} />
+                                                                            </linearGradient>
+                                                                        </defs>
+                                                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                        <XAxis dataKey="x" type="number" domain={[0, 20]} tick={{ fontSize: 10, fill: '#6B7280' }} />
+                                                                        <YAxis hide domain={[0, 1.15]} />
+                                                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => ['density', v != null ? v.toFixed(3) : '—']} labelFormatter={(l: unknown) => `Sum ${l}`} />
+                                                                        <Area type="monotone" dataKey="density" stroke="#059669" strokeWidth={2} fill="url(#writtenSumKdeFill)" />
+                                                                        {currentWrittenSum > 0 && (
+                                                                            <ReferenceLine x={currentWrittenSum} stroke="#dc2626" strokeWidth={2} strokeDasharray="4 2" label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }} />
+                                                                        )}
+                                                                    </AreaChart>
+                                                                </ResponsiveContainer>
+                                                            </div>
+                                                            <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">CDF</p>
+                                                            <div className="h-52" style={{ marginTop: 4 }}>
+                                                                <ResponsiveContainer width="100%" height="100%">
+                                                                    <LineChart data={writtenSumCdfData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
+                                                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                        <XAxis dataKey="x" type="number" domain={[0, 20]} tick={{ fontSize: 10, fill: '#6B7280' }} />
+                                                                        <YAxis domain={[0, 1]} tick={{ fontSize: 10, fill: '#6B7280' }} tickFormatter={(v) => `${Math.round(v * 100)}%`} />
+                                                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? `${(v * 100).toFixed(0)}%` : '—', 'CDF']} labelFormatter={(l: unknown) => `Sum ${l}`} />
+                                                                        <Line type="monotone" dataKey="cdf" stroke="#059669" strokeWidth={2} dot={false} />
+                                                                        {currentWrittenSum > 0 && (
+                                                                            <ReferenceLine x={currentWrittenSum} stroke="#dc2626" strokeWidth={2} strokeDasharray="4 2" label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }} />
+                                                                        )}
+                                                                    </LineChart>
+                                                                </ResponsiveContainer>
+                                                            </div>
+                                                        </>
+                                                    )}
                                                 </div>
                                             )}
 
@@ -896,7 +956,7 @@ export function DeliberationPage() {
                                                     <h3 className="text-sm font-semibold text-primary mb-3">Written application dimensions (out of 5)</h3>
                                                     <div className="h-64">
                                                         <ResponsiveContainer width="100%" height="100%">
-                                                            <BarChart data={writtenBarData} layout="vertical" margin={{ top: 4, right: 16, left: 60, bottom: 4 }}>
+                                                            <BarChart data={writtenBarData} layout="vertical" margin={{ top: 14, right: 16, left: 60, bottom: 4 }}>
                                                                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                                                                 <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 11, fill: '#6B7280' }} />
                                                                 <YAxis type="category" dataKey="name" width={56} tick={{ fontSize: 11, fill: '#374151' }} />
@@ -914,7 +974,7 @@ export function DeliberationPage() {
                                                     <h3 className="text-sm font-semibold text-primary mb-3">Interview dimensions — average (out of 10)</h3>
                                                     <div className="h-64">
                                                         <ResponsiveContainer width="100%" height="100%">
-                                                            <BarChart data={interviewBarData} layout="vertical" margin={{ top: 4, right: 16, left: 80, bottom: 4 }}>
+                                                            <BarChart data={interviewBarData} layout="vertical" margin={{ top: 14, right: 16, left: 80, bottom: 4 }}>
                                                                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                                                                 <XAxis type="number" domain={[0, 10]} tick={{ fontSize: 11, fill: '#6B7280' }} />
                                                                 <YAxis type="category" dataKey="name" width={76} tick={{ fontSize: 11, fill: '#374151' }} />
@@ -932,7 +992,7 @@ export function DeliberationPage() {
                                                     <h3 className="text-sm font-semibold text-primary mb-3">Interviewer comparison by dimension</h3>
                                                     <div className="h-72">
                                                         <ResponsiveContainer width="100%" height="100%">
-                                                            <BarChart data={multiInterviewerChartData} margin={{ top: 8, right: 16, left: 8, bottom: 24 }}>
+                                                            <BarChart data={multiInterviewerChartData} margin={{ top: 16, right: 16, left: 8, bottom: 24 }}>
                                                                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                                                                 <XAxis dataKey="dimension" tick={{ fontSize: 10, fill: '#374151' }} />
                                                                 <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: '#6B7280' }} />
