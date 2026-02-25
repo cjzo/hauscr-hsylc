@@ -2,9 +2,19 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { Card } from '../components/ui/Card';
+import { standardizeCategory } from '../utils/categories';
 import {
-    Search, CheckCircle, XCircle, Clock, PauseCircle,
-    ChevronDown, GraduationCap, MapPin, Loader2, Star
+    Search,
+    CheckCircle,
+    XCircle,
+    Clock,
+    PauseCircle,
+    ChevronDown,
+    GraduationCap,
+    MapPin,
+    Loader2,
+    Star,
+    X
 } from 'lucide-react';
 
 export function DatabasePage() {
@@ -12,14 +22,16 @@ export function DatabasePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'waitlisted' | 'rejected'>('pending');
+    const [selectedCandidate, setSelectedCandidate] = useState<any | null>(null);
 
     useEffect(() => {
         async function fetchCandidates() {
             try {
-                // Fetch all candidates from supabase
+                // Fetch only NEW SL candidates from supabase
                 const { data, error } = await supabase
                     .from('candidates')
                     .select('*')
+                    .eq('candidate_type', 'New')
                     .order('score_overall', { ascending: false, nullsFirst: false });
 
                 if (error) throw error;
@@ -54,6 +66,8 @@ export function DatabasePage() {
         { id: 'waitlisted', label: 'Waitlisted', icon: PauseCircle, color: 'text-amber-500' },
         { id: 'rejected', label: 'Rejected', icon: XCircle, color: 'text-red-500' },
     ];
+
+    const closeDetails = () => setSelectedCandidate(null);
 
     if (isLoading) {
         return (
@@ -108,8 +122,8 @@ export function DatabasePage() {
             </div>
 
             <Card className="flex-1 flex flex-col overflow-hidden p-0">
-                <div className="overflow-x-auto flex-1">
-                    <table className="w-full text-left text-sm whitespace-nowrap">
+                <div className="flex-1 overflow-y-auto">
+                    <table className="w-full text-left text-sm">
                         <thead className="bg-surface/50 border-b border-border sticky top-0 z-10 backdrop-blur-sm">
                             <tr>
                                 <th className="px-6 py-4 font-semibold text-secondary">Candidate</th>
@@ -162,8 +176,13 @@ export function DatabasePage() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-secondary">
-                                                <div className="truncate max-w-[300px] xl:max-w-[450px] 2xl:max-w-[600px]" title={cand.seminar_category}>
-                                                    {cand.seminar_category || 'N/A'}
+                                                <div
+                                                    className="truncate max-w-[220px] sm:max-w-[260px] md:max-w-[320px]"
+                                                    title={cand.seminar_category || cand.seminar_title || undefined}
+                                                >
+                                                    {(cand.seminar_category || cand.seminar_title)
+                                                        ? standardizeCategory(cand.seminar_category || cand.seminar_title)
+                                                        : 'N/A'}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
@@ -181,7 +200,10 @@ export function DatabasePage() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <button className="text-xs font-medium text-accent hover:text-accent/80 transition-colors opacity-0 group-hover:opacity-100 flex items-center gap-1 ml-auto">
+                                                <button
+                                                    className="text-xs font-medium text-accent hover:text-accent/80 transition-colors opacity-0 group-hover:opacity-100 flex items-center gap-1 ml-auto"
+                                                    onClick={() => setSelectedCandidate(cand)}
+                                                >
                                                     View Details <ChevronDown className="w-3 h-3 -rotate-90" />
                                                 </button>
                                             </td>
@@ -193,6 +215,154 @@ export function DatabasePage() {
                     </table>
                 </div>
             </Card>
+
+            {selectedCandidate && (
+                <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
+                    <div className="bg-background dark:bg-surface w-full max-w-4xl max-h-[90vh] rounded-xl shadow-xl border border-border flex flex-col overflow-hidden">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-surface/70 dark:bg-surfaceHover/40 backdrop-blur-sm">
+                            <div>
+                                <h2 className="text-lg font-semibold text-primary flex items-center gap-2">
+                                    {selectedCandidate.full_name || `${selectedCandidate.first_name} ${selectedCandidate.last_name}`}
+                                    {selectedCandidate.candidate_type && (
+                                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 font-semibold uppercase tracking-wider">
+                                            {selectedCandidate.candidate_type}
+                                        </span>
+                                    )}
+                                </h2>
+                                <p className="text-xs text-secondary mt-1">
+                                    {selectedCandidate.school} &middot; Class of {selectedCandidate.class_year} &middot; {selectedCandidate.major}
+                                </p>
+                            </div>
+                            <button
+                                onClick={closeDetails}
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-secondary hover:text-primary transition-colors"
+                                aria-label="Close details"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Email</p>
+                                    <p className="text-sm text-primary break-all">{selectedCandidate.email}</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Nationality</p>
+                                    <p className="text-sm text-primary">{selectedCandidate.nationality || 'N/A'}</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Seminar Category</p>
+                                    <p
+                                        className="inline-block px-2.5 py-1 rounded-full bg-accent/10 text-accent text-xs font-semibold"
+                                        title={selectedCandidate.seminar_category || selectedCandidate.seminar_title || undefined}
+                                    >
+                                        {(selectedCandidate.seminar_category || selectedCandidate.seminar_title)
+                                            ? standardizeCategory(selectedCandidate.seminar_category || selectedCandidate.seminar_title)
+                                            : 'N/A'}
+                                    </p>
+                                </div>
+                                <div className="space-y-2">
+                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Overall Score</p>
+                                    <p className="text-sm text-primary font-semibold">
+                                        {typeof selectedCandidate.score_overall === 'number'
+                                            ? selectedCandidate.score_overall.toFixed(1)
+                                            : 'N/A'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <p className="text-xs font-semibold text-muted uppercase tracking-wider">Seminar Title & Description</p>
+                                <p className="text-sm font-medium text-primary">
+                                    {selectedCandidate.seminar_title || 'N/A'}
+                                </p>
+                                {selectedCandidate.seminar_description && (
+                                    <p className="text-sm text-secondary leading-relaxed bg-surface/60 dark:bg-surfaceHover p-3 rounded-lg border border-border">
+                                        {selectedCandidate.seminar_description}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Tangible Final Product</p>
+                                    <p className="text-sm text-secondary leading-relaxed">
+                                        {selectedCandidate.final_product || 'N/A'}
+                                    </p>
+                                </div>
+                                <div className="space-y-2">
+                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Other Potential Topics</p>
+                                    <p className="text-sm text-secondary leading-relaxed">
+                                        {selectedCandidate.more_topics || 'N/A'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Interest in HSYLC Mission</p>
+                                    <p className="text-sm text-secondary leading-relaxed bg-surface/60 dark:bg-surfaceHover p-3 rounded-lg border border-border">
+                                        {selectedCandidate.interest_reason || 'N/A'}
+                                    </p>
+                                </div>
+                                <div className="space-y-2">
+                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Teaching & Mentoring Experience</p>
+                                    <p className="text-sm text-secondary leading-relaxed bg-surface/60 dark:bg-surfaceHover p-3 rounded-lg border border-border">
+                                        {selectedCandidate.teaching_exp || 'N/A'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Self Introduction</p>
+                                    <p className="text-sm text-secondary leading-relaxed bg-surface/60 dark:bg-surfaceHover p-3 rounded-lg border border-border">
+                                        {selectedCandidate.self_intro || 'N/A'}
+                                    </p>
+                                </div>
+                                <div className="space-y-2">
+                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Advice for a High Schooler</p>
+                                    <p className="text-sm text-secondary leading-relaxed bg-surface/60 dark:bg-surfaceHover p-3 rounded-lg border border-border italic">
+                                        {selectedCandidate.advice ? `"${selectedCandidate.advice}"` : 'N/A'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <p className="text-xs font-semibold text-muted uppercase tracking-wider">Written Scores (out of 5)</p>
+                                <div className="flex flex-wrap gap-3 text-xs">
+                                    <span className="px-2 py-1 rounded-full bg-surfaceHover text-secondary">
+                                        Interest:{' '}
+                                        <span className="font-semibold text-primary">
+                                            {selectedCandidate.written_score_interest ?? 'N/A'}
+                                        </span>
+                                    </span>
+                                    <span className="px-2 py-1 rounded-full bg-surfaceHover text-secondary">
+                                        Teaching:{' '}
+                                        <span className="font-semibold text-primary">
+                                            {selectedCandidate.written_score_teaching ?? 'N/A'}
+                                        </span>
+                                    </span>
+                                    <span className="px-2 py-1 rounded-full bg-surfaceHover text-secondary">
+                                        Seminar:{' '}
+                                        <span className="font-semibold text-primary">
+                                            {selectedCandidate.written_score_seminar ?? 'N/A'}
+                                        </span>
+                                    </span>
+                                    <span className="px-2 py-1 rounded-full bg-surfaceHover text-secondary">
+                                        Personal:{' '}
+                                        <span className="font-semibold text-primary">
+                                            {selectedCandidate.written_score_personal ?? 'N/A'}
+                                        </span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

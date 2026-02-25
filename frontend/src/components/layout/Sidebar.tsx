@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Database, CheckSquare, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, Database, CheckSquare, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { useAuth } from '../../context/AuthContext';
 
 const navItems = [
     { icon: Home, label: 'Dashboard', to: '/dashboard' },
@@ -9,8 +10,33 @@ const navItems = [
     { icon: Database, label: 'Data Base', to: '/data' },
 ];
 
+function getInitials(name?: string | null, email?: string | null): string {
+    if (name) {
+        const parts = name.split(' ').filter(Boolean);
+        if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        return parts[0]?.slice(0, 2).toUpperCase() ?? '??';
+    }
+    if (email) return email.slice(0, 2).toUpperCase();
+    return '??';
+}
+
+function getDisplayName(user: { user_metadata?: Record<string, unknown>; email?: string } | null): string {
+    if (!user) return 'Unknown';
+    const meta = user.user_metadata;
+    if (meta?.full_name && typeof meta.full_name === 'string') return meta.full_name;
+    if (meta?.name && typeof meta.name === 'string') return meta.name;
+    return user.email ?? 'Unknown';
+}
+
 export function Sidebar() {
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const { user, role, signOut } = useAuth();
+
+    const displayName = getDisplayName(user);
+    const initials = getInitials(
+        user?.user_metadata?.full_name as string | undefined,
+        user?.email,
+    );
 
     return (
         <div className={cn("border-r border-border bg-surface h-screen flex flex-col transition-all duration-300", isCollapsed ? "w-16" : "w-64")}>
@@ -47,10 +73,35 @@ export function Sidebar() {
             <div className="p-4 border-t border-border">
                 <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-3")}>
                     <div className="w-8 h-8 shrink-0 rounded-full bg-accent text-white flex items-center justify-center font-semibold text-xs">
-                        AZ
+                        {initials}
                     </div>
-                    {!isCollapsed && <div className="text-sm font-medium text-primary truncate">Admin User</div>}
+                    {!isCollapsed && (
+                        <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-primary truncate">{displayName}</div>
+                            {role && (
+                                <div className="text-[11px] text-secondary capitalize">{role}</div>
+                            )}
+                        </div>
+                    )}
+                    {!isCollapsed && (
+                        <button
+                            onClick={signOut}
+                            className="p-1.5 rounded-md text-secondary hover:text-primary hover:bg-surfaceHover transition-colors"
+                            title="Sign out"
+                        >
+                            <LogOut className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
+                {isCollapsed && (
+                    <button
+                        onClick={signOut}
+                        className="mt-2 w-full flex items-center justify-center p-1.5 rounded-md text-secondary hover:text-primary hover:bg-surfaceHover transition-colors"
+                        title="Sign out"
+                    >
+                        <LogOut className="w-4 h-4" />
+                    </button>
+                )}
             </div>
         </div>
     );

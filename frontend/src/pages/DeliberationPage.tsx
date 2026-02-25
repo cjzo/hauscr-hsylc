@@ -10,6 +10,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { standardizeCategory } from '../utils/categories';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { useAuth } from '../context/AuthContext';
 
 export function DeliberationPage() {
     const [candidates, setCandidates] = useState<any[]>([]);
@@ -20,9 +21,8 @@ export function DeliberationPage() {
     const confirmModal = useConfirm();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-    // Conductor Mode / Admin Check
-    // For now, simple URL parameter check: ?admin=true
-    const isAdmin = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('admin') === 'true';
+    const { role } = useAuth();
+    const isAdmin = role === 'admin';
 
     const formatClassYear = (input: string | null | undefined) => {
         if (!input) return 'Other';
@@ -120,7 +120,8 @@ export function DeliberationPage() {
                 const { data, error } = await supabase
                     .from('candidates')
                     .select('*, interviews(*)')
-                    .eq('deliberation_status', 'pending');
+                    .eq('deliberation_status', 'pending')
+                    .eq('candidate_type', 'New');
 
                 if (error) throw error;
 
