@@ -2,14 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfirmProvider } from './components/ui/ConfirmModal';
 import { AppLayout } from './components/layout/AppLayout';
 import { DeliberationPage } from './pages/DeliberationPage';
-
-function DashboardPlaceholder() {
-  return (
-    <div className="flex items-center justify-center h-full text-secondary">
-      Dashboard coming soon...
-    </div>
-  )
-}
+import { DashboardPage } from './pages/DashboardPage';
+import { DatabasePage } from './pages/DatabasePage';
 
 function App() {
   return (
@@ -17,10 +11,11 @@ function App() {
       <ConfirmProvider>
         <Routes>
           <Route element={<AppLayout />}>
-            <Route path="/" element={<Navigate to="/deliberate" replace />} />
-            <Route path="/dashboard" element={<DashboardPlaceholder />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/deliberate" element={<DeliberationPage />} />
-            <Route path="*" element={<Navigate to="/deliberate" replace />} />
+            <Route path="/data" element={<DatabasePage />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
         </Routes>
       </ConfirmProvider>

@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { useConfirm } from '../components/ui/ConfirmModal';
 import {
     User, Mail, GraduationCap, ChevronRight, ChevronLeft,
-    ThumbsUp, ThumbsDown, Loader2, Globe, FileText, MessageSquare
+    ThumbsUp, ThumbsDown, Loader2, FileText, MessageSquare, PanelLeft
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { standardizeCategory } from '../utils/categories';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
 // Comprehensive Mock Data structured according to the Example.xlsx schema
 const MOCK_CANDIDATES = [
@@ -21,7 +24,7 @@ const MOCK_CANDIDATES = [
 
         // Seminar Details
         seminarTitle: 'Introduction to Modern Web Architecture',
-        seminarCategory: 'STEM',
+        seminarCategory: 'Data, Engineering, & Technology',
         seminarDescription: 'A comprehensive journey into building distributed data-intensive applications, focusing on architectural patterns that scale. Students will learn the building blocks of the modern internet.',
         finalProduct: 'A functioning full-stack web application deployed to the cloud, using a React frontend and Node.js backend. Materials needed: laptops with internet access.',
         moreTopics: 'Algorithms, Machine Learning Basics, Product Management',
@@ -33,9 +36,11 @@ const MOCK_CANDIDATES = [
         selfIntro: 'Hi! I am Alex, a junior at Harvard studying CS and Econ. I am the captain of the ultimate frisbee team and love building software that helps people.',
 
         // Interview Info & Scores (Normalized)
-        interviewer: 'David Bae',
         scores: {
-            writtenOverall: 8.5,
+            writtenInterest: 9.0,
+            writtenTeaching: 8.5,
+            writtenSeminar: 9.0,
+            writtenPersonal: 9.5,
             understanding: 9.0,
             enthusiasm: 10.0,
             quality: 8.5,
@@ -43,13 +48,27 @@ const MOCK_CANDIDATES = [
             interestEngaging: 9.5,
             overall: 9.1
         },
-        interviewNotes: {
-            whySL: 'Very articulate about wanting to mentor younger students. Clearly understands the mission.',
-            seminar: 'Solid technical background. The final product might be a bit ambitious for 9 days, but they are willing to adapt.',
-            extracurricular: 'Excited to lead sports activities and college prep panels.',
-            teachMe: 'Taught me how to solve a Rubik\'s cube in 2 minutes. Very patient and clear.',
-            comments: 'Strong candidate. Recommend accepting.'
-        }
+        sensitiveIssues: 'No',
+        flyFrom: 'BOS',
+        flyTo: 'PVG',
+        interviewNotes: [
+            {
+                interviewer: 'David Bae',
+                notes_why_sl: 'Very articulate about wanting to mentor younger students. Clearly understands the mission.',
+                notes_seminar: 'Solid technical background. The final product might be a bit ambitious for 9 days, but they are willing to adapt.',
+                notes_extracurricular: 'Excited to lead sports activities and college prep panels.',
+                notes_teach_me: 'Taught me how to solve a Rubik\'s cube in 2 minutes. Very patient and clear.',
+                notes_comments: 'Strong candidate. Recommend accepting.'
+            },
+            {
+                interviewer: 'Alice Wang',
+                notes_why_sl: 'Passionate and ready to commit.',
+                notes_seminar: 'We discussed adjusting the final product scope, and he was very receptive.',
+                notes_extracurricular: 'Can definitely lead the ultimate frisbee club.',
+                notes_teach_me: 'Great presentation.',
+                notes_comments: 'I agree with David, solid accept.'
+            }
+        ]
     },
     {
         id: 'CAND-002',
@@ -62,7 +81,7 @@ const MOCK_CANDIDATES = [
 
         // Seminar Details
         seminarTitle: 'The Ethics of Artificial Intelligence',
-        seminarCategory: 'Humanities & Social Sciences',
+        seminarCategory: 'Human Behavior and Ethics',
         seminarDescription: 'Exploring the moral implications of deploying large language models in healthcare and education contexts.',
         finalProduct: 'A policy brief proposing ethical guidelines for AI use in a specific industry. Materials needed: notebooks, laptops for research.',
         moreTopics: 'Cognitive Science, Bioethics, Creative Writing',
@@ -74,9 +93,11 @@ const MOCK_CANDIDATES = [
         selfIntro: 'I am Sarah! I love debating, philosophy, and hiking. I am currently researching AI alignment at Stanford.',
 
         // Interview Info & Scores (Normalized)
-        interviewer: 'Alice Wang',
         scores: {
-            writtenOverall: 9.5,
+            writtenInterest: 9.5,
+            writtenTeaching: 10.0,
+            writtenSeminar: 9.0,
+            writtenPersonal: 9.5,
             understanding: 8.0,
             enthusiasm: 9.5,
             quality: 10.0,
@@ -84,23 +105,115 @@ const MOCK_CANDIDATES = [
             interestEngaging: 8.5,
             overall: 9.2
         },
-        interviewNotes: {
-            whySL: 'Wants to inspire critical thinking about technology. Very passionate.',
-            seminar: 'Fascinating topic, highly relevant. She has great discussion questions prepared.',
-            extracurricular: 'Interested in hosting debate workshops and philosophy cafes.',
-            teachMe: 'Explained the Trolley Problem variants clearly and engagingly.',
-            comments: 'Excellent communicator. Will be a fantastic SL.'
-        }
+        sensitiveIssues: 'Yes, mentions sensitive political topics. Needs review.',
+        flyFrom: 'SFO',
+        flyTo: 'PEK',
+        interviewNotes: [
+            {
+                interviewer: 'Alice Wang',
+                notes_why_sl: 'Wants to inspire critical thinking about technology. Very passionate.',
+                notes_seminar: 'Fascinating topic, highly relevant. She has great discussion questions prepared.',
+                notes_extracurricular: 'Interested in hosting debate workshops and philosophy cafes.',
+                notes_teach_me: 'Explained the Trolley Problem variants clearly and engagingly.',
+                notes_comments: 'Excellent communicator. Will be a fantastic SL.'
+            }
+        ]
     }
 ];
 
 export function DeliberationPage() {
-    const [candidates] = useState(MOCK_CANDIDATES);
+    const [candidates, setCandidates] = useState<any[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [direction, setDirection] = useState(0);
-    const [isLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'seminar' | 'written' | 'interview'>('seminar');
     const confirmModal = useConfirm();
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+    const formatClassYear = (year: string) => {
+        if (!year) return 'Other';
+        const yearLower = String(year).toLowerCase();
+        if (yearLower.includes('freshman')) return `${year} (Freshman)`;
+        if (yearLower.includes('sophomore')) return `${year} (Sophomore)`;
+        if (yearLower.includes('junior')) return `${year} (Junior)`;
+        if (yearLower.includes('senior')) return `${year} (Senior)`;
+
+        const match = String(year).match(/\b(202[0-9]|203[0-9])\b/);
+        if (match) {
+            const num = parseInt(match[1], 10);
+            if (num === 2026) return `${year} (Senior)`;
+            if (num === 2027) return `${year} (Junior)`;
+            if (num === 2028) return `${year} (Sophomore)`;
+            if (num === 2029) return `${year} (Freshman)`;
+        }
+        return `${year} (Other)`;
+    };
+
+    useEffect(() => {
+        async function fetchCandidates() {
+            try {
+                const { data, error } = await supabase
+                    .from('candidates')
+                    .select('*')
+                    .eq('deliberation_status', 'pending');
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    const mappedData = data.map(cand => ({
+                        id: cand.id,
+                        name: cand.full_name || `${cand.first_name} ${cand.last_name}`,
+                        email: cand.email,
+                        school: cand.school,
+                        major: cand.major,
+                        year: cand.class_year,
+                        nationality: cand.nationality,
+
+                        seminarTitle: cand.seminar_title,
+                        seminarCategory: standardizeCategory(cand.seminar_category || cand.seminar_title),
+                        seminarDescription: cand.seminar_description || (cand.seminar_title?.includes('\n') ? cand.seminar_title : cand.seminar_title),
+                        finalProduct: cand.final_product,
+                        moreTopics: cand.more_topics,
+
+                        interestReason: cand.interest_reason,
+                        teachingExp: cand.teaching_exp,
+                        advice: cand.advice,
+                        selfIntro: cand.self_intro,
+
+                        grader: cand.grader_name || 'Not Available',
+                        tier: cand.tier_level || 'N/A',
+                        sensitiveIssues: cand.sensitive_issues,
+                        flyFrom: cand.fly_from,
+                        flyTo: cand.fly_to,
+                        scores: {
+                            writtenInterest: cand.written_score_interest || 0,
+                            writtenTeaching: cand.written_score_teaching || 0,
+                            writtenSeminar: cand.written_score_seminar || 0,
+                            writtenPersonal: cand.written_score_personal || 0,
+
+                            understanding: cand.score_understanding || 0,
+                            enthusiasm: cand.score_enthusiasm || 0,
+                            quality: cand.score_quality || 0,
+                            teaching: cand.score_teaching || 0,
+                            interestEngaging: cand.score_interest || 0,
+                            overall: cand.score_overall || 0
+                        },
+                        interviewNotes: cand.interview_notes || []
+                    }));
+                    setCandidates(mappedData);
+                } else {
+                    console.warn("No pending candidates found in Supabase. Using MOCK data.");
+                    setCandidates(MOCK_CANDIDATES);
+                }
+            } catch (err) {
+                console.error("Failed to fetch candidates. Falling back to mock data.", err);
+                setCandidates(MOCK_CANDIDATES);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        fetchCandidates();
+    }, []);
 
     const candidate = candidates[currentIndex];
 
@@ -129,8 +242,24 @@ export function DeliberationPage() {
         });
 
         if (isConfirmed) {
-            // Logic for supabase save goes here
-            nextCandidate();
+            try {
+                if (candidate.id && !candidate.id.startsWith('CAND-')) {
+                    const { error } = await supabase
+                        .from('candidates')
+                        .update({ deliberation_status: decision === 'approve' ? 'approved' : 'rejected' })
+                        .eq('id', candidate.id);
+                    if (error) throw error;
+                }
+
+                setCandidates(prev => prev.filter((_, i) => i !== currentIndex));
+                if (currentIndex >= candidates.length - 1 && currentIndex > 0) {
+                    setCurrentIndex(prev => prev - 1);
+                }
+                setDirection(1);
+                setActiveTab('seminar');
+            } catch (err) {
+                console.error("Failed to submit decision:", err);
+            }
         }
     };
 
@@ -171,12 +300,26 @@ export function DeliberationPage() {
         </div>
     );
 
+    const radarData = [
+        { subject: 'Understanding', A: candidate.scores.understanding, fullMark: 10 },
+        { subject: 'Enthusiasm', A: candidate.scores.enthusiasm, fullMark: 10 },
+        { subject: 'Seminar Quality', A: candidate.scores.quality, fullMark: 10 },
+        { subject: 'Teaching', A: candidate.scores.teaching, fullMark: 10 },
+        { subject: 'Extracurriculars', A: candidate.scores.interestEngaging, fullMark: 10 }
+    ];
+
     return (
         <div className="h-full flex flex-col gap-6">
             <div className="flex items-center justify-between shrink-0">
-                <div>
-                    <h1 className="text-2xl font-bold text-primary tracking-tight">Application Review</h1>
-                    <p className="text-sm text-secondary mt-1">Reviewing candidate {currentIndex + 1} of {candidates.length}</p>
+                <div className="flex items-center gap-4">
+                    <Button variant="secondary" size="sm" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+                        <PanelLeft className="w-4 h-4 mr-1" />
+                        {isSidebarOpen ? 'Collapse' : 'Expand'}
+                    </Button>
+                    <div>
+                        <h1 className="text-2xl font-bold text-primary tracking-tight">Application Review</h1>
+                        <p className="text-sm text-secondary mt-1">Reviewing candidate {currentIndex + 1} of {candidates.length}</p>
+                    </div>
                 </div>
                 <div className="flex gap-2">
                     <Button variant="secondary" size="sm" onClick={prevCandidate} disabled={currentIndex === 0}>
@@ -203,66 +346,112 @@ export function DeliberationPage() {
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full pb-8">
 
                             {/* Left Column: Candidate Profile & Standardized Scores */}
-                            <div className="lg:col-span-4 flex flex-col gap-6 h-full overflow-y-auto pr-1">
-                                <Card className="flex flex-col shrink-0">
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className="w-16 h-16 rounded-full bg-surfaceHover flex items-center justify-center border border-border">
-                                            <User className="w-8 h-8 text-secondary" />
+                            {isSidebarOpen && (
+                                <div className="lg:col-span-4 flex flex-col gap-6 h-full overflow-y-auto pr-1">
+                                    <Card className="flex flex-col shrink-0">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h2 className="text-2xl font-bold text-primary">{candidate.name}</h2>
                                         </div>
-                                    </div>
-                                    <h2 className="text-2xl font-bold text-primary">{candidate.name}</h2>
 
-                                    <div className="space-y-2 mt-4">
-                                        <div className="flex items-center text-sm text-secondary">
-                                            <GraduationCap className="w-4 h-4 mr-3 text-muted" />
-                                            {candidate.school}, {candidate.year}
+                                        <div className="space-y-2 mt-2">
+                                            <div className="flex items-center text-sm text-secondary">
+                                                <GraduationCap className="w-4 h-4 mr-3 text-muted shrink-0" />
+                                                {candidate.school}, {formatClassYear(candidate.year)}
+                                            </div>
+                                            <div className="flex items-center text-sm text-secondary">
+                                                <Mail className="w-4 h-4 mr-3 text-muted shrink-0" />
+                                                <span className="truncate">{candidate.email}</span>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center text-sm text-secondary">
-                                            <Globe className="w-4 h-4 mr-3 text-muted" />
-                                            {candidate.nationality}
+                                        <div className="mt-4 pt-4 border-t border-border">
+                                            <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-1">Major / Concentration</p>
+                                            <p className="text-sm font-medium text-primary">{candidate.major}</p>
                                         </div>
-                                        <div className="flex items-center text-sm text-secondary">
-                                            <Mail className="w-4 h-4 mr-3 text-muted" />
-                                            <span className="truncate">{candidate.email}</span>
-                                        </div>
-                                    </div>
-                                    <div className="mt-4 pt-4 border-t border-border">
-                                        <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-1">Major / Concentration</p>
-                                        <p className="text-sm font-medium text-primary">{candidate.major}</p>
-                                    </div>
 
-                                    {/* Decision Buttons inside Profile Card */}
-                                    <div className="mt-6 flex flex-col gap-2">
-                                        <Button variant="primary" className="w-full justify-center" onClick={() => handleDecision('approve')}>
-                                            <ThumbsUp className="w-4 h-4 mr-2" /> Approve
-                                        </Button>
-                                        <Button variant="danger" className="w-full justify-center" onClick={() => handleDecision('reject')}>
-                                            <ThumbsDown className="w-4 h-4 mr-2" /> Reject
-                                        </Button>
-                                    </div>
-                                </Card>
+                                        {/* Travel Preferences */}
+                                        {(candidate.flyFrom || candidate.flyTo) && (
+                                            <div className="mt-4 pt-4 border-t border-border">
+                                                <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Travel Preferences</p>
 
-                                <Card className="shrink-0 mb-4">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-sm font-semibold text-primary">Standardized Scores</h3>
-                                        <div className="text-xs px-2 py-1 bg-surfaceHover text-secondary rounded font-medium">
-                                            Overall: {candidate.scores.overall.toFixed(1)}
+                                                {candidate.flyFrom && (
+                                                    <div className="flex items-center justify-between text-sm text-secondary mb-1">
+                                                        <span>Fly From:</span>
+                                                        <span className="font-medium text-primary">{candidate.flyFrom}</span>
+                                                    </div>
+                                                )}
+                                                {candidate.flyTo && (
+                                                    <div className="flex items-center justify-between text-sm text-secondary mb-1">
+                                                        <span>Fly To:</span>
+                                                        <span className="font-medium text-primary">{candidate.flyTo}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Decision Buttons inside Profile Card */}
+                                        <div className="mt-6 flex flex-col gap-2">
+                                            <Button variant="primary" className="w-full justify-center" onClick={() => handleDecision('approve')}>
+                                                <ThumbsUp className="w-4 h-4 mr-2" /> Approve
+                                            </Button>
+                                            <Button variant="danger" className="w-full justify-center" onClick={() => handleDecision('reject')}>
+                                                <ThumbsDown className="w-4 h-4 mr-2" /> Reject
+                                            </Button>
                                         </div>
-                                    </div>
+                                    </Card>
 
-                                    <div className="space-y-1">
-                                        {renderProgressBar('Written App', candidate.scores.writtenOverall)}
-                                        {renderProgressBar('Understanding of HSYLC', candidate.scores.understanding)}
-                                        {renderProgressBar('Enthusiasm', candidate.scores.enthusiasm)}
-                                        {renderProgressBar('Seminar Quality', candidate.scores.quality)}
-                                        {renderProgressBar('Teaching Level', candidate.scores.teaching)}
-                                        {renderProgressBar('Extracurricular Interest', candidate.scores.interestEngaging)}
-                                    </div>
-                                </Card>
-                            </div>
+                                    <Card className="flex-1 flex flex-col mb-4">
+                                        <div className="flex items-center justify-between mb-2 shrink-0">
+                                            <h3 className="text-sm font-semibold text-primary">Assessment Scores</h3>
+                                            <div className="text-xs px-2 py-1 bg-accent/10 text-accent rounded font-bold">
+                                                Overall: {candidate.scores.overall.toFixed(1)}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex-1 min-h-[200px] -mx-4">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                                                    <PolarGrid stroke="#E5E7EB" />
+                                                    <PolarAngleAxis
+                                                        dataKey="subject"
+                                                        tick={{ fill: '#6B7280', fontSize: 10, fontWeight: 500 }}
+                                                    />
+                                                    <PolarRadiusAxis
+                                                        angle={30}
+                                                        domain={[0, 10]}
+                                                        tick={{ fill: '#9CA3AF', fontSize: 10 }}
+                                                        tickCount={6}
+                                                    />
+                                                    <Radar
+                                                        name={candidate.name}
+                                                        dataKey="A"
+                                                        stroke="#8b5cf6"
+                                                        fill="#8b5cf6"
+                                                        fillOpacity={0.4}
+                                                    />
+                                                    <Tooltip
+                                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                    />
+                                                </RadarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+
+                                        <div className="space-y-1 mt-4 pt-4 border-t border-border">
+                                            <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Written Scores</p>
+                                            {renderProgressBar('Interest', candidate.scores.writtenInterest)}
+                                            {renderProgressBar('Teaching', candidate.scores.writtenTeaching)}
+                                            {renderProgressBar('Seminar', candidate.scores.writtenSeminar)}
+                                            {renderProgressBar('Personal', candidate.scores.writtenPersonal)}
+
+                                            <div className="mt-4 pt-4 border-t border-border">
+                                                <p className="text-xs font-semibold text-muted mb-1">Graded By: {candidate.grader}</p>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                </div>
+                            )}
 
                             {/* Right Column: Detailed Context Tabs */}
-                            <div className="lg:col-span-8 flex flex-col h-full bg-white dark:bg-surface border border-border rounded-xl shadow-sm overflow-hidden">
+                            <div className={`${isSidebarOpen ? 'lg:col-span-8' : 'lg:col-span-12'} flex flex-col h-full bg-white dark:bg-surface border border-border rounded-xl shadow-sm overflow-hidden transition-all duration-300`}>
                                 {/* Tab Navigation */}
                                 <div className="flex border-b border-border px-2 pt-2 bg-surface/50 dark:bg-surfaceHover/30">
                                     <button
@@ -349,34 +538,52 @@ export function DeliberationPage() {
                                     )}
 
                                     {activeTab === 'interview' && (
-                                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                            <div className="flex items-center gap-2 mb-6 p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg border border-blue-100 dark:border-blue-800">
-                                                <User className="w-4 h-4" />
-                                                <span className="text-sm font-medium">Interviewed by: <strong>{candidate.interviewer}</strong></span>
-                                            </div>
+                                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                            {candidate.sensitiveIssues && candidate.sensitiveIssues.toLowerCase() !== 'no' && (
+                                                <div className="p-4 bg-orange-50 dark:bg-orange-900/20 text-orange-800 dark:text-orange-200 border border-orange-200 dark:border-orange-800 rounded-lg">
+                                                    <h4 className="text-sm font-bold mb-1 flex items-center gap-2">⚠️ Sensitive Topics Alert</h4>
+                                                    <p className="text-sm">{candidate.sensitiveIssues}</p>
+                                                </div>
+                                            )}
 
-                                            <div className="space-y-4">
-                                                <div className="p-4 rounded-lg border border-border">
-                                                    <h4 className="text-sm font-semibold text-primary mb-1">Why SL & HSYLC Understanding</h4>
-                                                    <p className="text-sm text-secondary">{candidate.interviewNotes.whySL}</p>
+                                            {!candidate.interviewNotes || candidate.interviewNotes.length === 0 ? (
+                                                <div className="text-center text-secondary py-8">
+                                                    No interviews have been recorded for this candidate yet.
                                                 </div>
-                                                <div className="p-4 rounded-lg border border-border">
-                                                    <h4 className="text-sm font-semibold text-primary mb-1">Seminar Feedback</h4>
-                                                    <p className="text-sm text-secondary">{candidate.interviewNotes.seminar}</p>
-                                                </div>
-                                                <div className="p-4 rounded-lg border border-border">
-                                                    <h4 className="text-sm font-semibold text-primary mb-1">Extracurricular Impact</h4>
-                                                    <p className="text-sm text-secondary">{candidate.interviewNotes.extracurricular}</p>
-                                                </div>
-                                                <div className="p-4 rounded-lg border border-border">
-                                                    <h4 className="text-sm font-semibold text-primary mb-1">"Teach Me in 2 Minutes" Performance</h4>
-                                                    <p className="text-sm text-secondary">{candidate.interviewNotes.teachMe}</p>
-                                                </div>
-                                                <div className="p-4 rounded-lg border border-border bg-surface dark:bg-surfaceHover/50">
-                                                    <h4 className="text-sm font-semibold text-primary mb-1">Overall Comments</h4>
-                                                    <p className="text-sm text-primary font-medium">{candidate.interviewNotes.comments}</p>
-                                                </div>
-                                            </div>
+                                            ) : (
+                                                candidate.interviewNotes.map((note: any, index: number) => (
+                                                    <div key={index} className="bg-white dark:bg-surface border border-border rounded-xl shadow-sm overflow-hidden mb-6">
+                                                        <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-surface/50 dark:bg-surfaceHover/30">
+                                                            <div className="flex items-center gap-2 text-primary">
+                                                                <User className="w-4 h-4 text-accent" />
+                                                                <span className="text-sm font-semibold text-primary">Interviewer: {note.interviewer || 'Unknown'}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="p-5 space-y-4">
+                                                            <div className="p-4 rounded-lg border border-border bg-surface/30">
+                                                                <h4 className="text-sm font-semibold text-primary mb-1">Why SL & HSYLC Understanding</h4>
+                                                                <p className="text-sm text-secondary">{note.notes_why_sl || 'N/A'}</p>
+                                                            </div>
+                                                            <div className="p-4 rounded-lg border border-border bg-surface/30">
+                                                                <h4 className="text-sm font-semibold text-primary mb-1">Seminar Feedback</h4>
+                                                                <p className="text-sm text-secondary">{note.notes_seminar || 'N/A'}</p>
+                                                            </div>
+                                                            <div className="p-4 rounded-lg border border-border bg-surface/30">
+                                                                <h4 className="text-sm font-semibold text-primary mb-1">Extracurricular Impact</h4>
+                                                                <p className="text-sm text-secondary">{note.notes_extracurricular || 'N/A'}</p>
+                                                            </div>
+                                                            <div className="p-4 rounded-lg border border-border bg-surface/30">
+                                                                <h4 className="text-sm font-semibold text-primary mb-1">"Teach Me in 2 Minutes" Performance</h4>
+                                                                <p className="text-sm text-secondary">{note.notes_teach_me || 'N/A'}</p>
+                                                            </div>
+                                                            <div className="p-4 rounded-lg border border-border bg-accent/5 dark:bg-accent/10 border-accent/20">
+                                                                <h4 className="text-sm font-semibold text-primary mb-1">Overall Comments</h4>
+                                                                <p className="text-sm text-primary font-medium">{note.notes_comments || 'N/A'}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
                                         </div>
                                     )}
                                 </div>
