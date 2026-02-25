@@ -5,7 +5,7 @@ import { Button } from '../components/ui/Button';
 import { useConfirm } from '../components/ui/ConfirmModal';
 import {
     User, Mail, GraduationCap, ChevronRight, ChevronLeft,
-    ThumbsUp, ThumbsDown, Loader2, FileText, MessageSquare, PanelLeft
+    ThumbsUp, ThumbsDown, Loader2, FileText, MessageSquare, PanelLeft, Clock
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { standardizeCategory } from '../utils/categories';
@@ -51,6 +51,7 @@ const MOCK_CANDIDATES = [
         sensitiveIssues: 'No',
         flyFrom: 'BOS',
         flyTo: 'PVG',
+        availability: 'Available from Aug 11 - 21',
         interviewNotes: [
             {
                 interviewer: 'David Bae',
@@ -58,7 +59,13 @@ const MOCK_CANDIDATES = [
                 notes_seminar: 'Solid technical background. The final product might be a bit ambitious for 9 days, but they are willing to adapt.',
                 notes_extracurricular: 'Excited to lead sports activities and college prep panels.',
                 notes_teach_me: 'Taught me how to solve a Rubik\'s cube in 2 minutes. Very patient and clear.',
-                notes_comments: 'Strong candidate. Recommend accepting.'
+                notes_commitment: 'Says he can fully commit to the spring and summer deliverables.',
+                notes_comments: 'Strong candidate. Recommend accepting.',
+                score_enthusiasm: 10.0,
+                score_quality: 8.5,
+                score_teaching: 9.0,
+                score_interest: 9.5,
+                score_overall: 9.25
             },
             {
                 interviewer: 'Alice Wang',
@@ -66,7 +73,13 @@ const MOCK_CANDIDATES = [
                 notes_seminar: 'We discussed adjusting the final product scope, and he was very receptive.',
                 notes_extracurricular: 'Can definitely lead the ultimate frisbee club.',
                 notes_teach_me: 'Great presentation.',
-                notes_comments: 'I agree with David, solid accept.'
+                notes_commitment: 'Seems highly organized, confident he can meet deadlines.',
+                notes_comments: 'I agree with David, solid accept.',
+                score_enthusiasm: 9.5,
+                score_quality: 9.0,
+                score_teaching: 8.5,
+                score_interest: 9.5,
+                score_overall: 9.125
             }
         ]
     },
@@ -108,6 +121,7 @@ const MOCK_CANDIDATES = [
         sensitiveIssues: 'Yes, mentions sensitive political topics. Needs review.',
         flyFrom: 'SFO',
         flyTo: 'PEK',
+        availability: 'Available from Aug 13 - 21',
         interviewNotes: [
             {
                 interviewer: 'Alice Wang',
@@ -115,7 +129,13 @@ const MOCK_CANDIDATES = [
                 notes_seminar: 'Fascinating topic, highly relevant. She has great discussion questions prepared.',
                 notes_extracurricular: 'Interested in hosting debate workshops and philosophy cafes.',
                 notes_teach_me: 'Explained the Trolley Problem variants clearly and engagingly.',
-                notes_comments: 'Excellent communicator. Will be a fantastic SL.'
+                notes_commitment: 'She might have an internship, but says she can juggle the work.',
+                notes_comments: 'Excellent communicator. Will be a fantastic SL.',
+                score_enthusiasm: 9.5,
+                score_quality: 10.0,
+                score_teaching: 9.5,
+                score_interest: 8.5,
+                score_overall: 9.375
             }
         ]
     }
@@ -185,6 +205,7 @@ export function DeliberationPage() {
                         sensitiveIssues: cand.sensitive_issues,
                         flyFrom: cand.fly_from,
                         flyTo: cand.fly_to,
+                        availability: cand.availability,
                         scores: {
                             writtenInterest: cand.written_score_interest || 0,
                             writtenTeaching: cand.written_score_teaching || 0,
@@ -196,9 +217,41 @@ export function DeliberationPage() {
                             quality: cand.score_quality || 0,
                             teaching: cand.score_teaching || 0,
                             interestEngaging: cand.score_interest || 0,
-                            overall: cand.score_overall || 0
+                            overall: cand.score_overall !== null && cand.score_overall !== undefined ? cand.score_overall : (() => {
+                                const s = [cand.interviewer1_score_overall, cand.interviewer2_score_overall].filter(v => typeof v === 'number');
+                                return s.length ? s.reduce((a, b) => a + b, 0) / s.length : 0;
+                            })()
                         },
-                        interviewNotes: cand.interview_notes || []
+                        interviewNotes: [
+                            ...(cand.interviewer1_name ? [{
+                                interviewer: cand.interviewer1_name,
+                                notes_why_sl: cand.interviewer1_notes_why_sl,
+                                notes_seminar: cand.interviewer1_notes_seminar,
+                                notes_extracurricular: cand.interviewer1_notes_extracurricular,
+                                notes_teach_me: cand.interviewer1_notes_teach_me,
+                                notes_commitment: cand.interviewer1_notes_commitment,
+                                notes_comments: cand.interviewer1_notes_comments,
+                                score_enthusiasm: cand.interviewer1_score_enthusiasm,
+                                score_quality: cand.interviewer1_score_quality,
+                                score_teaching: cand.interviewer1_score_teaching,
+                                score_interest: cand.interviewer1_score_interest,
+                                score_overall: cand.interviewer1_score_overall,
+                            }] : []),
+                            ...(cand.interviewer2_name ? [{
+                                interviewer: cand.interviewer2_name,
+                                notes_why_sl: cand.interviewer2_notes_why_sl,
+                                notes_seminar: cand.interviewer2_notes_seminar,
+                                notes_extracurricular: cand.interviewer2_notes_extracurricular,
+                                notes_teach_me: cand.interviewer2_notes_teach_me,
+                                notes_commitment: cand.interviewer2_notes_commitment,
+                                notes_comments: cand.interviewer2_notes_comments,
+                                score_enthusiasm: cand.interviewer2_score_enthusiasm,
+                                score_quality: cand.interviewer2_score_quality,
+                                score_teaching: cand.interviewer2_score_teaching,
+                                score_interest: cand.interviewer2_score_interest,
+                                score_overall: cand.interviewer2_score_overall,
+                            }] : [])
+                        ]
                     }));
                     setCandidates(mappedData);
                 } else {
@@ -233,20 +286,22 @@ export function DeliberationPage() {
         }
     };
 
-    const handleDecision = async (decision: 'approve' | 'reject') => {
+    const handleDecision = async (decision: 'approve' | 'reject' | 'waitlist') => {
+        const actionText = decision === 'approve' ? 'Approve' : decision === 'reject' ? 'Reject' : 'Waitlist';
         const isConfirmed = await confirmModal.confirm({
             title: `Confirm Decision`,
             message: `Are you sure you want to ${decision} ${candidate.name}'s application?`,
-            confirmText: decision === 'approve' ? 'Approve' : 'Reject',
+            confirmText: actionText,
             destructive: decision === 'reject'
         });
 
         if (isConfirmed) {
             try {
                 if (candidate.id && !candidate.id.startsWith('CAND-')) {
+                    const status = decision === 'approve' ? 'approved' : decision === 'reject' ? 'rejected' : 'waitlisted';
                     const { error } = await supabase
                         .from('candidates')
-                        .update({ deliberation_status: decision === 'approve' ? 'approved' : 'rejected' })
+                        .update({ deliberation_status: status })
                         .eq('id', candidate.id);
                     if (error) throw error;
                 }
@@ -343,11 +398,11 @@ export function DeliberationPage() {
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         className="h-full absolute inset-0 w-full"
                     >
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full pb-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full pb-2">
 
                             {/* Left Column: Candidate Profile & Standardized Scores */}
                             {isSidebarOpen && (
-                                <div className="lg:col-span-4 flex flex-col gap-6 h-full overflow-y-auto pr-1">
+                                <div className="lg:col-span-3 flex flex-col gap-6 h-full overflow-y-auto pr-1">
                                     <Card className="flex flex-col shrink-0">
                                         <div className="flex items-center justify-between mb-2">
                                             <h2 className="text-2xl font-bold text-primary">{candidate.name}</h2>
@@ -369,9 +424,9 @@ export function DeliberationPage() {
                                         </div>
 
                                         {/* Travel Preferences */}
-                                        {(candidate.flyFrom || candidate.flyTo) && (
+                                        {(candidate.flyFrom || candidate.flyTo || candidate.availability) && (
                                             <div className="mt-4 pt-4 border-t border-border">
-                                                <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Travel Preferences</p>
+                                                <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Travel & Availability</p>
 
                                                 {candidate.flyFrom && (
                                                     <div className="flex items-center justify-between text-sm text-secondary mb-1">
@@ -385,18 +440,16 @@ export function DeliberationPage() {
                                                         <span className="font-medium text-primary">{candidate.flyTo}</span>
                                                     </div>
                                                 )}
+                                                {candidate.availability && (
+                                                    <div className="flex items-center justify-between text-sm text-secondary mb-1">
+                                                        <span>Availability:</span>
+                                                        <span className="font-medium text-primary text-right max-w-[150px]">{candidate.availability}</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
 
-                                        {/* Decision Buttons inside Profile Card */}
-                                        <div className="mt-6 flex flex-col gap-2">
-                                            <Button variant="primary" className="w-full justify-center" onClick={() => handleDecision('approve')}>
-                                                <ThumbsUp className="w-4 h-4 mr-2" /> Approve
-                                            </Button>
-                                            <Button variant="danger" className="w-full justify-center" onClick={() => handleDecision('reject')}>
-                                                <ThumbsDown className="w-4 h-4 mr-2" /> Reject
-                                            </Button>
-                                        </div>
+                                        {/* Removed Decision Buttons from here */}
                                     </Card>
 
                                     <Card className="flex-1 flex flex-col mb-4">
@@ -451,7 +504,7 @@ export function DeliberationPage() {
                             )}
 
                             {/* Right Column: Detailed Context Tabs */}
-                            <div className={`${isSidebarOpen ? 'lg:col-span-8' : 'lg:col-span-12'} flex flex-col h-full bg-white dark:bg-surface border border-border rounded-xl shadow-sm overflow-hidden transition-all duration-300`}>
+                            <div className={`${isSidebarOpen ? 'lg:col-span-9' : 'lg:col-span-12'} flex flex-col h-full bg-white dark:bg-surface border border-border rounded-xl shadow-sm overflow-hidden transition-all duration-300`}>
                                 {/* Tab Navigation */}
                                 <div className="flex border-b border-border px-2 pt-2 bg-surface/50 dark:bg-surfaceHover/30">
                                     <button
@@ -551,38 +604,66 @@ export function DeliberationPage() {
                                                     No interviews have been recorded for this candidate yet.
                                                 </div>
                                             ) : (
-                                                candidate.interviewNotes.map((note: any, index: number) => (
-                                                    <div key={index} className="bg-white dark:bg-surface border border-border rounded-xl shadow-sm overflow-hidden mb-6">
-                                                        <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-surface/50 dark:bg-surfaceHover/30">
-                                                            <div className="flex items-center gap-2 text-primary">
+                                                <div className={`grid ${candidate.interviewNotes.length === 1 ? 'grid-cols-1' : candidate.interviewNotes.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3'} gap-0 md:gap-8 divide-y md:divide-y-0 md:divide-x divide-border`}>
+                                                    {candidate.interviewNotes.map((note: any, index: number) => (
+                                                        <div key={index} className="first:pl-0 last:pr-0 md:px-6 md:first:px-0 md:last:px-0 pt-6 first:pt-0 md:pt-0 pb-6 md:pb-0">
+                                                            <div className="flex items-center gap-2 mb-6">
                                                                 <User className="w-4 h-4 text-accent" />
-                                                                <span className="text-sm font-semibold text-primary">Interviewer: {note.interviewer || 'Unknown'}</span>
+                                                                <span className="font-semibold text-primary">{note.interviewer || 'Unknown Interviewer'}</span>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                                                                <div className="p-3 rounded-lg border border-border bg-surface text-center">
+                                                                    <div className="text-xs text-muted mb-1">Enthusiasm</div>
+                                                                    <div className="font-bold text-accent">{note.score_enthusiasm ?? 'N/A'}</div>
+                                                                </div>
+                                                                <div className="p-3 rounded-lg border border-border bg-surface text-center">
+                                                                    <div className="text-xs text-muted mb-1">Quality</div>
+                                                                    <div className="font-bold text-accent">{note.score_quality ?? 'N/A'}</div>
+                                                                </div>
+                                                                <div className="p-3 rounded-lg border border-border bg-surface text-center">
+                                                                    <div className="text-xs text-muted mb-1">Teaching</div>
+                                                                    <div className="font-bold text-accent">{note.score_teaching ?? 'N/A'}</div>
+                                                                </div>
+                                                                <div className="p-3 rounded-lg border border-border bg-surface text-center">
+                                                                    <div className="text-xs text-muted mb-1">Interest</div>
+                                                                    <div className="font-bold text-accent">{note.score_interest ?? 'N/A'}</div>
+                                                                </div>
+                                                                <div className="p-3 rounded-lg border border-accent/20 bg-accent/5 text-center">
+                                                                    <div className="text-xs text-accent font-semibold mb-1">Overall</div>
+                                                                    <div className="font-bold text-accent">{note.score_overall ?? 'N/A'}</div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="space-y-6">
+                                                                <div>
+                                                                    <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Why SL & Understanding</h4>
+                                                                    <p className="text-sm text-primary leading-relaxed">{note.notes_why_sl || '—'}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Seminar Feedback</h4>
+                                                                    <p className="text-sm text-primary leading-relaxed">{note.notes_seminar || '—'}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Extracurricular Impact</h4>
+                                                                    <p className="text-sm text-primary leading-relaxed">{note.notes_extracurricular || '—'}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">"Teach Me in 2 Minutes"</h4>
+                                                                    <p className="text-sm text-primary leading-relaxed">{note.notes_teach_me || '—'}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Spring/Summer Commitment</h4>
+                                                                    <p className="text-sm text-primary leading-relaxed">{note.notes_commitment || '—'}</p>
+                                                                </div>
+                                                                <div className="pt-4 border-t border-border">
+                                                                    <h4 className="text-xs font-semibold text-accent uppercase tracking-wider mb-2">Overall Comments</h4>
+                                                                    <p className="text-sm font-medium text-primary leading-relaxed">{note.notes_comments || '—'}</p>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div className="p-5 space-y-4">
-                                                            <div className="p-4 rounded-lg border border-border bg-surface/30">
-                                                                <h4 className="text-sm font-semibold text-primary mb-1">Why SL & HSYLC Understanding</h4>
-                                                                <p className="text-sm text-secondary">{note.notes_why_sl || 'N/A'}</p>
-                                                            </div>
-                                                            <div className="p-4 rounded-lg border border-border bg-surface/30">
-                                                                <h4 className="text-sm font-semibold text-primary mb-1">Seminar Feedback</h4>
-                                                                <p className="text-sm text-secondary">{note.notes_seminar || 'N/A'}</p>
-                                                            </div>
-                                                            <div className="p-4 rounded-lg border border-border bg-surface/30">
-                                                                <h4 className="text-sm font-semibold text-primary mb-1">Extracurricular Impact</h4>
-                                                                <p className="text-sm text-secondary">{note.notes_extracurricular || 'N/A'}</p>
-                                                            </div>
-                                                            <div className="p-4 rounded-lg border border-border bg-surface/30">
-                                                                <h4 className="text-sm font-semibold text-primary mb-1">"Teach Me in 2 Minutes" Performance</h4>
-                                                                <p className="text-sm text-secondary">{note.notes_teach_me || 'N/A'}</p>
-                                                            </div>
-                                                            <div className="p-4 rounded-lg border border-border bg-accent/5 dark:bg-accent/10 border-accent/20">
-                                                                <h4 className="text-sm font-semibold text-primary mb-1">Overall Comments</h4>
-                                                                <p className="text-sm text-primary font-medium">{note.notes_comments || 'N/A'}</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))
+                                                    ))}
+                                                </div>
                                             )}
                                         </div>
                                     )}
@@ -592,6 +673,24 @@ export function DeliberationPage() {
                         </div>
                     </motion.div>
                 </AnimatePresence>
+            </div>
+
+            {/* Always-present Action Bar */}
+            <div className="shrink-0 flex flex-col sm:flex-row items-center justify-between pt-4 border-t border-border mt-auto">
+                <div className="text-sm font-medium text-secondary mb-3 sm:mb-0">
+                    Make a final decision for <span className="text-primary font-bold">{candidate.name}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <Button variant="danger" onClick={() => handleDecision('reject')}>
+                        <ThumbsDown className="w-4 h-4 mr-2" /> Reject
+                    </Button>
+                    <Button variant="secondary" onClick={() => handleDecision('waitlist')}>
+                        <Clock className="w-4 h-4 mr-2" /> Waitlist
+                    </Button>
+                    <Button variant="primary" onClick={() => handleDecision('approve')}>
+                        <ThumbsUp className="w-4 h-4 mr-2" /> Approve
+                    </Button>
+                </div>
             </div>
         </div>
     );
