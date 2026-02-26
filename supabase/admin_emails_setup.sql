@@ -61,17 +61,8 @@ DROP POLICY IF EXISTS "Users can read own role" ON public.user_roles;
 CREATE POLICY "Users can read own role" ON public.user_roles
   FOR SELECT TO authenticated USING (auth.uid() = user_id);
 
--- Allow admins (identified by their email being present in admin_emails)
--- to read ALL roles for the admin UI.
+-- Clean up any legacy admin-read-all policy (replaced by RPC below).
 DROP POLICY IF EXISTS "Admins can read all roles" ON public.user_roles;
-CREATE POLICY "Admins can read all roles" ON public.user_roles
-  FOR SELECT TO authenticated USING (
-    EXISTS (
-      SELECT 1
-      FROM public.admin_emails ae
-      WHERE lower(trim(ae.email)) = lower(trim(auth.jwt() ->> 'email'))
-    )
-  );
 
 -- 4. Function: resolve role from email lists and persist to user_roles (called on every sign-in)
 CREATE OR REPLACE FUNCTION public.get_role_for_user(p_user_id uuid, p_email text)
@@ -107,3 +98,25 @@ $$;
 -- Allow authenticated users to call this (they pass their own user_id and email; function enforces logic)
 GRANT EXECUTE ON FUNCTION public.get_role_for_user(uuid, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_role_for_user(uuid, text) TO service_role;
+
+-- 5. Admin-only view of all roles, exposed via RPC instead of direct SELECT with RLS.
+-- This avoids complex RLS policies and keeps the admin UI simple:
+--   SELECT * FROM admin_list_user_roles();
+DROP FUNCTION IF EXISTS public.admin_list_user_roles();
+CREATE OR REPLACE FUNCTION public.admin_list_user_roles()
+RETURNS SETOF public.user_roles
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT ur.*
+  FROM public.user_roles ur
+  WHERE EXISTS (
+    SELECT 1
+    FROM public.admin_emails ae
+    WHERE lower(trim(ae.email)) = lower(trim(auth.jwt() ->> 'email'))
+  )
+  ORDER BY ur.user_id;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_list_user_roles() TO authenticated;

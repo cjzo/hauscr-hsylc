@@ -47,16 +47,13 @@ export function UserManagementPage() {
   const loadRoles = async () => {
     setLoading(true);
     setError(null);
-    const { data, error } = await supabase
-      .from('user_roles')
-      .select('user_id, email, role')
-      .order('user_id');
+    const { data, error } = await supabase.rpc('admin_list_user_roles');
 
     if (error) {
       setError(error.message);
       setRows([]);
     } else {
-      setRows(data as UserRoleRow[]);
+      setRows((data ?? []) as UserRoleRow[]);
     }
     setLoading(false);
   };
