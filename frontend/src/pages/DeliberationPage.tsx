@@ -5,7 +5,7 @@ import { Button } from '../components/ui/Button';
 import { useConfirm } from '../components/ui/ConfirmModal';
 import {
     User, Mail, GraduationCap, ChevronRight, ChevronLeft,
-    ThumbsUp, ThumbsDown, Loader2, FileText, MessageSquare, Clock, BarChart2
+    ThumbsUp, ThumbsDown, Loader2, FileText, MessageSquare, Clock, BarChart2, RefreshCw
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { standardizeCategory } from '../utils/categories';
@@ -216,7 +216,8 @@ export function DeliberationPage() {
                         overall: cand.score_overall !== null && cand.score_overall !== undefined ? cand.score_overall : (() => {
                             const s = (cand.interviews || []).map((i: any) => i.score_overall).filter((v: any) => typeof v === 'number');
                             return s.length ? s.reduce((a: number, b: number) => a + b, 0) / s.length : 0;
-                        })()
+                        })(),
+                        empirical: typeof cand.score_empirical === 'number' ? cand.score_empirical : null,
                     },
                     interviewNotes: (cand.interviews || []).map((note: any) => ({
                         interviewer: note.interviewer_name,
@@ -393,12 +394,6 @@ export function DeliberationPage() {
         exit: (dir: number) => ({ x: dir === 0 ? 0 : dir < 0 ? 40 : -40, opacity: 0 }),
     };
 
-    const columnVariants = {
-        enter: { opacity: 0, y: 10 },
-        center: { opacity: 1, y: 0 },
-        exit: { opacity: 0, y: -8 },
-    };
-
     if (isLoading) {
         return (
             <div className="h-full flex items-center justify-center">
@@ -510,6 +505,35 @@ export function DeliberationPage() {
 
     const chartTopMargin = 32;
 
+    const resyncFromConductor = async () => {
+        if (!candidates.length) return;
+        try {
+            const { data, error } = await supabase
+                .from('system_state')
+                .select('current_candidate_id')
+                .eq('id', 1)
+                .single();
+
+            if (error) {
+                console.error('Failed to fetch system_state for resync:', error);
+                return;
+            }
+
+            const newId = data?.current_candidate_id;
+            if (!newId) return;
+
+            const idx = candidates.findIndex(c => c.id === newId);
+            if (idx === -1 || idx === currentIndex) return;
+
+            setDirection(idx > currentIndex ? 1 : -1);
+            setCurrentIndex(idx);
+            setTabDirection(0);
+            setActiveTab('seminar');
+        } catch (err) {
+            console.error('Error during resyncFromConductor:', err);
+        }
+    };
+
     return (
         <div className="h-full flex flex-col gap-6">
             <div className="flex items-center justify-between shrink-0">
@@ -519,7 +543,14 @@ export function DeliberationPage() {
                     </h1>
                     <p className="text-sm text-secondary mt-1">Reviewing candidate {currentIndex + 1} of {candidates.length}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={resyncFromConductor}
+                    >
+                        <RefreshCw className="w-4 h-4 mr-1" /> Sync to Conductor
+                    </Button>
                     {isAdmin && (
                         <>
                             <Button variant="secondary" size="sm" onClick={prevCandidate} disabled={currentIndex === 0}>
@@ -552,12 +583,10 @@ export function DeliberationPage() {
                                 {isSidebarOpen && (
                                     <motion.div
                                         key="deliberation-sidebar"
-                                        layout
-                                        initial="enter"
-                                        animate="center"
-                                        exit="exit"
-                                        variants={columnVariants}
-                                        transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.03 }}
+                                        initial={{ opacity: 0, x: -12 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -12 }}
+                                        transition={{ type: 'spring', stiffness: 220, damping: 26 }}
                                         className="lg:col-span-3 flex flex-col gap-6 h-full overflow-y-auto pr-1 relative"
                                     >
                                     {/* Collapse handle: attached to right edge of sidebar */}
@@ -627,15 +656,33 @@ export function DeliberationPage() {
                                     <Card className="flex-1 flex flex-col mb-4">
                                         <div className="mb-4 shrink-0">
                                             <p className="text-[11px] font-semibold text-muted uppercase tracking-wider">
-                                                Overall Evaluation
+                                                Standardized Scores
                                             </p>
+
+                                            {/* Overall standardized score */}
                                             <div className="mt-1 flex items-baseline gap-2">
                                                 <span className="text-3xl font-semibold text-primary">
                                                     {candidate.scores.overall.toFixed(1)}
                                                 </span>
-                                                <span className="text-xs text-secondary">/ 10</span>
+                                                <span className="text-xs text-secondary">Overall (standardized, 0–10)</span>
                                             </div>
-                                            <div className="mt-2 flex flex-wrap items-center gap-2">
+
+                                            {/* Empirical standardized score */}
+                                            {typeof candidate.scores.empirical === 'number' && (
+                                                <div className="mt-2 flex items-baseline gap-2">
+                                                    <span className="text-2xl font-semibold text-primary">
+                                                        {candidate.scores.empirical.toFixed(1)}
+                                                    </span>
+                                                    <span
+                                                        className="text-xs text-secondary"
+                                                        title="Empirical score combines written scores, interview scores, and overall rating: ((1/6)*(written1 + written2) + (1/3)*overall + (1/12)*(interview1 + interview2 + interview3 + interview4)) * 3/2."
+                                                    >
+                                                        Empirical (standardized)
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            <div className="mt-3 flex flex-wrap items-center gap-2">
                                                 {hasWrittenScores && (
                                                     <div className="text-[11px] px-2 py-1 rounded-full bg-surfaceHover text-secondary font-semibold">
                                                         Written Avg {writtenOverall?.toFixed(2)}/5
@@ -698,9 +745,7 @@ export function DeliberationPage() {
                                 layout
                                 transition={{ layout: { duration: 0.28, ease: 'easeOut' }, delay: 0.08 }}
                                 className={`${isSidebarOpen ? 'lg:col-span-9' : 'lg:col-span-12'} flex flex-col h-full bg-white dark:bg-surface border border-border rounded-xl shadow-sm overflow-hidden transition-all duration-300 relative`}
-                                initial="enter"
-                                animate="center"
-                                variants={columnVariants}
+                                initial={false}
                             >
                                 {/* Expand handle when sidebar is collapsed */}
                                 {!isSidebarOpen && (

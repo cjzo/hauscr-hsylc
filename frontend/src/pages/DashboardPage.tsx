@@ -62,6 +62,9 @@ export function DashboardPage() {
                     const waitlisted = data.filter(c => c.deliberation_status === 'waitlisted').length;
                     const rejected = data.filter(c => c.deliberation_status === 'rejected').length;
 
+                    // Default cohort filter: accepted if any exist, otherwise entire cohort
+                    setCohortFilter(accepted > 0 ? 'accepted' : 'all');
+
                     setSummaryStats([
                         { label: 'Total Applicants', value: total, trend: '', icon: Users, color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
                         { label: 'Accepted', value: accepted, trend: '', icon: CheckCircle2, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
