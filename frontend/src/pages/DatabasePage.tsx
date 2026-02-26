@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
@@ -19,7 +19,9 @@ import {
     Loader2,
     Star,
     X,
-    ExternalLink
+    ExternalLink,
+    ArrowUpDown,
+    SlidersHorizontal
 } from 'lucide-react';
 
 export function DatabasePage() {
@@ -29,10 +31,34 @@ export function DatabasePage() {
     const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'waitlisted' | 'rejected'>('pending');
     const [selectedCandidate, setSelectedCandidate] = useState<any | null>(null);
     const [settingCurrentId, setSettingCurrentId] = useState<string | null>(null);
+    const [categoryFilter, setCategoryFilter] = useState<string>('all');
+    const [candidateTypeFilter, setCandidateTypeFilter] = useState<'all' | 'New' | 'Returning'>('all');
+    const [sortKey, setSortKey] = useState<'score_overall' | 'written_avg' | 'name'>('score_overall');
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
     const confirmModal = useConfirm();
     const navigate = useNavigate();
     const { role } = useAuth();
     const isAdmin = role === 'admin';
+
+    const getWrittenAvg = (cand: any) => {
+        const scores = [
+            cand.written_score_interest,
+            cand.written_score_teaching,
+            cand.written_score_seminar,
+            cand.written_score_personal,
+        ].filter((score) => typeof score === 'number');
+        if (scores.length === 0) return null;
+        const total = scores.reduce((sum, score) => sum + score, 0);
+        return total / scores.length;
+    };
+
+    const getDisplayName = (cand: any) =>
+        cand.full_name || `${cand.first_name ?? ''} ${cand.last_name ?? ''}`.trim();
+
+    const getCategory = (cand: any) => {
+        const raw = cand.seminar_category || cand.seminar_title;
+        return raw ? standardizeCategory(raw) : 'Uncategorized';
+    };
 
     useEffect(() => {
         async function fetchCandidates() {
@@ -58,7 +84,15 @@ export function DatabasePage() {
         fetchCandidates();
     }, []);
 
-    const filteredCandidates = candidates.filter(cand => {
+    const categoryOptions = useMemo(() => {
+        const unique = new Set<string>();
+        candidates.forEach((cand) => {
+            unique.add(getCategory(cand));
+        });
+        return Array.from(unique).sort((a, b) => a.localeCompare(b));
+    }, [candidates]);
+
+    const filteredCandidates = candidates.filter((cand) => {
         const matchesTab = cand.deliberation_status === activeTab;
         const searchInput = searchQuery.toLowerCase();
         const matchesSearch =
@@ -66,9 +100,49 @@ export function DatabasePage() {
             (cand.first_name?.toLowerCase().includes(searchInput)) ||
             (cand.last_name?.toLowerCase().includes(searchInput)) ||
             (cand.school?.toLowerCase().includes(searchInput));
+        const matchesCategory = categoryFilter === 'all' || getCategory(cand) === categoryFilter;
+        const matchesCandidateType =
+            candidateTypeFilter === 'all' || cand.candidate_type === candidateTypeFilter;
 
-        return matchesTab && matchesSearch;
+        return matchesTab && matchesSearch && matchesCategory && matchesCandidateType;
     });
+
+    const sortedCandidates = useMemo(() => {
+        const sorted = [...filteredCandidates];
+        sorted.sort((a, b) => {
+            let av: any;
+            let bv: any;
+            if (sortKey === 'score_overall') {
+                av = a.score_overall ?? null;
+                bv = b.score_overall ?? null;
+            } else if (sortKey === 'written_avg') {
+                av = getWrittenAvg(a);
+                bv = getWrittenAvg(b);
+            } else {
+                av = getDisplayName(a).toLowerCase();
+                bv = getDisplayName(b).toLowerCase();
+            }
+
+            if (av == null && bv == null) return 0;
+            if (av == null) return 1;
+            if (bv == null) return -1;
+
+            if (typeof av === 'number' && typeof bv === 'number') {
+                return sortDir === 'asc' ? av - bv : bv - av;
+            }
+
+            const comparison = String(av).localeCompare(String(bv));
+            return sortDir === 'asc' ? comparison : -comparison;
+        });
+        return sorted;
+    }, [filteredCandidates, sortKey, sortDir]);
+
+    const hasActiveFilters =
+        searchQuery.trim().length > 0 ||
+        categoryFilter !== 'all' ||
+        candidateTypeFilter !== 'all' ||
+        sortKey !== 'score_overall' ||
+        sortDir !== 'desc';
 
     const tabs = [
         { id: 'pending', label: 'Undecided', icon: Clock, color: 'text-blue-500' },
@@ -186,6 +260,81 @@ export function DatabasePage() {
                         />
                     </div>
                 </div>
+
+                <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-muted uppercase tracking-wider">
+                        <SlidersHorizontal className="w-4 h-4" />
+                        Filters & Sorting
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3 w-full">
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-semibold text-muted uppercase tracking-wider">Category</label>
+                            <select
+                                value={categoryFilter}
+                                onChange={(e) => setCategoryFilter(e.target.value)}
+                                className="min-w-[200px] px-3 py-2 text-sm bg-surface border border-border rounded-lg text-primary focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent"
+                            >
+                                <option value="all">All categories</option>
+                                {categoryOptions.map((category) => (
+                                    <option key={category} value={category}>
+                                        {category}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-semibold text-muted uppercase tracking-wider">Type</label>
+                            <select
+                                value={candidateTypeFilter}
+                                onChange={(e) => setCandidateTypeFilter(e.target.value as any)}
+                                className="min-w-[160px] px-3 py-2 text-sm bg-surface border border-border rounded-lg text-primary focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent"
+                            >
+                                <option value="all">All types</option>
+                                <option value="New">New</option>
+                                <option value="Returning">Returning</option>
+                            </select>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-semibold text-muted uppercase tracking-wider">Sort</label>
+                            <select
+                                value={sortKey}
+                                onChange={(e) => setSortKey(e.target.value as any)}
+                                className="min-w-[170px] px-3 py-2 text-sm bg-surface border border-border rounded-lg text-primary focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent"
+                            >
+                                <option value="score_overall">Score (Interview)</option>
+                                <option value="written_avg">Score (Written)</option>
+                                <option value="name">Name (A-Z)</option>
+                            </select>
+                            <button
+                                type="button"
+                                onClick={() => setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
+                                className="inline-flex items-center gap-1 px-3 py-2 text-sm bg-surface border border-border rounded-lg text-primary hover:bg-surfaceHover transition-colors"
+                                aria-label="Toggle sort order"
+                            >
+                                <ArrowUpDown className="w-4 h-4" />
+                                {sortDir === 'asc' ? 'Asc' : 'Desc'}
+                            </button>
+                        </div>
+
+                        {hasActiveFilters && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSearchQuery('');
+                                    setCategoryFilter('all');
+                                    setCandidateTypeFilter('all');
+                                    setSortKey('score_overall');
+                                    setSortDir('desc');
+                                }}
+                                className="px-3 py-2 text-sm font-medium text-secondary hover:text-primary border border-border rounded-lg hover:bg-surfaceHover transition-colors"
+                            >
+                                Clear all
+                            </button>
+                        )}
+                    </div>
+                </div>
             </div>
 
             <Card className="flex-1 flex flex-col overflow-hidden p-0">
@@ -202,7 +351,7 @@ export function DatabasePage() {
                         </thead>
                         <tbody className="divide-y divide-border">
                             <AnimatePresence mode="popLayout">
-                                {filteredCandidates.length === 0 ? (
+                                {sortedCandidates.length === 0 ? (
                                     <motion.tr
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
@@ -213,7 +362,7 @@ export function DatabasePage() {
                                         </td>
                                     </motion.tr>
                                 ) : (
-                                    filteredCandidates.map((cand) => (
+                                    sortedCandidates.map((cand) => (
                                         <motion.tr
                                             key={cand.id}
                                             layout
@@ -230,7 +379,7 @@ export function DatabasePage() {
                                                     </div>
                                                     <div>
                                                         <div className="font-medium text-primary flex items-center gap-2">
-                                                            {cand.full_name || `${cand.first_name} ${cand.last_name}`}
+                                                            {getDisplayName(cand)}
                                                             {cand.candidate_type === 'Returning' && (
                                                                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 font-semibold uppercase tracking-wider">Returning</span>
                                                             )}
@@ -247,17 +396,13 @@ export function DatabasePage() {
                                                     className="truncate max-w-[220px] sm:max-w-[260px] md:max-w-[320px]"
                                                     title={cand.seminar_category || cand.seminar_title || undefined}
                                                 >
-                                                    {(cand.seminar_category || cand.seminar_title)
-                                                        ? standardizeCategory(cand.seminar_category || cand.seminar_title)
-                                                        : 'N/A'}
+                                                    {getCategory(cand)}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-1.5 font-medium text-primary">
                                                     <span className="text-muted">Avg:</span>
-                                                    {cand.written_score_seminar ?
-                                                        ((cand.written_score_interest + cand.written_score_teaching + cand.written_score_seminar + cand.written_score_personal) / 4).toFixed(1)
-                                                        : 'N/A'}
+                                                    {getWrittenAvg(cand) !== null ? getWrittenAvg(cand)!.toFixed(1) : 'N/A'}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">

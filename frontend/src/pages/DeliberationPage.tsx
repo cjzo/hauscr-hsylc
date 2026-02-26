@@ -55,18 +55,22 @@ function computeCdf(samples: number[], domainMin: number, domainMax: number, ste
 }
 import { useAuth } from '../context/AuthContext';
 
+type DeliberationTab = 'seminar' | 'written' | 'interview' | 'visualizations';
+
 export function DeliberationPage() {
     const [candidates, setCandidates] = useState<any[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [direction, setDirection] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'seminar' | 'written' | 'interview' | 'visualizations'>('seminar');
+    const [activeTab, setActiveTab] = useState<DeliberationTab>('seminar');
+    const [tabDirection, setTabDirection] = useState(0);
     const confirmModal = useConfirm();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [distributionMode, setDistributionMode] = useState<'written' | 'interview'>('interview');
 
     const { role } = useAuth();
     const isAdmin = role === 'admin';
+    const tabOrder: DeliberationTab[] = ['seminar', 'written', 'interview', 'visualizations'];
 
     const formatClassYear = (input: string | null | undefined) => {
         if (!input) return 'Other';
@@ -282,6 +286,7 @@ export function DeliberationPage() {
                     if (idx !== -1 && idx !== currentIndex) {
                         setDirection(idx > currentIndex ? 1 : -1);
                         setCurrentIndex(idx);
+                        setTabDirection(0);
                         setActiveTab('seminar');
                     }
                 }
@@ -310,6 +315,7 @@ export function DeliberationPage() {
             const nextIdx = currentIndex + 1;
             setDirection(1);
             setCurrentIndex(nextIdx);
+            setTabDirection(0);
             setActiveTab('seminar');
             syncCurrentCandidateId(candidates[nextIdx].id);
         }
@@ -320,6 +326,7 @@ export function DeliberationPage() {
             const prevIdx = currentIndex - 1;
             setDirection(-1);
             setCurrentIndex(prevIdx);
+            setTabDirection(0);
             setActiveTab('seminar');
             syncCurrentCandidateId(candidates[prevIdx].id);
         }
@@ -358,6 +365,7 @@ export function DeliberationPage() {
                     setCurrentIndex(prev => prev - 1);
                 }
                 setDirection(1);
+                setTabDirection(0);
                 setActiveTab('seminar');
             } catch (err) {
                 console.error("Failed to submit decision:", err);
@@ -365,10 +373,30 @@ export function DeliberationPage() {
         }
     };
 
+    const handleTabChange = (nextTab: DeliberationTab) => {
+        if (nextTab === activeTab) return;
+        const currentIndex = tabOrder.indexOf(activeTab);
+        const nextIndex = tabOrder.indexOf(nextTab);
+        setTabDirection(nextIndex > currentIndex ? 1 : -1);
+        setActiveTab(nextTab);
+    };
+
     const variants = {
         enter: (dir: number) => ({ x: dir > 0 ? 50 : -50, opacity: 0 }),
         center: { x: 0, opacity: 1 },
         exit: (dir: number) => ({ x: dir < 0 ? 50 : -50, opacity: 0 }),
+    };
+
+    const tabVariants = {
+        enter: (dir: number) => ({ x: dir === 0 ? 0 : dir > 0 ? 40 : -40, opacity: 0 }),
+        center: { x: 0, opacity: 1 },
+        exit: (dir: number) => ({ x: dir === 0 ? 0 : dir < 0 ? 40 : -40, opacity: 0 }),
+    };
+
+    const columnVariants = {
+        enter: { opacity: 0, y: 10 },
+        center: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: -8 },
     };
 
     if (isLoading) {
@@ -394,9 +422,11 @@ export function DeliberationPage() {
                 <span className="font-semibold">{value.toFixed(1)}/{max}</span>
             </div>
             <div className="w-full bg-surfaceHover h-1.5 rounded-full overflow-hidden">
-                <div
-                    className="bg-accent h-full transition-all duration-500"
-                    style={{ width: `${(value / max) * 100}%` }}
+                <motion.div
+                    className="bg-accent h-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(value / max) * 100}%` }}
+                    transition={{ type: 'spring', stiffness: 160, damping: 22 }}
                 />
             </div>
         </div>
@@ -518,8 +548,18 @@ export function DeliberationPage() {
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full pb-2">
 
                             {/* Left Column: Candidate Profile & Standardized Scores */}
-                            {isSidebarOpen && (
-                                <div className="lg:col-span-3 flex flex-col gap-6 h-full overflow-y-auto pr-1 relative">
+                            <AnimatePresence initial={false}>
+                                {isSidebarOpen && (
+                                    <motion.div
+                                        key="deliberation-sidebar"
+                                        layout
+                                        initial="enter"
+                                        animate="center"
+                                        exit="exit"
+                                        variants={columnVariants}
+                                        transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.03 }}
+                                        className="lg:col-span-3 flex flex-col gap-6 h-full overflow-y-auto pr-1 relative"
+                                    >
                                     {/* Collapse handle: attached to right edge of sidebar */}
                                     <button
                                         type="button"
@@ -649,11 +689,19 @@ export function DeliberationPage() {
                                             </ResponsiveContainer>
                                         </div>
                                     </Card>
-                                </div>
-                            )}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
                             {/* Right Column: Detailed Context Tabs */}
-                            <div className={`${isSidebarOpen ? 'lg:col-span-9' : 'lg:col-span-12'} flex flex-col h-full bg-white dark:bg-surface border border-border rounded-xl shadow-sm overflow-hidden transition-all duration-300 relative`}>
+                            <motion.div
+                                layout
+                                transition={{ layout: { duration: 0.28, ease: 'easeOut' }, delay: 0.08 }}
+                                className={`${isSidebarOpen ? 'lg:col-span-9' : 'lg:col-span-12'} flex flex-col h-full bg-white dark:bg-surface border border-border rounded-xl shadow-sm overflow-hidden transition-all duration-300 relative`}
+                                initial="enter"
+                                animate="center"
+                                variants={columnVariants}
+                            >
                                 {/* Expand handle when sidebar is collapsed */}
                                 {!isSidebarOpen && (
                                     <button
@@ -669,25 +717,25 @@ export function DeliberationPage() {
                                 {/* Tab Navigation */}
                                 <div className="flex border-b border-border px-2 pt-2 bg-surface/50 dark:bg-surfaceHover/30">
                                     <button
-                                        onClick={() => setActiveTab('seminar')}
+                                        onClick={() => handleTabChange('seminar')}
                                         className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'seminar' ? 'border-accent text-accent' : 'border-transparent text-secondary hover:text-primary hover:border-border'}`}
                                     >
                                         <FileText className="w-4 h-4" /> Seminar Proposal
                                     </button>
                                     <button
-                                        onClick={() => setActiveTab('written')}
+                                        onClick={() => handleTabChange('written')}
                                         className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'written' ? 'border-accent text-accent' : 'border-transparent text-secondary hover:text-primary hover:border-border'}`}
                                     >
                                         <MessageSquare className="w-4 h-4" /> Written App
                                     </button>
                                     <button
-                                        onClick={() => setActiveTab('interview')}
+                                        onClick={() => handleTabChange('interview')}
                                         className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'interview' ? 'border-accent text-accent' : 'border-transparent text-secondary hover:text-primary hover:border-border'}`}
                                     >
                                         <User className="w-4 h-4" /> Interview Notes
                                     </button>
                                     <button
-                                        onClick={() => setActiveTab('visualizations')}
+                                        onClick={() => handleTabChange('visualizations')}
                                         className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'visualizations' ? 'border-accent text-accent' : 'border-transparent text-secondary hover:text-primary hover:border-border'}`}
                                     >
                                         <BarChart2 className="w-4 h-4" /> Visualizations
@@ -695,9 +743,20 @@ export function DeliberationPage() {
                                 </div>
 
                                 {/* Tab Content Area (Scrollable) */}
-                                <div className="flex-1 overflow-y-auto p-6 md:p-8">
-                                    {activeTab === 'seminar' && (
-                                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <div className="flex-1 relative overflow-hidden">
+                                    <AnimatePresence mode="wait" custom={tabDirection}>
+                                        <motion.div
+                                            key={activeTab}
+                                            custom={tabDirection}
+                                            variants={tabVariants}
+                                            initial="enter"
+                                            animate="center"
+                                            exit="exit"
+                                            transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+                                            className="h-full overflow-y-auto p-6 md:p-8"
+                                        >
+                                            {activeTab === 'seminar' && (
+                                                <div className="space-y-8">
                                             <div>
                                                 <div className="inline-block px-2.5 py-1 bg-accent/10 text-accent rounded-full text-xs font-semibold tracking-wide mb-3">
                                                     {candidate.seminarCategory}
@@ -728,11 +787,11 @@ export function DeliberationPage() {
                                                     {candidate.moreTopics}
                                                 </p>
                                             </div>
-                                        </div>
-                                    )}
+                                                </div>
+                                            )}
 
-                                    {activeTab === 'written' && (
-                                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                            {activeTab === 'written' && (
+                                                <div className="space-y-8">
                                             <div>
                                                 <h3 className="text-sm font-semibold text-primary mb-2">Self Introduction & Achievements</h3>
                                                 <p className="text-sm text-secondary leading-relaxed p-3 bg-surface rounded-md border border-border">
@@ -757,11 +816,11 @@ export function DeliberationPage() {
                                                     "{candidate.advice}"
                                                 </p>
                                             </div>
-                                        </div>
-                                    )}
+                                                </div>
+                                            )}
 
-                                    {activeTab === 'interview' && (
-                                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                            {activeTab === 'interview' && (
+                                                <div className="space-y-8">
                                             {candidate.sensitiveIssues && candidate.sensitiveIssues.toLowerCase() !== 'no' && (
                                                 <div className="p-4 bg-orange-50 dark:bg-orange-900/20 text-orange-800 dark:text-orange-200 border border-orange-200 dark:border-orange-800 rounded-lg">
                                                     <h4 className="text-sm font-bold mb-1 flex items-center gap-2">⚠️ Sensitive Topics Alert</h4>
@@ -823,14 +882,19 @@ export function DeliberationPage() {
                                                     ))}
                                                 </div>
                                             )}
-                                        </div>
-                                    )}
+                                                </div>
+                                            )}
 
-                                    {activeTab === 'visualizations' && (
-                                        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                            {activeTab === 'visualizations' && (
+                                        <div className="space-y-10">
                                             {/* Written vs Interview summary */}
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                <div className="p-4 rounded-xl border border-border bg-surface/50 dark:bg-surfaceHover/30">
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 8 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ type: 'spring', stiffness: 220, damping: 26 }}
+                                                    className="p-4 rounded-xl border border-border bg-surface/50 dark:bg-surfaceHover/30"
+                                                >
                                                     <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Written application (avg)</p>
                                                     <div className="flex items-baseline gap-2">
                                                         <span className="text-2xl font-bold text-primary">{writtenOverall != null ? writtenOverall.toFixed(2) : '—'}</span>
@@ -838,11 +902,21 @@ export function DeliberationPage() {
                                                     </div>
                                                     {hasWrittenScores && (
                                                         <div className="mt-2 h-2 w-full bg-surfaceHover rounded-full overflow-hidden">
-                                                            <div className="h-full bg-violet-500 rounded-full" style={{ width: `${((writtenOverall ?? 0) / 5) * 100}%` }} />
+                                                            <motion.div
+                                                                className="h-full bg-violet-500 rounded-full"
+                                                                initial={{ width: 0 }}
+                                                                animate={{ width: `${((writtenOverall ?? 0) / 5) * 100}%` }}
+                                                                transition={{ type: 'spring', stiffness: 160, damping: 22 }}
+                                                            />
                                                         </div>
                                                     )}
-                                                </div>
-                                                <div className="p-4 rounded-xl border border-border bg-surface/50 dark:bg-surfaceHover/30">
+                                                </motion.div>
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 8 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.05 }}
+                                                    className="p-4 rounded-xl border border-border bg-surface/50 dark:bg-surfaceHover/30"
+                                                >
                                                     <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Interview (avg overall)</p>
                                                     <div className="flex items-baseline gap-2">
                                                         <span className="text-2xl font-bold text-primary">{interviewOverallAvg != null ? interviewOverallAvg.toFixed(2) : '—'}</span>
@@ -850,15 +924,24 @@ export function DeliberationPage() {
                                                     </div>
                                                     {hasInterviewOverall && (
                                                         <div className="mt-2 h-2 w-full bg-surfaceHover rounded-full overflow-hidden">
-                                                            <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${((interviewOverallAvg ?? 0) / 10) * 100}%` }} />
+                                                            <motion.div
+                                                                className="h-full bg-emerald-500 rounded-full"
+                                                                initial={{ width: 0 }}
+                                                                animate={{ width: `${((interviewOverallAvg ?? 0) / 10) * 100}%` }}
+                                                                transition={{ type: 'spring', stiffness: 160, damping: 22 }}
+                                                            />
                                                         </div>
                                                     )}
-                                                </div>
+                                                </motion.div>
                                             </div>
 
                                             {/* Cohort distribution: Written vs Interview toggle, PMF + CDF */}
                                             {(cohortOverallScores.length > 0 || cohortWrittenSums.length > 0) && (
-                                                <div>
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 8 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.06 }}
+                                                >
                                                     <div className="flex flex-wrap items-center gap-3 mb-2">
                                                         <h3 className="text-sm font-semibold text-primary">Score distribution (cohort)</h3>
                                                         <div className="flex rounded-lg border border-border bg-surface/50 p-0.5">
@@ -966,12 +1049,16 @@ export function DeliberationPage() {
                                                             </div>
                                                         </>
                                                     )}
-                                                </div>
+                                                </motion.div>
                                             )}
 
                                             {/* Written dimensions bar chart */}
                                             {hasWrittenScores && (
-                                                <div>
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 8 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.08 }}
+                                                >
                                                     <h3 className="text-sm font-semibold text-primary mb-3">Written application dimensions (out of 5)</h3>
                                                     <div className="h-64">
                                                         <ResponsiveContainer width="100%" height="100%">
@@ -984,12 +1071,16 @@ export function DeliberationPage() {
                                                             </BarChart>
                                                         </ResponsiveContainer>
                                                     </div>
-                                                </div>
+                                                </motion.div>
                                             )}
 
                                             {/* Interview dimensions bar chart (average) */}
                                             {(hasInterviewOverall || interviewBarData.some(d => d.score > 0)) && (
-                                                <div>
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 8 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.1 }}
+                                                >
                                                     <h3 className="text-sm font-semibold text-primary mb-3">Interview dimensions — average (out of 10)</h3>
                                                     <div className="h-64">
                                                         <ResponsiveContainer width="100%" height="100%">
@@ -1002,12 +1093,16 @@ export function DeliberationPage() {
                                                             </BarChart>
                                                         </ResponsiveContainer>
                                                     </div>
-                                                </div>
+                                                </motion.div>
                                             )}
 
                                             {/* Multi-interviewer comparison */}
                                             {multiInterviewerChartData.length > 0 && (
-                                                <div>
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 8 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.12 }}
+                                                >
                                                     <h3 className="text-sm font-semibold text-primary mb-3">Interviewer comparison by dimension</h3>
                                                     <div className="h-72">
                                                         <ResponsiveContainer width="100%" height="100%">
@@ -1026,7 +1121,7 @@ export function DeliberationPage() {
                                                             </BarChart>
                                                         </ResponsiveContainer>
                                                     </div>
-                                                </div>
+                                                </motion.div>
                                             )}
 
                                             {!hasWrittenScores && !hasInterviewOverall && (
@@ -1035,9 +1130,11 @@ export function DeliberationPage() {
                                                 </div>
                                             )}
                                         </div>
-                                    )}
+                                            )}
+                                        </motion.div>
+                                    </AnimatePresence>
                                 </div>
-                            </div>
+                            </motion.div>
 
                         </div>
                     </motion.div>
@@ -1052,15 +1149,21 @@ export function DeliberationPage() {
                 <div className="flex items-center gap-3">
                     {isAdmin ? (
                         <>
-                            <Button variant="danger" onClick={() => handleDecision('reject')}>
-                                <ThumbsDown className="w-4 h-4 mr-2" /> Reject
-                            </Button>
-                            <Button variant="secondary" onClick={() => handleDecision('waitlist')}>
-                                <Clock className="w-4 h-4 mr-2" /> Waitlist
-                            </Button>
-                            <Button variant="primary" onClick={() => handleDecision('approve')}>
-                                <ThumbsUp className="w-4 h-4 mr-2" /> Approve
-                            </Button>
+                            <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
+                                <Button variant="danger" onClick={() => handleDecision('reject')}>
+                                    <ThumbsDown className="w-4 h-4 mr-2" /> Reject
+                                </Button>
+                            </motion.div>
+                            <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
+                                <Button variant="secondary" onClick={() => handleDecision('waitlist')}>
+                                    <Clock className="w-4 h-4 mr-2" /> Waitlist
+                                </Button>
+                            </motion.div>
+                            <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
+                                <Button variant="primary" onClick={() => handleDecision('approve')}>
+                                    <ThumbsUp className="w-4 h-4 mr-2" /> Approve
+                                </Button>
+                            </motion.div>
                         </>
                     ) : (
                         <div className="px-4 py-2 bg-surfaceHover text-secondary text-sm italic rounded-lg border border-border">
