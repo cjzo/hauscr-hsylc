@@ -66,6 +66,7 @@ export function DeliberationPage() {
     const [tabDirection, setTabDirection] = useState(0);
     const confirmModal = useConfirm();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarMounted, setIsSidebarMounted] = useState(true);
     const [distributionMode, setDistributionMode] = useState<'written' | 'interview'>('interview');
 
     const { role } = useAuth();
@@ -310,6 +311,8 @@ export function DeliberationPage() {
     };
 
     const candidate = candidates[currentIndex];
+
+    const hasSidebarSpace = isSidebarOpen || isSidebarMounted;
 
     const nextCandidate = () => {
         if (currentIndex < candidates.length - 1) {
@@ -579,8 +582,11 @@ export function DeliberationPage() {
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full pb-2">
 
                             {/* Left Column: Candidate Profile & Standardized Scores */}
-                            <AnimatePresence initial={false}>
-                                {isSidebarOpen && (
+                            <AnimatePresence
+                                initial={false}
+                                onExitComplete={() => setIsSidebarMounted(false)}
+                            >
+                                {hasSidebarSpace && (
                                     <motion.div
                                         key="deliberation-sidebar"
                                         initial={{ opacity: 0, x: -12 }}
@@ -592,7 +598,10 @@ export function DeliberationPage() {
                                     {/* Collapse handle: attached to right edge of sidebar */}
                                     <button
                                         type="button"
-                                        onClick={() => setIsSidebarOpen(false)}
+                                        onClick={() => {
+                                            setIsSidebarOpen(false);
+                                            setIsSidebarMounted(true);
+                                        }}
                                         className="absolute top-6 right-0 z-10 w-6 h-10 flex items-center justify-center rounded-l-md border border-r-0 border-border bg-surface hover:bg-surfaceHover text-muted hover:text-primary shadow-sm transition-colors"
                                         title="Collapse panel"
                                         aria-label="Collapse panel"
@@ -741,17 +750,20 @@ export function DeliberationPage() {
                             </AnimatePresence>
 
                             {/* Right Column: Detailed Context Tabs */}
-                            <motion.div
-                                layout
-                                transition={{ layout: { duration: 0.28, ease: 'easeOut' }, delay: 0.08 }}
-                                className={`${isSidebarOpen ? 'lg:col-span-9' : 'lg:col-span-12'} flex flex-col h-full bg-white dark:bg-surface border border-border rounded-xl shadow-sm overflow-hidden transition-all duration-300 relative`}
-                                initial={false}
-                            >
-                                {/* Expand handle when sidebar is collapsed */}
-                                {!isSidebarOpen && (
+                                <motion.div
+                                    layout
+                                    transition={{ layout: { duration: 0.28, ease: 'easeOut' }, delay: 0.08 }}
+                                    className={`${hasSidebarSpace ? 'lg:col-span-9' : 'lg:col-span-12'} flex flex-col h-full bg-white dark:bg-surface border border-border rounded-xl shadow-sm overflow-hidden transition-all duration-300 relative`}
+                                    initial={false}
+                                >
+                                {/* Expand handle when sidebar is fully collapsed */}
+                                {!hasSidebarSpace && (
                                     <button
                                         type="button"
-                                        onClick={() => setIsSidebarOpen(true)}
+                                        onClick={() => {
+                                            setIsSidebarMounted(true);
+                                            setIsSidebarOpen(true);
+                                        }}
                                         className="absolute top-6 left-0 z-10 w-6 h-10 flex items-center justify-center rounded-r-md border border-l-0 border-border bg-surface hover:bg-surfaceHover text-muted hover:text-primary shadow-sm transition-colors"
                                         title="Expand panel"
                                         aria-label="Expand panel"

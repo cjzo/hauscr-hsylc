@@ -21,8 +21,7 @@ import {
     X,
     ExternalLink,
     ArrowUpDown,
-    SlidersHorizontal,
-    Download
+    SlidersHorizontal
 } from 'lucide-react';
 
 export function DatabasePage() {
@@ -36,7 +35,6 @@ export function DatabasePage() {
     const [candidateTypeFilter, setCandidateTypeFilter] = useState<'all' | 'New' | 'Returning'>('all');
     const [sortKey, setSortKey] = useState<'score_overall' | 'written_avg' | 'name'>('score_overall');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-    const [exportingStatus, setExportingStatus] = useState<'approved' | 'waitlisted' | 'rejected' | null>(null);
     const confirmModal = useConfirm();
     const navigate = useNavigate();
     const { role } = useAuth();
@@ -146,82 +144,6 @@ export function DatabasePage() {
         sortKey !== 'score_overall' ||
         sortDir !== 'desc';
 
-    const exportCsvForStatus = async (status: 'approved' | 'waitlisted' | 'rejected') => {
-        if (!isAdmin) return;
-        setExportingStatus(status);
-        try {
-            const { data, error } = await supabase
-                .from('candidates')
-                .select('*')
-                .eq('deliberation_status', status)
-                .order('score_overall', { ascending: false, nullsFirst: false });
-
-            if (error) {
-                console.error('Error exporting candidates:', error);
-                alert('Failed to export CSV. Please try again.');
-                return;
-            }
-
-            if (!data || data.length === 0) {
-                alert('No candidates found for this decision group.');
-                return;
-            }
-
-            const headers = Array.from(
-                data.reduce<Set<string>>((set, row) => {
-                    Object.keys(row).forEach((key) => set.add(key));
-                    return set;
-                }, new Set<string>())
-            );
-
-            const escapeCell = (value: unknown): string => {
-                if (value === null || value === undefined) return '';
-                if (typeof value === 'object') {
-                    try {
-                        value = JSON.stringify(value);
-                    } catch {
-                        value = String(value);
-                    }
-                }
-                let str = String(value);
-                const needsQuotes = /[",\r\n]/.test(str);
-                if (needsQuotes) {
-                    str = '"' + str.replace(/"/g, '""') + '"';
-                }
-                return str;
-            };
-
-            const rows = data.map((row) =>
-                headers.map((key) => escapeCell((row as any)[key])).join(',')
-            );
-
-            const csvContent = [headers.join(','), ...rows].join('\r\n');
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-
-            const prefix =
-                status === 'approved'
-                    ? 'accepted'
-                    : status === 'waitlisted'
-                    ? 'waitlisted'
-                    : 'rejected';
-
-            const dateStr = new Date().toISOString().slice(0, 10);
-            link.href = url;
-            link.download = `${prefix}-candidates-${dateStr}.csv`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        } catch (err) {
-            console.error('Unexpected error while exporting CSV:', err);
-            alert('An unexpected error occurred while exporting. Please check the console for details.');
-        } finally {
-            setExportingStatus(null);
-        }
-    };
-
     const tabs = [
         { id: 'pending', label: 'Undecided', icon: Clock, color: 'text-blue-500' },
         { id: 'approved', label: 'Accepted', icon: CheckCircle, color: 'text-emerald-500' },
@@ -327,60 +249,15 @@ export function DatabasePage() {
                     </div>
 
                     {/* Search */}
-                    <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto sm:ml-auto">
-                        <div className="relative w-full sm:max-w-xs">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-                            <input
-                                type="text"
-                                placeholder="Search by name or school..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-9 pr-4 py-2 text-sm bg-surface border border-border rounded-lg placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-shadow"
-                            />
-                        </div>
-                        {isAdmin && (
-                            <div className="flex flex-wrap items-center gap-2">
-                                <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={() => exportCsvForStatus('approved')}
-                                    disabled={exportingStatus !== null}
-                                >
-                                    {exportingStatus === 'approved' ? (
-                                        <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                                    ) : (
-                                        <Download className="w-3.5 h-3.5 mr-1" />
-                                    )}
-                                    Export Accepted
-                                </Button>
-                                <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={() => exportCsvForStatus('waitlisted')}
-                                    disabled={exportingStatus !== null}
-                                >
-                                    {exportingStatus === 'waitlisted' ? (
-                                        <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                                    ) : (
-                                        <Download className="w-3.5 h-3.5 mr-1" />
-                                    )}
-                                    Export Waitlisted
-                                </Button>
-                                <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={() => exportCsvForStatus('rejected')}
-                                    disabled={exportingStatus !== null}
-                                >
-                                    {exportingStatus === 'rejected' ? (
-                                        <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                                    ) : (
-                                        <Download className="w-3.5 h-3.5 mr-1" />
-                                    )}
-                                    Export Rejected
-                                </Button>
-                            </div>
-                        )}
+                    <div className="relative w-full sm:max-w-xs">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                        <input
+                            type="text"
+                            placeholder="Search by name or school..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2 text-sm bg-surface border border-border rounded-lg placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-shadow"
+                        />
                     </div>
                 </div>
 

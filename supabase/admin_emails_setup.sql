@@ -20,6 +20,11 @@ CREATE TABLE IF NOT EXISTS public.user_roles (
   role text NOT NULL CHECK (role IN ('blocked', 'member', 'admin'))
 );
 
+-- Also cache the user's email alongside their role so that
+-- the admin UI can display "Current roles" with email + UUID.
+ALTER TABLE public.user_roles
+  ADD COLUMN IF NOT EXISTS email text;
+
 -- 3. RLS: allow authenticated to read (for User Management UI); only RPC writes
 ALTER TABLE public.admin_emails ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.member_emails ENABLE ROW LEVEL SECURITY;
@@ -56,6 +61,18 @@ DROP POLICY IF EXISTS "Users can read own role" ON public.user_roles;
 CREATE POLICY "Users can read own role" ON public.user_roles
   FOR SELECT TO authenticated USING (auth.uid() = user_id);
 
+-- Allow admins (identified by their email being present in admin_emails)
+-- to read ALL roles for the admin UI.
+DROP POLICY IF EXISTS "Admins can read all roles" ON public.user_roles;
+CREATE POLICY "Admins can read all roles" ON public.user_roles
+  FOR SELECT TO authenticated USING (
+    EXISTS (
+      SELECT 1
+      FROM public.admin_emails ae
+      WHERE lower(trim(ae.email)) = lower(trim(auth.jwt() ->> 'email'))
+    )
+  );
+
 -- 4. Function: resolve role from email lists and persist to user_roles (called on every sign-in)
 CREATE OR REPLACE FUNCTION public.get_role_for_user(p_user_id uuid, p_email text)
 RETURNS text
@@ -77,9 +94,11 @@ BEGIN
     resolved_role := 'blocked';
   END IF;
 
-  INSERT INTO public.user_roles (user_id, role)
-  VALUES (p_user_id, resolved_role)
-  ON CONFLICT (user_id) DO UPDATE SET role = resolved_role;
+  INSERT INTO public.user_roles (user_id, role, email)
+  VALUES (p_user_id, resolved_role, email_lower)
+  ON CONFLICT (user_id) DO UPDATE
+    SET role = resolved_role,
+        email = email_lower;
 
   RETURN resolved_role;
 END;

@@ -3,12 +3,13 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Download, Loader2 } from 'lucide-react';
 
 type Role = 'blocked' | 'member' | 'admin';
 
 interface UserRoleRow {
   user_id: string;
+  email: string | null;
   role: Role;
 }
 
@@ -41,12 +42,14 @@ export function UserManagementPage() {
   const [memberEmailError, setMemberEmailError] = useState<string | null>(null);
   const [memberEmailMessage, setMemberEmailMessage] = useState<string | null>(null);
 
+  const [exportingStatus, setExportingStatus] = useState<'approved' | 'waitlisted' | 'rejected' | null>(null);
+
   const loadRoles = async () => {
     setLoading(true);
     setError(null);
     const { data, error } = await supabase
       .from('user_roles')
-      .select('user_id, role')
+      .select('user_id, email, role')
       .order('user_id');
 
     if (error) {
@@ -146,6 +149,84 @@ export function UserManagementPage() {
     else await loadMemberEmails();
   };
 
+  const exportCsvForStatus = async (status: 'approved' | 'waitlisted' | 'rejected') => {
+    if (myRole !== 'admin') return;
+    setExportingStatus(status);
+    try {
+      const { data, error } = await supabase
+        .from('candidates')
+        .select('*')
+        .eq('deliberation_status', status)
+        .order('score_overall', { ascending: false, nullsFirst: false });
+
+      if (error) {
+        console.error('Error exporting candidates:', error);
+        alert('Failed to export CSV. Please try again.');
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        alert('No candidates found for this decision group.');
+        return;
+      }
+
+      const headers = Array.from(
+        data.reduce<Set<string>>((set, row) => {
+          Object.keys(row).forEach((key) => set.add(key));
+          return set;
+        }, new Set<string>()),
+      );
+
+      const escapeCell = (value: unknown): string => {
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'object') {
+          try {
+            value = JSON.stringify(value);
+          } catch {
+            value = String(value);
+          }
+        }
+        let str = String(value);
+        const needsQuotes = /[",\r\n]/.test(str);
+        if (needsQuotes) {
+          str = '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
+      };
+
+      const rows = data.map((row) =>
+        headers.map((key) => escapeCell((row as any)[key])).join(','),
+      );
+
+      const csvContent = [headers.join(','), ...rows].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      const prefix =
+        status === 'approved'
+          ? 'accepted'
+          : status === 'waitlisted'
+          ? 'waitlisted'
+          : 'rejected';
+
+      const dateStr = new Date().toISOString().slice(0, 10);
+      link.href = url;
+      link.download = `${prefix}-candidates-${dateStr}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Unexpected error while exporting CSV:', err);
+      alert(
+        'An unexpected error occurred while exporting. Please check the console for details.',
+      );
+    } finally {
+      setExportingStatus(null);
+    }
+  };
+
   const handleSave = async () => {
     setError(null);
     setMessage(null);
@@ -187,19 +268,71 @@ export function UserManagementPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-primary tracking-tight">
-          User Management
-        </h1>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => { void loadRoles(); void loadAdminEmails(); void loadMemberEmails(); }}
-          disabled={loading || loadingEmails}
-        >
-          Refresh
-        </Button>
+    <div className="max-w-5xl mx-auto space-y-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-primary tracking-tight">
+            Admin
+          </h1>
+          <p className="text-sm text-secondary mt-1">
+            Manage access and export decision CSVs for accepted, waitlisted, and rejected candidates.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              void loadRoles();
+              void loadAdminEmails();
+              void loadMemberEmails();
+            }}
+            disabled={loading || loadingEmails}
+          >
+            Refresh
+          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => exportCsvForStatus('approved')}
+              disabled={exportingStatus !== null}
+            >
+              {exportingStatus === 'approved' ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5 mr-1" />
+              )}
+              Export Accepted
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => exportCsvForStatus('waitlisted')}
+              disabled={exportingStatus !== null}
+            >
+              {exportingStatus === 'waitlisted' ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5 mr-1" />
+              )}
+              Export Waitlisted
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => exportCsvForStatus('rejected')}
+              disabled={exportingStatus !== null}
+            >
+              {exportingStatus === 'rejected' ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5 mr-1" />
+              )}
+              Export Rejected
+            </Button>
+          </div>
+        </div>
       </div>
 
       <Card>
@@ -378,6 +511,9 @@ export function UserManagementPage() {
                       User ID
                     </th>
                     <th className="text-left px-3 py-2 font-medium text-secondary border-b border-border">
+                      Email
+                    </th>
+                    <th className="text-left px-3 py-2 font-medium text-secondary border-b border-border">
                       Role
                     </th>
                   </tr>
@@ -387,6 +523,9 @@ export function UserManagementPage() {
                     <tr key={row.user_id} className="border-t border-border/60">
                       <td className="px-3 py-2 font-mono text-xs text-primary break-all">
                         {row.user_id}
+                      </td>
+                      <td className="px-3 py-2 text-sm text-primary">
+                        {row.email ?? <span className="text-secondary italic">unknown</span>}
                       </td>
                       <td className="px-3 py-2 capitalize text-primary">
                         {row.role}
