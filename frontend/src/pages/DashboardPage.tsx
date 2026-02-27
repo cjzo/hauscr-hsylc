@@ -33,7 +33,7 @@ export function DashboardPage() {
     ]);
     const [seminarDist, setSeminarDist] = useState<{ name: string, value: number }[]>([]);
     const [classYearDist, setClassYearDist] = useState<{ name: string, applicants: number }[]>([]);
-    const [scoreDist, setScoreDist] = useState<{ scoreRange: string, count: number }[]>([]);
+    const [, setScoreDist] = useState<{ scoreRange: string, count: number }[]>([]);
     const [candidates, setCandidates] = useState<any[]>([]);
     const [selectedReviewer, setSelectedReviewer] = useState<string>('all');
     const [reviewers, setReviewers] = useState<string[]>([]);
