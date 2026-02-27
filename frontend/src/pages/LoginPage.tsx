@@ -9,7 +9,7 @@ export function LoginPage() {
         <div className="bg-surface border border-border rounded-xl p-8 shadow-sm">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-primary tracking-tight">
-              HSYLC System
+              HAUSCR Tech
             </h1>
             <p className="text-sm text-secondary mt-2">
               Sign in to access the deliberation platform
@@ -43,7 +43,7 @@ export function LoginPage() {
         </div>
 
         <p className="text-xs text-center text-tertiary mt-4">
-          Only authorized members can access this platform.
+          Use your college email to sign in.
         </p>
       </div>
     </div>

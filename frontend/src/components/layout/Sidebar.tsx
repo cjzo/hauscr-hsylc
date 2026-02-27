@@ -40,7 +40,7 @@ export function Sidebar() {
     );
 
     return (
-        <div className={cn("border-r border-border bg-surface h-screen flex flex-col transition-all duration-300", isCollapsed ? "w-16" : "w-64")}>
+        <div className={cn("border-r border-border bg-surface h-screen flex flex-col transition-all duration-300", isCollapsed ? "w-16" : "w-52")}>
             <div className={cn("h-16 flex items-center gap-2 px-4 border-b border-border", isCollapsed ? "justify-center" : "justify-between")}>
                 {isCollapsed ? (
                     <button
@@ -53,7 +53,7 @@ export function Sidebar() {
                 ) : (
                     <>
                         <img src={logoUrl} alt="HSYLC" className="w-9 h-9 shrink-0 object-contain" />
-                        <span className="font-semibold text-lg tracking-tight text-primary truncate">HSYLC System</span>
+                        <span className="font-semibold text-sm tracking-tight text-primary truncate">HAUSCR Tech</span>
                         <button
                             onClick={() => setIsCollapsed(true)}
                             className="p-1 rounded-md text-secondary hover:text-primary hover:bg-surfaceHover transition-colors"

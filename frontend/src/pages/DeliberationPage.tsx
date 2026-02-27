@@ -10,7 +10,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { standardizeCategory } from '../utils/categories';
 import {
-    Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip,
+    ResponsiveContainer, Tooltip,
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, AreaChart, Area, LineChart, Line, ReferenceLine
 } from 'recharts';
 
@@ -66,8 +66,8 @@ export function DeliberationPage() {
     const [tabDirection, setTabDirection] = useState(0);
     const confirmModal = useConfirm();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const [isSidebarMounted, setIsSidebarMounted] = useState(true);
-    const [distributionMode, setDistributionMode] = useState<'written' | 'interview'>('interview');
+    const [sidebarHasSpace, setSidebarHasSpace] = useState(true);
+    const [distributionMode, setDistributionMode] = useState<'written' | 'interview' | 'empirical'>('interview');
 
     const { role } = useAuth();
     const isAdmin = role === 'admin';
@@ -218,21 +218,35 @@ export function DeliberationPage() {
                             const s = (cand.interviews || []).map((i: any) => i.score_overall).filter((v: any) => typeof v === 'number');
                             return s.length ? s.reduce((a: number, b: number) => a + b, 0) / s.length : 0;
                         })(),
-                        empirical: typeof cand.score_empirical === 'number' ? cand.score_empirical : null,
+                        empirical: (() => {
+                            if (typeof cand.score_empirical === 'number') return cand.score_empirical;
+                            const s = (cand.interviews || []).map((i: any) => i.score_empirical).filter((v: any) => typeof v === 'number');
+                            return s.length ? s.reduce((a: number, b: number) => a + b, 0) / s.length : null;
+                        })(),
                     },
                     interviewNotes: (cand.interviews || []).map((note: any) => ({
                         interviewer: note.interviewer_name,
                         notes_why_sl: note.notes_why_sl,
                         notes_seminar: note.notes_seminar,
                         notes_extracurricular: note.notes_extracurricular,
+                        notes_cross_cultural: note.notes_cross_cultural,
                         notes_teach_me: note.notes_teach_me,
                         notes_commitment: note.notes_commitment,
                         notes_comments: note.notes_comments,
+                        availabilityAnswer: note.availability_answer,
+                        availabilityShenzhen: note.availability_shenzhen,
+                        availabilityShanghai: note.availability_shanghai,
+                        availabilityHangzhou: note.availability_hangzhou,
+                        availabilityBeijing: note.availability_beijing,
+                        flyFromInterview: note.fly_from_interview,
+                        flyToInterview: note.fly_to_interview,
+                        sensitiveFlag: note.sensitive_flag,
                         score_enthusiasm: note.score_enthusiasm,
                         score_quality: note.score_quality,
                         score_teaching: note.score_teaching,
                         score_interest: note.score_interest,
-                        score_overall: note.score_overall
+                        score_overall: note.score_overall,
+                        score_empirical: note.score_empirical
                     }))
                 }));
                 setCandidates(mappedData);
@@ -312,7 +326,7 @@ export function DeliberationPage() {
 
     const candidate = candidates[currentIndex];
 
-    const hasSidebarSpace = isSidebarOpen || isSidebarMounted;
+    const hasSidebarSpace = sidebarHasSpace;
 
     const nextCandidate = () => {
         if (currentIndex < candidates.length - 1) {
@@ -413,7 +427,7 @@ export function DeliberationPage() {
         );
     }
 
-    const renderProgressBar = (label: string, value: number, max: number = 10) => (
+    const renderProgressBar = (label: string, value: number, max: number = 10, colorClass: string = 'bg-accent') => (
         <div className="mb-3 last:mb-0">
             <div className="flex justify-between text-xs mb-1">
                 <span className="text-secondary font-medium">{label}</span>
@@ -421,7 +435,7 @@ export function DeliberationPage() {
             </div>
             <div className="w-full bg-surfaceHover h-1.5 rounded-full overflow-hidden">
                 <motion.div
-                    className="bg-accent h-full"
+                    className={`${colorClass} h-full`}
                     initial={{ width: 0 }}
                     animate={{ width: `${(value / max) * 100}%` }}
                     transition={{ type: 'spring', stiffness: 160, damping: 22 }}
@@ -429,14 +443,6 @@ export function DeliberationPage() {
             </div>
         </div>
     );
-
-    const radarData = [
-        { subject: 'Understanding', A: candidate.scores.understanding, fullMark: 10 },
-        { subject: 'Enthusiasm', A: candidate.scores.enthusiasm, fullMark: 10 },
-        { subject: 'Seminar Quality', A: candidate.scores.quality, fullMark: 10 },
-        { subject: 'Teaching', A: candidate.scores.teaching, fullMark: 10 },
-        { subject: 'Extracurriculars', A: candidate.scores.interestEngaging, fullMark: 10 }
-    ];
 
     const writtenScores = [
         candidate.scores.writtenInterest,
@@ -457,6 +463,13 @@ export function DeliberationPage() {
     const interviewOverallAvg = hasInterviewOverall
         ? interviewOverallScores.reduce((sum: number, val: number) => sum + val, 0) / interviewOverallScores.length
         : null;
+
+    const overallStandardized =
+        interviewOverallAvg != null
+            ? interviewOverallAvg
+            : typeof candidate.scores.overall === 'number'
+                ? candidate.scores.overall
+                : null;
 
     const formatScore = (val: number | null | undefined) => {
         if (val === null || val === undefined) return 'N/A';
@@ -493,18 +506,57 @@ export function DeliberationPage() {
     const INTERVIEWER_COLORS = ['#8b5cf6', '#059669', '#d97706', '#dc2626'];
 
     // Cohort distributions for percentile / PMF charts (all pending candidates)
-    const cohortOverallScores = candidates.map(c => c.scores?.overall).filter((v: unknown): v is number => typeof v === 'number');
-    const cohortWrittenSums = candidates.map(c =>
-        (c.scores?.writtenInterest ?? 0) + (c.scores?.writtenTeaching ?? 0) + (c.scores?.writtenSeminar ?? 0) + (c.scores?.writtenPersonal ?? 0)
-    ).filter(s => s > 0);
-    const currentOverall = candidate.scores?.overall;
-    const currentWrittenSum = (candidate.scores?.writtenInterest ?? 0) + (candidate.scores?.writtenTeaching ?? 0) + (candidate.scores?.writtenSeminar ?? 0) + (candidate.scores?.writtenPersonal ?? 0);
+    const cohortOverallScores = candidates
+        .map(c => {
+            const notes = c.interviewNotes || [];
+            const perInterview = notes
+                .map((note: any) => (typeof note.score_overall === 'number' ? note.score_overall : null))
+                .filter((v: number | null): v is number => v !== null);
+
+            if (perInterview.length > 0) {
+                return perInterview.reduce((sum: number, v: number) => sum + v, 0) / perInterview.length;
+            }
+
+            const fallback = c.scores?.overall;
+            return typeof fallback === 'number' ? fallback : null;
+        })
+        .filter((v: number | null): v is number => v !== null);
+
+    const cohortWrittenAverages = candidates
+        .map(c => {
+            const vals = [
+                c.scores?.writtenInterest ?? null,
+                c.scores?.writtenTeaching ?? null,
+                c.scores?.writtenSeminar ?? null,
+                c.scores?.writtenPersonal ?? null,
+            ].filter((v: number | null) => typeof v === 'number' && v > 0) as number[];
+
+            if (!vals.length) return null;
+            return vals.reduce((sum, v) => sum + v, 0) / vals.length;
+        })
+        .filter((v: number | null): v is number => v !== null);
+
+    const cohortEmpiricalScores = candidates
+        .map(c => c.scores?.empirical)
+        .filter((v: unknown): v is number => typeof v === 'number');
+
+    const currentOverall = overallStandardized;
+    const currentWrittenAvg = writtenOverall;
+    const currentEmpirical = typeof candidate.scores?.empirical === 'number' ? candidate.scores.empirical : null;
+
     const overallKdeData = kernelDensity(cohortOverallScores, 0, 10, 0.2, 0.5);
-    const writtenSumKdeData = kernelDensity(cohortWrittenSums, 0, 20, 0.25, 0.8);
+    const writtenAvgKdeData = kernelDensity(cohortWrittenAverages, 0, 5, 0.1, 0.25);
+    const empiricalKdeData = kernelDensity(cohortEmpiricalScores, 0, 10, 0.2, 0.5);
+
     const overallCdfData = computeCdf(cohortOverallScores, 0, 10, 0.2);
-    const writtenSumCdfData = computeCdf(cohortWrittenSums, 0, 20, 0.25);
-    const overallPercentile = typeof currentOverall === 'number' ? percentile(cohortOverallScores, currentOverall) : null;
-    const writtenSumPercentile = currentWrittenSum > 0 && cohortWrittenSums.length > 0 ? percentile(cohortWrittenSums, currentWrittenSum) : null;
+    const writtenAvgCdfData = computeCdf(cohortWrittenAverages, 0, 5, 0.1);
+    const empiricalCdfData = computeCdf(cohortEmpiricalScores, 0, 10, 0.2);
+
+    const overallPercentile = currentOverall != null ? percentile(cohortOverallScores, currentOverall) : null;
+    const writtenAvgPercentile =
+        currentWrittenAvg != null && cohortWrittenAverages.length > 0 ? percentile(cohortWrittenAverages, currentWrittenAvg) : null;
+    const empiricalPercentile =
+        currentEmpirical != null && cohortEmpiricalScores.length > 0 ? percentile(cohortEmpiricalScores, currentEmpirical) : null;
 
     const chartTopMargin = 32;
 
@@ -584,9 +636,9 @@ export function DeliberationPage() {
                             {/* Left Column: Candidate Profile & Standardized Scores */}
                             <AnimatePresence
                                 initial={false}
-                                onExitComplete={() => setIsSidebarMounted(false)}
+                                onExitComplete={() => setSidebarHasSpace(false)}
                             >
-                                {hasSidebarSpace && (
+                                {isSidebarOpen && (
                                     <motion.div
                                         key="deliberation-sidebar"
                                         initial={{ opacity: 0, x: -12 }}
@@ -595,19 +647,18 @@ export function DeliberationPage() {
                                         transition={{ type: 'spring', stiffness: 220, damping: 26 }}
                                         className="lg:col-span-3 flex flex-col gap-6 h-full overflow-y-auto pr-1 relative"
                                     >
-                                    {/* Collapse handle: attached to right edge of sidebar */}
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setIsSidebarOpen(false);
-                                            setIsSidebarMounted(true);
-                                        }}
-                                        className="absolute top-6 right-0 z-10 w-6 h-10 flex items-center justify-center rounded-l-md border border-r-0 border-border bg-surface hover:bg-surfaceHover text-muted hover:text-primary shadow-sm transition-colors"
-                                        title="Collapse panel"
-                                        aria-label="Collapse panel"
-                                    >
-                                        <ChevronLeft className="w-3.5 h-3.5" />
-                                    </button>
+                                        {/* Collapse handle: attached to right edge of sidebar */}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsSidebarOpen(false);
+                                            }}
+                                            className="absolute top-6 right-0 z-10 w-6 h-10 flex items-center justify-center rounded-l-md border border-r-0 border-border bg-surface hover:bg-surfaceHover text-muted hover:text-primary shadow-sm transition-colors"
+                                            title="Collapse panel"
+                                            aria-label="Collapse panel"
+                                        >
+                                            <ChevronLeft className="w-3.5 h-3.5" />
+                                        </button>
                                     <Card className="flex flex-col shrink-0">
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center gap-3">
@@ -668,38 +719,54 @@ export function DeliberationPage() {
                                                 Standardized Scores
                                             </p>
 
-                                            {/* Overall standardized score */}
-                                            <div className="mt-1 flex items-baseline gap-2">
-                                                <span className="text-3xl font-semibold text-primary">
-                                                    {candidate.scores.overall.toFixed(1)}
-                                                </span>
-                                                <span className="text-xs text-secondary">Overall (standardized, 0–10)</span>
-                                            </div>
-
-                                            {/* Empirical standardized score */}
-                                            {typeof candidate.scores.empirical === 'number' && (
-                                                <div className="mt-2 flex items-baseline gap-2">
-                                                    <span className="text-2xl font-semibold text-primary">
-                                                        {candidate.scores.empirical.toFixed(1)}
-                                                    </span>
-                                                    <span
-                                                        className="text-xs text-secondary"
-                                                        title="Empirical score combines written scores, interview scores, and overall rating: ((1/6)*(written1 + written2) + (1/3)*overall + (1/12)*(interview1 + interview2 + interview3 + interview4)) * 3/2."
-                                                    >
-                                                        Empirical (standardized)
-                                                    </span>
+                                            <div className="mt-2 grid grid-cols-1 gap-3">
+                                                {/* Overall standardized (interview-based) */}
+                                                <div>
+                                                    <p className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-0.5">
+                                                        Overall standardized
+                                                    </p>
+                                                    <div className="flex items-baseline gap-2">
+                                                        <span className="text-3xl font-semibold text-primary">
+                                                            {overallStandardized != null ? overallStandardized.toFixed(1) : '—'}
+                                                        </span>
+                                                        <span className="text-xs text-secondary">
+                                                            Interview overall (avg across interviews, 0–10)
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                            )}
 
-                                            <div className="mt-3 flex flex-wrap items-center gap-2">
-                                                {hasWrittenScores && (
-                                                    <div className="text-[11px] px-2 py-1 rounded-full bg-surfaceHover text-secondary font-semibold">
-                                                        Written Avg {writtenOverall?.toFixed(2)}/5
+                                                {/* Empirical standardized score */}
+                                                {typeof candidate.scores.empirical === 'number' && (
+                                                    <div>
+                                                        <p className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-0.5">
+                                                            Empirical overall
+                                                        </p>
+                                                        <div className="flex items-baseline gap-2">
+                                                            <span className="text-3xl font-semibold text-primary">
+                                                                {candidate.scores.empirical.toFixed(1)}
+                                                            </span>
+                                                            <span
+                                                                className="text-xs text-secondary"
+                                                                title="Empirical score combines written scores, interview scores, and overall rating: ((1/6)*(written1 + written2) + (1/3)*overall + (1/12)*(interview1 + interview2 + interview3 + interview4)) * 3/2."
+                                                            >
+                                                                Standardized composite
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 )}
-                                                {hasInterviewOverall && (
-                                                    <div className="text-[11px] px-2 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-200 font-semibold">
-                                                        Interview Avg {interviewOverallAvg?.toFixed(2)}
+
+                                                {/* Written overall (average of dimensions) */}
+                                                {hasWrittenScores && (
+                                                    <div>
+                                                        <p className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-0.5">
+                                                            Written overall
+                                                        </p>
+                                                        <div className="flex items-baseline gap-2">
+                                                            <span className="text-3xl font-semibold text-primary">
+                                                                {writtenOverall != null ? writtenOverall.toFixed(2) : '—'}
+                                                            </span>
+                                                            <span className="text-xs text-secondary">Average of written dimensions (0–5)</span>
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
@@ -707,42 +774,23 @@ export function DeliberationPage() {
 
                                         <div className="space-y-1 mb-4">
                                             <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Written Scores (out of 5)</p>
-                                            {renderProgressBar('Interest', candidate.scores.writtenInterest, 5)}
-                                            {renderProgressBar('Teaching', candidate.scores.writtenTeaching, 5)}
-                                            {renderProgressBar('Seminar', candidate.scores.writtenSeminar, 5)}
-                                            {renderProgressBar('Personal', candidate.scores.writtenPersonal, 5)}
+                                            {renderProgressBar('Interest', candidate.scores.writtenInterest, 5, 'bg-violet-500')}
+                                            {renderProgressBar('Teaching', candidate.scores.writtenTeaching, 5, 'bg-violet-500')}
+                                            {renderProgressBar('Seminar', candidate.scores.writtenSeminar, 5, 'bg-violet-500')}
+                                            {renderProgressBar('Personal', candidate.scores.writtenPersonal, 5, 'bg-violet-500')}
 
                                             <div className="mt-3 pt-3 border-t border-border">
                                                 <p className="text-xs font-semibold text-muted mb-1">Graded By: {candidate.grader}</p>
                                             </div>
                                         </div>
 
-                                        <div className="flex-1 min-h-[200px] -mx-4">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                                                    <PolarGrid stroke="#E5E7EB" />
-                                                    <PolarAngleAxis
-                                                        dataKey="subject"
-                                                        tick={{ fill: '#6B7280', fontSize: 10, fontWeight: 500 }}
-                                                    />
-                                                    <PolarRadiusAxis
-                                                        angle={30}
-                                                        domain={[0, 10]}
-                                                        tick={{ fill: '#9CA3AF', fontSize: 10 }}
-                                                        tickCount={6}
-                                                    />
-                                                    <Radar
-                                                        name={candidate.name}
-                                                        dataKey="A"
-                                                        stroke="#8b5cf6"
-                                                        fill="#8b5cf6"
-                                                        fillOpacity={0.4}
-                                                    />
-                                                    <Tooltip
-                                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                    />
-                                                </RadarChart>
-                                            </ResponsiveContainer>
+                                        <div className="space-y-1 mb-2">
+                                            <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Interview Scores (out of 10)</p>
+                                            {renderProgressBar('Understanding', candidate.scores.understanding ?? 0, 10, 'bg-emerald-500')}
+                                            {renderProgressBar('Enthusiasm', candidate.scores.enthusiasm ?? 0, 10, 'bg-emerald-500')}
+                                            {renderProgressBar('Seminar Quality', candidate.scores.quality ?? 0, 10, 'bg-emerald-500')}
+                                            {renderProgressBar('Teaching', candidate.scores.teaching ?? 0, 10, 'bg-emerald-500')}
+                                            {renderProgressBar('Extracurriculars / Interest', candidate.scores.interestEngaging ?? 0, 10, 'bg-emerald-500')}
                                         </div>
                                     </Card>
                                     </motion.div>
@@ -757,11 +805,11 @@ export function DeliberationPage() {
                                     initial={false}
                                 >
                                 {/* Expand handle when sidebar is fully collapsed */}
-                                {!hasSidebarSpace && (
+                                {!sidebarHasSpace && (
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            setIsSidebarMounted(true);
+                                            setSidebarHasSpace(true);
                                             setIsSidebarOpen(true);
                                         }}
                                         className="absolute top-6 left-0 z-10 w-6 h-10 flex items-center justify-center rounded-r-md border border-l-0 border-border bg-surface hover:bg-surfaceHover text-muted hover:text-primary shadow-sm transition-colors"
@@ -906,6 +954,11 @@ export function DeliberationPage() {
                                                                     <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent font-semibold">
                                                                         Overall {formatScore(note.score_overall)}
                                                                     </span>
+                                                                    {note.sensitiveFlag && (
+                                                                        <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-100 font-semibold">
+                                                                            Sensitive
+                                                                        </span>
+                                                                    )}
                                                                 </div>
                                                             </div>
 
@@ -923,6 +976,10 @@ export function DeliberationPage() {
                                                                     <p className="text-sm text-primary leading-relaxed">{note.notes_extracurricular || '—'}</p>
                                                                 </div>
                                                                 <div>
+                                                                    <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Cross-Cultural Exchange</h4>
+                                                                    <p className="text-sm text-primary leading-relaxed">{note.notes_cross_cultural || '—'}</p>
+                                                                </div>
+                                                                <div>
                                                                     <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">"Teach Me in 2 Minutes"</h4>
                                                                     <p className="text-sm text-primary leading-relaxed">{note.notes_teach_me || '—'}</p>
                                                                 </div>
@@ -930,6 +987,43 @@ export function DeliberationPage() {
                                                                     <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Spring/Summer Commitment</h4>
                                                                     <p className="text-sm text-primary leading-relaxed">{note.notes_commitment || '—'}</p>
                                                                 </div>
+                                                                {(note.availabilityAnswer || note.flyFromInterview || note.flyToInterview) && (
+                                                                    <div>
+                                                                        <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Logistics (Interview)</h4>
+                                                                        {note.availabilityAnswer && (
+                                                                            <p className="text-sm text-primary leading-relaxed mb-1">
+                                                                                {note.availabilityAnswer}
+                                                                            </p>
+                                                                        )}
+                                                                        {(note.availabilityShenzhen || note.availabilityShanghai || note.availabilityHangzhou || note.availabilityBeijing) && (
+                                                                            <p className="text-xs text-secondary mb-1">
+                                                                                Cities:{' '}
+                                                                                <span className="font-medium text-primary">
+                                                                                    {[
+                                                                                        note.availabilityShenzhen && 'Shenzhen',
+                                                                                        note.availabilityShanghai && 'Shanghai',
+                                                                                        note.availabilityHangzhou && 'Hangzhou',
+                                                                                        note.availabilityBeijing && 'Beijing',
+                                                                                    ]
+                                                                                        .filter(Boolean)
+                                                                                        .join(', ')}
+                                                                                </span>
+                                                                            </p>
+                                                                        )}
+                                                                        {note.flyFromInterview && (
+                                                                            <p className="text-xs text-secondary mb-1">
+                                                                                Fly from (interview):{' '}
+                                                                                <span className="font-medium text-primary">{note.flyFromInterview}</span>
+                                                                            </p>
+                                                                        )}
+                                                                        {note.flyToInterview && (
+                                                                            <p className="text-xs text-secondary">
+                                                                                Fly to (interview):{' '}
+                                                                                <span className="font-medium text-primary">{note.flyToInterview}</span>
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
+                                                                )}
                                                                 <div className="pt-4 border-t border-border">
                                                                     <h4 className="text-xs font-semibold text-accent uppercase tracking-wider mb-2">Overall Comments</h4>
                                                                     <p className="text-sm font-medium text-primary leading-relaxed">{note.notes_comments || '—'}</p>
@@ -992,8 +1086,8 @@ export function DeliberationPage() {
                                                 </motion.div>
                                             </div>
 
-                                            {/* Cohort distribution: Written vs Interview toggle, PMF + CDF */}
-                                            {(cohortOverallScores.length > 0 || cohortWrittenSums.length > 0) && (
+                                            {/* Cohort distribution: Written vs Interview vs Empirical toggle, PMF + CDF */}
+                                            {(cohortOverallScores.length > 0 || cohortWrittenAverages.length > 0 || cohortEmpiricalScores.length > 0) && (
                                                 <motion.div
                                                     initial={{ opacity: 0, y: 8 }}
                                                     animate={{ opacity: 1, y: 0 }}
@@ -1007,7 +1101,7 @@ export function DeliberationPage() {
                                                                 onClick={() => setDistributionMode('written')}
                                                                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'written' ? 'bg-accent text-white' : 'text-secondary hover:text-primary'}`}
                                                             >
-                                                                Written (sum)
+                                                                Written (avg)
                                                             </button>
                                                             <button
                                                                 type="button"
@@ -1016,13 +1110,53 @@ export function DeliberationPage() {
                                                             >
                                                                 Interview (avg overall)
                                                             </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setDistributionMode('empirical')}
+                                                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'empirical' ? 'bg-accent text-white' : 'text-secondary hover:text-primary'}`}
+                                                            >
+                                                                Empirical overall
+                                                            </button>
                                                         </div>
                                                     </div>
                                                     <p className="text-xs text-secondary mb-3">
-                                                        {distributionMode === 'interview'
-                                                            ? <>Smoothed distribution of interview overall score (average across interviewers) for all {candidates.length} candidates. {typeof currentOverall === 'number' && overallPercentile != null && (<span className="ml-1 font-medium text-primary">{candidate.name} is at <span className="text-accent">{overallPercentile}th percentile</span> (score {currentOverall.toFixed(1)}).</span>)}</>
-                                                            : <>Smoothed distribution of written dimension sum (max 20). {currentWrittenSum > 0 && writtenSumPercentile != null && (<span className="ml-1 font-medium text-primary">{candidate.name} is at <span className="text-accent">{writtenSumPercentile}th percentile</span> (sum {currentWrittenSum.toFixed(1)}/20).</span>)}</>
-                                                        }
+                                                        {distributionMode === 'interview' && (
+                                                            <>
+                                                                Smoothed distribution of interview overall score (average across interviewers) for all{' '}
+                                                                {candidates.length} candidates.
+                                                                {currentOverall != null && overallPercentile != null && (
+                                                                    <span className="ml-1 font-medium text-primary">
+                                                                        {candidate.name} is at{' '}
+                                                                        <span className="text-accent">{overallPercentile}th percentile</span> (score{' '}
+                                                                        {currentOverall.toFixed(1)}).
+                                                                    </span>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                        {distributionMode === 'written' && (
+                                                            <>
+                                                                Smoothed distribution of written overall average (0–5) across all candidates.
+                                                                {currentWrittenAvg != null && writtenAvgPercentile != null && (
+                                                                    <span className="ml-1 font-medium text-primary">
+                                                                        {candidate.name} is at{' '}
+                                                                        <span className="text-accent">{writtenAvgPercentile}th percentile</span> (avg{' '}
+                                                                        {currentWrittenAvg.toFixed(2)}/5).
+                                                                    </span>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                        {distributionMode === 'empirical' && (
+                                                            <>
+                                                                Smoothed distribution of empirical standardized score for all {candidates.length} candidates.
+                                                                {currentEmpirical != null && empiricalPercentile != null && (
+                                                                    <span className="ml-1 font-medium text-primary">
+                                                                        {candidate.name} is at{' '}
+                                                                        <span className="text-accent">{empiricalPercentile}th percentile</span> (score{' '}
+                                                                        {currentEmpirical.toFixed(1)}).
+                                                                    </span>
+                                                                )}
+                                                            </>
+                                                        )}
                                                     </p>
 
                                                     {distributionMode === 'interview' && cohortOverallScores.length > 0 && (
@@ -1066,25 +1200,25 @@ export function DeliberationPage() {
                                                         </>
                                                     )}
 
-                                                    {distributionMode === 'written' && cohortWrittenSums.length > 0 && (
+                                                    {distributionMode === 'written' && cohortWrittenAverages.length > 0 && (
                                                         <>
                                                             <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">Density (KDE)</p>
                                                             <div className="h-52 mb-2" style={{ marginTop: 4 }}>
                                                                 <ResponsiveContainer width="100%" height="100%">
-                                                                    <AreaChart data={writtenSumKdeData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
+                                                                    <AreaChart data={writtenAvgKdeData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
                                                                         <defs>
-                                                                            <linearGradient id="writtenSumKdeFill" x1="0" y1="0" x2="0" y2="1">
+                                                                            <linearGradient id="writtenAvgKdeFill" x1="0" y1="0" x2="0" y2="1">
                                                                                 <stop offset="0%" stopColor="#059669" stopOpacity={0.4} />
                                                                                 <stop offset="100%" stopColor="#059669" stopOpacity={0} />
                                                                             </linearGradient>
                                                                         </defs>
                                                                         <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                                                        <XAxis dataKey="x" type="number" domain={[0, 20]} tick={{ fontSize: 10, fill: '#6B7280' }} />
+                                                                        <XAxis dataKey="x" type="number" domain={[0, 5]} tick={{ fontSize: 10, fill: '#6B7280' }} />
                                                                         <YAxis hide domain={[0, 1.15]} />
-                                                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => ['density', v != null ? v.toFixed(3) : '—']} labelFormatter={(l: unknown) => `Sum ${l}`} />
-                                                                        <Area type="monotone" dataKey="density" stroke="#059669" strokeWidth={2} fill="url(#writtenSumKdeFill)" />
-                                                                        {currentWrittenSum > 0 && (
-                                                                            <ReferenceLine x={currentWrittenSum} stroke="#dc2626" strokeWidth={2} strokeDasharray="4 2" label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }} />
+                                                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => ['density', v != null ? v.toFixed(3) : '—']} labelFormatter={(l: unknown) => `Avg ${l}`} />
+                                                                        <Area type="monotone" dataKey="density" stroke="#059669" strokeWidth={2} fill="url(#writtenAvgKdeFill)" />
+                                                                        {currentWrittenAvg != null && (
+                                                                            <ReferenceLine x={currentWrittenAvg} stroke="#dc2626" strokeWidth={2} strokeDasharray="4 2" label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }} />
                                                                         )}
                                                                     </AreaChart>
                                                                 </ResponsiveContainer>
@@ -1092,14 +1226,79 @@ export function DeliberationPage() {
                                                             <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">CDF</p>
                                                             <div className="h-52" style={{ marginTop: 4 }}>
                                                                 <ResponsiveContainer width="100%" height="100%">
-                                                                    <LineChart data={writtenSumCdfData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
+                                                                    <LineChart data={writtenAvgCdfData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
                                                                         <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                                                        <XAxis dataKey="x" type="number" domain={[0, 20]} tick={{ fontSize: 10, fill: '#6B7280' }} />
+                                                                        <XAxis dataKey="x" type="number" domain={[0, 5]} tick={{ fontSize: 10, fill: '#6B7280' }} />
                                                                         <YAxis domain={[0, 1]} tick={{ fontSize: 10, fill: '#6B7280' }} tickFormatter={(v) => `${Math.round(v * 100)}%`} />
                                                                         <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? `${(v * 100).toFixed(0)}%` : '—', 'CDF']} labelFormatter={(l: unknown) => `Sum ${l}`} />
                                                                         <Line type="monotone" dataKey="cdf" stroke="#059669" strokeWidth={2} dot={false} />
-                                                                        {currentWrittenSum > 0 && (
-                                                                            <ReferenceLine x={currentWrittenSum} stroke="#dc2626" strokeWidth={2} strokeDasharray="4 2" label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }} />
+                                                                        {currentWrittenAvg != null && (
+                                                                            <ReferenceLine x={currentWrittenAvg} stroke="#dc2626" strokeWidth={2} strokeDasharray="4 2" label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }} />
+                                                                        )}
+                                                                    </LineChart>
+                                                                </ResponsiveContainer>
+                                                            </div>
+                                                        </>
+                                                    )}
+
+                                                    {distributionMode === 'empirical' && cohortEmpiricalScores.length > 0 && (
+                                                        <>
+                                                            <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">Density (KDE)</p>
+                                                            <div className="h-52 mb-2" style={{ marginTop: 4 }}>
+                                                                <ResponsiveContainer width="100%" height="100%">
+                                                                    <AreaChart data={empiricalKdeData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
+                                                                        <defs>
+                                                                            <linearGradient id="empiricalKdeFill" x1="0" y1="0" x2="0" y2="1">
+                                                                                <stop offset="0%" stopColor="#f97316" stopOpacity={0.4} />
+                                                                                <stop offset="100%" stopColor="#f97316" stopOpacity={0} />
+                                                                            </linearGradient>
+                                                                        </defs>
+                                                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                        <XAxis dataKey="x" type="number" domain={[0, 10]} tick={{ fontSize: 10, fill: '#6B7280' }} />
+                                                                        <YAxis hide domain={[0, 1.15]} />
+                                                                        <Tooltip
+                                                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                                            formatter={(v: number | undefined) => ['density', v != null ? v.toFixed(3) : '—']}
+                                                                            labelFormatter={(l: unknown) => `Score ${l}`}
+                                                                        />
+                                                                        <Area type="monotone" dataKey="density" stroke="#f97316" strokeWidth={2} fill="url(#empiricalKdeFill)" />
+                                                                        {currentEmpirical != null && (
+                                                                            <ReferenceLine
+                                                                                x={currentEmpirical}
+                                                                                stroke="#dc2626"
+                                                                                strokeWidth={2}
+                                                                                strokeDasharray="4 2"
+                                                                                label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }}
+                                                                            />
+                                                                        )}
+                                                                    </AreaChart>
+                                                                </ResponsiveContainer>
+                                                            </div>
+                                                            <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">CDF</p>
+                                                            <div className="h-52" style={{ marginTop: 4 }}>
+                                                                <ResponsiveContainer width="100%" height="100%">
+                                                                    <LineChart data={empiricalCdfData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
+                                                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                        <XAxis dataKey="x" type="number" domain={[0, 10]} tick={{ fontSize: 10, fill: '#6B7280' }} />
+                                                                        <YAxis
+                                                                            domain={[0, 1]}
+                                                                            tick={{ fontSize: 10, fill: '#6B7280' }}
+                                                                            tickFormatter={(v) => `${Math.round(v * 100)}%`}
+                                                                        />
+                                                                        <Tooltip
+                                                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                                            formatter={(v: number | undefined) => [v != null ? `${(v * 100).toFixed(0)}%` : '—', 'CDF']}
+                                                                            labelFormatter={(l: unknown) => `Score ${l}`}
+                                                                        />
+                                                                        <Line type="monotone" dataKey="cdf" stroke="#f97316" strokeWidth={2} dot={false} />
+                                                                        {currentEmpirical != null && (
+                                                                            <ReferenceLine
+                                                                                x={currentEmpirical}
+                                                                                stroke="#dc2626"
+                                                                                strokeWidth={2}
+                                                                                strokeDasharray="4 2"
+                                                                                label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }}
+                                                                            />
                                                                         )}
                                                                     </LineChart>
                                                                 </ResponsiveContainer>
