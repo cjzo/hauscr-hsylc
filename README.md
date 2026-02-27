@@ -1,42 +1,28 @@
-# HSYLC Data Pipeline
+## HSYLC Deliberations Data Commands
 
-This repo contains scripts for preprocessing written applications and interview data, then uploading candidates into Supabase.
+All commands are run from this directory (`hauscr-hsylc/`).  
+Supabase credentials are read from `frontend/.env` (`SUPABASE_URL`, `SUPABASE_KEY`).
 
-## Processing Interviews and Written CSVs into Supabase
+### Update candidates from written applications
 
-### 1) Prepare input files
+Inputs:
+- `../sheets/Written.csv`
 
-- Written applications CSV should live at `sheets/written_new_sl.csv`.
-- Interview data lives inside the Excel workbook used by `scripts/preprocess.py` (default: `sheets/Example.xlsx`).
-
-If your files are named differently, update the script arguments or paths accordingly.
-
-### 2) Generate `parsed_candidates.json`
-
-Choose one of the flows below depending on what data you have.
-
-**A. Written-only CSV (no interviews yet)**
+Commands:
 
 ```bash
-python3 scripts/preprocess_written.py
+python3 preprocess_written.py
+python3 upload_candidates.py
 ```
 
-This reads `sheets/written_new_sl.csv` and writes `parsed_candidates.json` in the repo root.
+### Update interviews
 
-**B. Written + interviews (single Excel workbook)**
+Input:
+- `../sheets/Interviews.csv`
+
+Commands:
 
 ```bash
-python3 scripts/preprocess.py
+python3 upload_interviews.py --truncate
 ```
 
-This reads `sheets/Example.xlsx` (tabs: `Written - New SLs`, `Written - Past SLs`, `Interviews_Normalized`) and writes `parsed_candidates.json` in the repo root.
-
-### 3) Upload to Supabase
-
-Set your Supabase credentials and run the uploader:
-
-```bash
-SUPABASE_URL="..." SUPABASE_KEY="..." python3 scripts/upload_to_supabase.py
-```
-
-The uploader inserts rows into the `candidates` table in batches of 100 and ignores any keys that do not exist in the table schema.

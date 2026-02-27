@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useId, useLayoutEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { useConfirm } from '../components/ui/ConfirmModal';
 import {
-    User, Mail, GraduationCap, ChevronRight, ChevronLeft,
+    User, Mail, GraduationCap, ChevronRight, ChevronLeft, MapPin,
     ThumbsUp, ThumbsDown, Loader2, FileText, MessageSquare, Clock, BarChart2, RefreshCw
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -57,6 +58,121 @@ import { useAuth } from '../context/AuthContext';
 
 type DeliberationTab = 'seminar' | 'written' | 'interview' | 'visualizations';
 
+function ScoreTooltip({
+    label,
+    lines,
+    children,
+}: {
+    label: string;
+    lines: string[];
+    children: React.ReactNode;
+}) {
+    const id = useId();
+    const triggerRef = useRef<HTMLSpanElement | null>(null);
+    const [open, setOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
+    const [pos, setPos] = useState<{ left: number; top: number; width: number } | null>(null);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const recompute = useCallback(() => {
+        const el = triggerRef.current;
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        const desiredWidth = 280;
+        const padding = 8;
+        const maxLeft = Math.max(padding, window.innerWidth - desiredWidth - padding);
+        const left = Math.min(Math.max(padding, r.left), maxLeft);
+        const top = r.bottom + 8;
+        setPos({ left, top, width: desiredWidth });
+    }, []);
+
+    useLayoutEffect(() => {
+        if (!open) return;
+        recompute();
+        const onScroll = () => recompute();
+        const onResize = () => recompute();
+        window.addEventListener('scroll', onScroll, true);
+        window.addEventListener('resize', onResize);
+        return () => {
+            window.removeEventListener('scroll', onScroll, true);
+            window.removeEventListener('resize', onResize);
+        };
+    }, [open, recompute]);
+
+    return (
+        <>
+            <span
+                ref={triggerRef}
+                className="relative inline-flex items-center"
+                aria-describedby={open ? id : undefined}
+                onMouseEnter={() => setOpen(true)}
+                onMouseLeave={() => setOpen(false)}
+                onFocus={() => setOpen(true)}
+                onBlur={() => setOpen(false)}
+            >
+                {children}
+            </span>
+            {mounted && open && pos != null && createPortal(
+                <span
+                    id={id}
+                    role="tooltip"
+                    className="pointer-events-none fixed z-[9999] rounded-xl border border-border bg-white/90 p-3 text-xs text-secondary shadow-xl backdrop-blur-md dark:bg-surface/90"
+                    style={{ left: pos.left, top: pos.top, width: pos.width }}
+                >
+                    <span className="block text-[11px] font-semibold text-primary mb-1">{label}</span>
+                    <span className="block whitespace-pre-line leading-relaxed">
+                        {lines.map((l, i) => (i === 0 ? l : `\n${l}`)).join('')}
+                    </span>
+                </span>,
+                document.body
+            )}
+        </>
+    );
+}
+
+function PercentileMini({
+    percentileValue,
+    color,
+    label,
+}: {
+    percentileValue: number | null;
+    color: string;
+    label: string;
+}) {
+    if (percentileValue == null) return null;
+    const clamped = Math.max(0, Math.min(100, percentileValue));
+    const dotLeft = Math.max(2, Math.min(98, clamped));
+
+    return (
+        <ScoreTooltip
+            label={`${label} percentile`}
+            lines={[
+                `${clamped}th percentile vs current cohort (pending candidates).`,
+                'Higher is better.',
+            ]}
+        >
+            <span className="inline-flex items-center gap-2 shrink-0 tabular-nums">
+                <span className="text-[11px] font-semibold opacity-90" style={{ color }}>
+                    P{clamped}
+                </span>
+                <span className="relative h-2 w-24 rounded-full bg-surfaceHover overflow-hidden">
+                    <span
+                        className="absolute inset-y-0 left-0 opacity-25"
+                        style={{ width: `${clamped}%`, backgroundColor: color }}
+                    />
+                    <span
+                        className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-1 ring-black/10 dark:ring-white/10"
+                        style={{ left: `${dotLeft}%`, backgroundColor: color }}
+                    />
+                </span>
+            </span>
+        </ScoreTooltip>
+    );
+}
+
 export function DeliberationPage() {
     const [candidates, setCandidates] = useState<any[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -72,6 +188,11 @@ export function DeliberationPage() {
     const { role } = useAuth();
     const isAdmin = role === 'admin';
     const tabOrder: DeliberationTab[] = ['seminar', 'written', 'interview', 'visualizations'];
+    const COLOR_WRITTEN = '#8b5cf6'; // tailwind violet-500
+    const COLOR_OVERALL = '#10b981'; // tailwind emerald-500
+    const COLOR_EMPIRICAL = '#f97316'; // tailwind orange-500
+    const COLOR_CANDIDATE = '#dc2626'; // tailwind red-600
+    const INTERVIEWER_COLORS = [COLOR_OVERALL, COLOR_WRITTEN, '#d97706', COLOR_CANDIDATE];
 
     const formatClassYear = (input: string | null | undefined) => {
         if (!input) return 'Other';
@@ -176,79 +297,148 @@ export function DeliberationPage() {
             if (error) throw error;
 
             if (data && data.length > 0) {
-                const mappedData = data.map(cand => ({
-                    id: cand.id,
-                    name: cand.full_name || `${cand.first_name} ${cand.last_name}`,
-                    email: cand.email,
-                    school: cand.school,
-                    major: cand.major,
-                    year: cand.class_year,
-                    nationality: cand.nationality,
-                    candidateType: cand.candidate_type || 'New',
+                const mappedData = data.map(cand => {
+                    const toNum = (value: unknown): number | null => {
+                        if (value === null || value === undefined) return null;
+                        const n = typeof value === 'number' ? value : Number(value);
+                        return Number.isFinite(n) ? n : null;
+                    };
 
-                    seminarTitle: cand.seminar_title,
-                    seminarCategory: standardizeCategory(cand.seminar_category || cand.seminar_title),
-                    seminarDescription: cand.seminar_description || (cand.seminar_title?.includes('\n') ? cand.seminar_title : cand.seminar_title),
-                    finalProduct: cand.final_product,
-                    moreTopics: cand.more_topics,
+                    const interviews: any[] = Array.isArray((cand as any).interviews) ? (cand as any).interviews : [];
 
-                    interestReason: cand.interest_reason,
-                    teachingExp: cand.teaching_exp,
-                    advice: cand.advice,
-                    selfIntro: cand.self_intro,
+                    const interviewOverallVals = interviews
+                        .map((i: any) => toNum(i?.score_overall))
+                        .filter((v: number | null): v is number => v !== null);
+                    const interviewEmpiricalVals = interviews
+                        .map((i: any) => toNum(i?.score_empirical))
+                        .filter((v: number | null): v is number => v !== null);
 
-                    grader: cand.grader_name || 'Not Available',
-                    tier: cand.tier_level || 'N/A',
-                    sensitiveIssues: cand.sensitive_issues,
-                    flyFrom: cand.fly_from,
-                    flyTo: cand.fly_to,
-                    availability: cand.availability,
-                    scores: {
-                        writtenInterest: cand.written_score_interest || 0,
-                        writtenTeaching: cand.written_score_teaching || 0,
-                        writtenSeminar: cand.written_score_seminar || 0,
-                        writtenPersonal: cand.written_score_personal || 0,
+                    const interviewUnderstandingVals = interviews
+                        .map((i: any) => toNum(i?.score_understanding))
+                        .filter((v: number | null): v is number => v !== null);
+                    const interviewEnthusiasmVals = interviews
+                        .map((i: any) => toNum(i?.score_enthusiasm))
+                        .filter((v: number | null): v is number => v !== null);
+                    const interviewQualityVals = interviews
+                        .map((i: any) => toNum(i?.score_quality))
+                        .filter((v: number | null): v is number => v !== null);
+                    const interviewTeachingVals = interviews
+                        .map((i: any) => toNum(i?.score_teaching))
+                        .filter((v: number | null): v is number => v !== null);
+                    const interviewInterestVals = interviews
+                        .map((i: any) => toNum(i?.score_interest))
+                        .filter((v: number | null): v is number => v !== null);
 
-                        understanding: cand.score_understanding || 0,
-                        enthusiasm: cand.score_enthusiasm || 0,
-                        quality: cand.score_quality || 0,
-                        teaching: cand.score_teaching || 0,
-                        interestEngaging: cand.score_interest || 0,
-                        overall: cand.score_overall !== null && cand.score_overall !== undefined ? cand.score_overall : (() => {
-                            const s = (cand.interviews || []).map((i: any) => i.score_overall).filter((v: any) => typeof v === 'number');
-                            return s.length ? s.reduce((a: number, b: number) => a + b, 0) / s.length : 0;
-                        })(),
-                        empirical: (() => {
-                            if (typeof cand.score_empirical === 'number') return cand.score_empirical;
-                            const s = (cand.interviews || []).map((i: any) => i.score_empirical).filter((v: any) => typeof v === 'number');
-                            return s.length ? s.reduce((a: number, b: number) => a + b, 0) / s.length : null;
-                        })(),
-                    },
-                    interviewNotes: (cand.interviews || []).map((note: any) => ({
-                        interviewer: note.interviewer_name,
-                        notes_why_sl: note.notes_why_sl,
-                        notes_seminar: note.notes_seminar,
-                        notes_extracurricular: note.notes_extracurricular,
-                        notes_cross_cultural: note.notes_cross_cultural,
-                        notes_teach_me: note.notes_teach_me,
-                        notes_commitment: note.notes_commitment,
-                        notes_comments: note.notes_comments,
-                        availabilityAnswer: note.availability_answer,
-                        availabilityShenzhen: note.availability_shenzhen,
-                        availabilityShanghai: note.availability_shanghai,
-                        availabilityHangzhou: note.availability_hangzhou,
-                        availabilityBeijing: note.availability_beijing,
-                        flyFromInterview: note.fly_from_interview,
-                        flyToInterview: note.fly_to_interview,
-                        sensitiveFlag: note.sensitive_flag,
-                        score_enthusiasm: note.score_enthusiasm,
-                        score_quality: note.score_quality,
-                        score_teaching: note.score_teaching,
-                        score_interest: note.score_interest,
-                        score_overall: note.score_overall,
-                        score_empirical: note.score_empirical
-                    }))
-                }));
+                    const candOverall = toNum((cand as any).score_overall);
+                    const overallFromInterviews =
+                        interviewOverallVals.length > 0
+                            ? interviewOverallVals.reduce((a, b) => a + b, 0) / interviewOverallVals.length
+                            : 0;
+
+                    const candEmpirical = toNum((cand as any).score_empirical);
+                    const empiricalFromInterviews =
+                        interviewEmpiricalVals.length > 0
+                            ? interviewEmpiricalVals.reduce((a, b) => a + b, 0) / interviewEmpiricalVals.length
+                            : null;
+
+                    const candUnderstanding = toNum((cand as any).score_understanding);
+                    const understandingFromInterviews =
+                        interviewUnderstandingVals.length > 0
+                            ? interviewUnderstandingVals.reduce((a, b) => a + b, 0) / interviewUnderstandingVals.length
+                            : null;
+
+                    const candEnthusiasm = toNum((cand as any).score_enthusiasm);
+                    const enthusiasmFromInterviews =
+                        interviewEnthusiasmVals.length > 0
+                            ? interviewEnthusiasmVals.reduce((a, b) => a + b, 0) / interviewEnthusiasmVals.length
+                            : null;
+
+                    const candQuality = toNum((cand as any).score_quality);
+                    const qualityFromInterviews =
+                        interviewQualityVals.length > 0
+                            ? interviewQualityVals.reduce((a, b) => a + b, 0) / interviewQualityVals.length
+                            : null;
+
+                    const candTeaching = toNum((cand as any).score_teaching);
+                    const teachingFromInterviews =
+                        interviewTeachingVals.length > 0
+                            ? interviewTeachingVals.reduce((a, b) => a + b, 0) / interviewTeachingVals.length
+                            : null;
+
+                    const candInterest = toNum((cand as any).score_interest);
+                    const interestFromInterviews =
+                        interviewInterestVals.length > 0
+                            ? interviewInterestVals.reduce((a, b) => a + b, 0) / interviewInterestVals.length
+                            : null;
+
+                    return ({
+                        id: cand.id,
+                        name: cand.full_name || `${cand.first_name} ${cand.last_name}`,
+                        email: cand.email,
+                        school: cand.school,
+                        major: cand.major,
+                        year: cand.class_year,
+                        nationality: cand.nationality,
+                        candidateType: cand.candidate_type || 'New',
+
+                        seminarTitle: cand.seminar_title,
+                        seminarCategory: standardizeCategory(cand.seminar_category || cand.seminar_title),
+                        seminarDescription: cand.seminar_description || (cand.seminar_title?.includes('\n') ? cand.seminar_title : cand.seminar_title),
+                        finalProduct: cand.final_product,
+                        moreTopics: cand.more_topics,
+
+                        interestReason: cand.interest_reason,
+                        teachingExp: cand.teaching_exp,
+                        advice: cand.advice,
+                        selfIntro: cand.self_intro,
+
+                        grader: cand.grader_name || 'Not Available',
+                        tier: cand.tier_level || 'N/A',
+                        sensitiveIssues: cand.sensitive_issues,
+                        flyFrom: cand.fly_from,
+                        flyTo: cand.fly_to,
+                        availability: cand.availability,
+                        scores: {
+                            writtenInterest: toNum((cand as any).written_score_interest) ?? 0,
+                            writtenTeaching: toNum((cand as any).written_score_teaching) ?? 0,
+                            writtenSeminar: toNum((cand as any).written_score_seminar) ?? 0,
+                            writtenPersonal: toNum((cand as any).written_score_personal) ?? 0,
+
+                            understanding: (candUnderstanding ?? understandingFromInterviews ?? 0),
+                            enthusiasm: (candEnthusiasm ?? enthusiasmFromInterviews ?? 0),
+                            quality: (candQuality ?? qualityFromInterviews ?? 0),
+                            teaching: (candTeaching ?? teachingFromInterviews ?? 0),
+                            interestEngaging: (candInterest ?? interestFromInterviews ?? 0),
+                            overall: candOverall ?? overallFromInterviews,
+                            empirical: candEmpirical ?? empiricalFromInterviews,
+                        },
+                        interviewNotes: interviews.map((note: any) => ({
+                            interviewer: note.interviewer_name,
+                            notes_why_sl: note.notes_why_sl,
+                            notes_seminar: note.notes_seminar,
+                            notes_extracurricular: note.notes_extracurricular,
+                            notes_cross_cultural: note.notes_cross_cultural,
+                            notes_teach_me: note.notes_teach_me,
+                            notes_commitment: note.notes_commitment,
+                            notes_comments: note.notes_comments,
+                            availabilityAnswer: note.availability_answer,
+                            availabilityShenzhen: note.availability_shenzhen,
+                            availabilityShanghai: note.availability_shanghai,
+                            availabilityHangzhou: note.availability_hangzhou,
+                            availabilityBeijing: note.availability_beijing,
+                            flyFromInterview: note.fly_from_interview,
+                            flyToInterview: note.fly_to_interview,
+                            sensitiveFlag: note.sensitive_flag,
+                            score_understanding: toNum(note.score_understanding),
+                            score_enthusiasm: toNum(note.score_enthusiasm),
+                            score_quality: toNum(note.score_quality),
+                            score_teaching: toNum(note.score_teaching),
+                            score_interest: toNum(note.score_interest),
+                            score_overall: toNum(note.score_overall),
+                            score_empirical: toNum(note.score_empirical)
+                        }))
+                    });
+                });
                 setCandidates(mappedData);
                 if (preserveId) {
                     const idx = mappedData.findIndex(c => c.id === preserveId);
@@ -427,7 +617,7 @@ export function DeliberationPage() {
         );
     }
 
-    const renderProgressBar = (label: string, value: number, max: number = 10, colorClass: string = 'bg-accent') => (
+    const renderProgressBar = (label: string, value: number, max: number = 10, color: string = COLOR_OVERALL) => (
         <div className="mb-3 last:mb-0">
             <div className="flex justify-between text-xs mb-1">
                 <span className="text-secondary font-medium">{label}</span>
@@ -435,7 +625,8 @@ export function DeliberationPage() {
             </div>
             <div className="w-full bg-surfaceHover h-1.5 rounded-full overflow-hidden">
                 <motion.div
-                    className={`${colorClass} h-full`}
+                    className="h-full"
+                    style={{ backgroundColor: color }}
                     initial={{ width: 0 }}
                     animate={{ width: `${(value / max) * 100}%` }}
                     transition={{ type: 'spring', stiffness: 160, damping: 22 }}
@@ -484,11 +675,11 @@ export function DeliberationPage() {
         { name: 'Personal', score: candidate.scores.writtenPersonal ?? 0, fullMark: 5 },
     ];
     const interviewBarData = [
-        { name: 'Understanding', score: candidate.scores.understanding ?? 0, fullMark: 10 },
-        { name: 'Enthusiasm', score: candidate.scores.enthusiasm ?? 0, fullMark: 10 },
-        { name: 'Seminar Quality', score: candidate.scores.quality ?? 0, fullMark: 10 },
-        { name: 'Teaching', score: candidate.scores.teaching ?? 0, fullMark: 10 },
-        { name: 'Interest', score: candidate.scores.interestEngaging ?? 0, fullMark: 10 },
+        { name: 'Understanding', score: candidate.scores.understanding ?? 0, fullMark: 5 },
+        { name: 'Enthusiasm', score: candidate.scores.enthusiasm ?? 0, fullMark: 5 },
+        { name: 'Seminar Quality', score: candidate.scores.quality ?? 0, fullMark: 5 },
+        { name: 'Teaching', score: candidate.scores.teaching ?? 0, fullMark: 5 },
+        { name: 'Interest', score: candidate.scores.interestEngaging ?? 0, fullMark: 5 },
     ];
     const interviewNotes = candidate.interviewNotes || [];
     const multiInterviewerChartData = interviewNotes.length >= 2
@@ -502,8 +693,6 @@ export function DeliberationPage() {
             return point;
         })
         : [];
-
-    const INTERVIEWER_COLORS = ['#8b5cf6', '#059669', '#d97706', '#dc2626'];
 
     // Cohort distributions for percentile / PMF charts (all pending candidates)
     const cohortOverallScores = candidates
@@ -590,7 +779,7 @@ export function DeliberationPage() {
     };
 
     return (
-        <div className="h-full flex flex-col gap-6">
+        <div className="h-full min-h-0 flex flex-col gap-6">
             <div className="flex items-center justify-between shrink-0">
                 <div>
                     <h1 className="text-2xl font-bold text-primary tracking-tight">
@@ -619,7 +808,7 @@ export function DeliberationPage() {
                 </div>
             </div>
 
-            <div className="flex-1 relative overflow-hidden">
+            <div className="flex-1 min-h-0 relative overflow-hidden">
                 <AnimatePresence mode="wait" custom={direction}>
                     <motion.div
                         key={candidate.id}
@@ -629,9 +818,9 @@ export function DeliberationPage() {
                         animate="center"
                         exit="exit"
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                        className="h-full absolute inset-0 w-full"
+                        className="h-full absolute inset-0 w-full min-h-0"
                     >
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full pb-2">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full min-h-0 pb-2">
 
                             {/* Left Column: Candidate Profile & Standardized Scores */}
                             <AnimatePresence
@@ -645,7 +834,7 @@ export function DeliberationPage() {
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: -12 }}
                                         transition={{ type: 'spring', stiffness: 220, damping: 26 }}
-                                        className="lg:col-span-3 flex flex-col gap-6 h-full overflow-y-auto pr-1 relative"
+                                        className="lg:col-span-3 flex flex-col h-full min-h-0 relative overflow-visible"
                                     >
                                         {/* Collapse handle: attached to right edge of sidebar */}
                                         <button
@@ -659,21 +848,28 @@ export function DeliberationPage() {
                                         >
                                             <ChevronLeft className="w-3.5 h-3.5" />
                                         </button>
-                                    <Card className="flex flex-col shrink-0">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <div className="flex items-center gap-3">
-                                                <h2 className="text-2xl font-bold text-primary">{candidate.name}</h2>
-                                                <span className={`px-2 py-1 text-xs font-bold rounded-full ${candidate.candidateType === 'Returning' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'}`}>
-                                                    {candidate.candidateType}
-                                                </span>
-                                            </div>
-                                        </div>
+                                        <div className="flex flex-col gap-6 h-full min-h-0 overflow-y-auto overflow-x-visible pr-1">
+                                            <Card className="flex flex-col shrink-0">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center gap-3">
+                                                        <h2 className="text-2xl font-bold text-primary">{candidate.name}</h2>
+                                                        <span className={`px-2 py-1 text-xs font-bold rounded-full ${candidate.candidateType === 'Returning' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'}`}>
+                                                            {candidate.candidateType}
+                                                        </span>
+                                                    </div>
+                                                </div>
 
                                         <div className="space-y-2 mt-2">
                                             <div className="flex items-center text-sm text-secondary">
                                                 <GraduationCap className="w-4 h-4 mr-3 text-muted shrink-0" />
                                                 {candidate.school}, {formatClassYear(candidate.year)}
                                             </div>
+                                            {candidate.nationality && (
+                                                <div className="flex items-center text-sm text-secondary">
+                                                    <MapPin className="w-4 h-4 mr-3 text-muted shrink-0" />
+                                                    <span className="truncate">From {candidate.nationality}</span>
+                                                </div>
+                                            )}
                                             <div className="flex items-center text-sm text-secondary">
                                                 <Mail className="w-4 h-4 mr-3 text-muted shrink-0" />
                                                 <span className="truncate">{candidate.email}</span>
@@ -711,26 +907,42 @@ export function DeliberationPage() {
                                         )}
 
                                         {/* Removed Decision Buttons from here */}
-                                    </Card>
+                                            </Card>
 
-                                    <Card className="flex-1 flex flex-col mb-4">
+                                            <Card className="flex-1 flex flex-col mb-4">
                                         <div className="mb-4 shrink-0">
-                                            <p className="text-[11px] font-semibold text-muted uppercase tracking-wider">
-                                                Standardized Scores
-                                            </p>
+                                            <div className="flex items-center gap-3">
+                                                <span className="block flex-1 border-t border-border" aria-hidden="true" />
+                                                <p className="text-[11px] font-semibold text-muted uppercase tracking-wider whitespace-nowrap">
+                                                    Standardized Scores
+                                                </p>
+                                                <span className="block flex-1 border-t border-border" aria-hidden="true" />
+                                            </div>
 
                                             <div className="mt-2 grid grid-cols-1 gap-3">
                                                 {/* Overall standardized (interview-based) */}
                                                 <div>
-                                                    <p className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-0.5">
-                                                        Overall standardized
-                                                    </p>
-                                                    <div className="flex items-baseline gap-2">
-                                                        <span className="text-3xl font-semibold text-primary">
-                                                            {overallStandardized != null ? overallStandardized.toFixed(1) : '—'}
-                                                        </span>
-                                                        <span className="text-xs text-secondary">
-                                                            Interview overall (avg across interviews, 0–10)
+                                                    <div className="mb-0.5">
+                                                        <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Overall</span>
+                                                    </div>
+                                                    <div className="flex items-baseline w-full gap-2">
+                                                        <div className="flex items-baseline gap-2">
+                                                            <ScoreTooltip
+                                                                label="Overall"
+                                                                lines={[
+                                                                    'Average standardized overall score across all interviews for this candidate.',
+                                                                    'Standardized by interviewer.',
+                                                                    'Scale: 0–10.',
+                                                                ]}
+                                                            >
+                                                                <span className="text-3xl font-semibold text-primary">
+                                                                    {overallStandardized != null ? overallStandardized.toFixed(1) : '—'}
+                                                                </span>
+                                                            </ScoreTooltip>
+                                                            <span className="text-xs text-secondary">/ 10</span>
+                                                        </div>
+                                                        <span className="ml-auto">
+                                                            <PercentileMini percentileValue={overallPercentile} color={COLOR_OVERALL} label="Overall" />
                                                         </span>
                                                     </div>
                                                 </div>
@@ -738,18 +950,31 @@ export function DeliberationPage() {
                                                 {/* Empirical standardized score */}
                                                 {typeof candidate.scores.empirical === 'number' && (
                                                     <div>
-                                                        <p className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-0.5">
-                                                            Empirical overall
-                                                        </p>
-                                                        <div className="flex items-baseline gap-2">
-                                                            <span className="text-3xl font-semibold text-primary">
-                                                                {candidate.scores.empirical.toFixed(1)}
-                                                            </span>
-                                                            <span
-                                                                className="text-xs text-secondary"
-                                                                title="Empirical score combines written scores, interview scores, and overall rating: ((1/6)*(written1 + written2) + (1/3)*overall + (1/12)*(interview1 + interview2 + interview3 + interview4)) * 3/2."
-                                                            >
-                                                                Standardized composite
+                                                        <div className="mb-0.5">
+                                                            <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Empirical</span>
+                                                        </div>
+                                                        <div className="flex items-baseline w-full gap-2">
+                                                            <div className="flex items-baseline gap-2">
+                                                                <ScoreTooltip
+                                                                    label="Empirical"
+                                                                    lines={[
+                                                                        'Weighted standardized metric combining written + interview + overall into one score.',
+                                                                        'Standardized by interviewer.',
+                                                                        'Scale: 0–10.',
+                                                                    ]}
+                                                                >
+                                                                    <span className="text-3xl font-semibold text-primary">
+                                                                        {candidate.scores.empirical.toFixed(1)}
+                                                                    </span>
+                                                                </ScoreTooltip>
+                                                                <span className="text-xs text-secondary">/ 10</span>
+                                                            </div>
+                                                            <span className="ml-auto">
+                                                                <PercentileMini
+                                                                    percentileValue={empiricalPercentile}
+                                                                    color={COLOR_EMPIRICAL}
+                                                                    label="Empirical"
+                                                                />
                                                             </span>
                                                         </div>
                                                     </div>
@@ -758,14 +983,32 @@ export function DeliberationPage() {
                                                 {/* Written overall (average of dimensions) */}
                                                 {hasWrittenScores && (
                                                     <div>
-                                                        <p className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-0.5">
-                                                            Written overall
-                                                        </p>
-                                                        <div className="flex items-baseline gap-2">
-                                                            <span className="text-3xl font-semibold text-primary">
-                                                                {writtenOverall != null ? writtenOverall.toFixed(2) : '—'}
+                                                        <div className="mb-0.5">
+                                                            <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Written</span>
+                                                        </div>
+                                                        <div className="flex items-baseline w-full gap-2">
+                                                            <div className="flex items-baseline gap-2">
+                                                                <ScoreTooltip
+                                                                    label="Written"
+                                                                    lines={[
+                                                                        'Average of the 4 written scores (interest, teaching, seminar, personal).',
+                                                                        'Standardized across the cohort.',
+                                                                        'Scale: 0–5.',
+                                                                    ]}
+                                                                >
+                                                                    <span className="text-3xl font-semibold text-primary">
+                                                                        {writtenOverall != null ? writtenOverall.toFixed(2) : '—'}
+                                                                    </span>
+                                                                </ScoreTooltip>
+                                                                <span className="text-xs text-secondary">/ 5</span>
+                                                            </div>
+                                                            <span className="ml-auto">
+                                                                <PercentileMini
+                                                                    percentileValue={writtenAvgPercentile}
+                                                                    color={COLOR_WRITTEN}
+                                                                    label="Written"
+                                                                />
                                                             </span>
-                                                            <span className="text-xs text-secondary">Average of written dimensions (0–5)</span>
                                                         </div>
                                                     </div>
                                                 )}
@@ -774,10 +1017,10 @@ export function DeliberationPage() {
 
                                         <div className="space-y-1 mb-4">
                                             <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Written Scores (out of 5)</p>
-                                            {renderProgressBar('Interest', candidate.scores.writtenInterest, 5, 'bg-violet-500')}
-                                            {renderProgressBar('Teaching', candidate.scores.writtenTeaching, 5, 'bg-violet-500')}
-                                            {renderProgressBar('Seminar', candidate.scores.writtenSeminar, 5, 'bg-violet-500')}
-                                            {renderProgressBar('Personal', candidate.scores.writtenPersonal, 5, 'bg-violet-500')}
+                                            {renderProgressBar('Interest', candidate.scores.writtenInterest, 5, COLOR_WRITTEN)}
+                                            {renderProgressBar('Teaching', candidate.scores.writtenTeaching, 5, COLOR_WRITTEN)}
+                                            {renderProgressBar('Seminar', candidate.scores.writtenSeminar, 5, COLOR_WRITTEN)}
+                                            {renderProgressBar('Personal', candidate.scores.writtenPersonal, 5, COLOR_WRITTEN)}
 
                                             <div className="mt-3 pt-3 border-t border-border">
                                                 <p className="text-xs font-semibold text-muted mb-1">Graded By: {candidate.grader}</p>
@@ -785,14 +1028,15 @@ export function DeliberationPage() {
                                         </div>
 
                                         <div className="space-y-1 mb-2">
-                                            <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Interview Scores (out of 10)</p>
-                                            {renderProgressBar('Understanding', candidate.scores.understanding ?? 0, 10, 'bg-emerald-500')}
-                                            {renderProgressBar('Enthusiasm', candidate.scores.enthusiasm ?? 0, 10, 'bg-emerald-500')}
-                                            {renderProgressBar('Seminar Quality', candidate.scores.quality ?? 0, 10, 'bg-emerald-500')}
-                                            {renderProgressBar('Teaching', candidate.scores.teaching ?? 0, 10, 'bg-emerald-500')}
-                                            {renderProgressBar('Extracurriculars / Interest', candidate.scores.interestEngaging ?? 0, 10, 'bg-emerald-500')}
+                                            <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Interview Scores (out of 5)</p>
+                                            {renderProgressBar('Understanding', candidate.scores.understanding ?? 0, 5, COLOR_OVERALL)}
+                                            {renderProgressBar('Enthusiasm', candidate.scores.enthusiasm ?? 0, 5, COLOR_OVERALL)}
+                                            {renderProgressBar('Seminar Quality', candidate.scores.quality ?? 0, 5, COLOR_OVERALL)}
+                                            {renderProgressBar('Teaching', candidate.scores.teaching ?? 0, 5, COLOR_OVERALL)}
+                                            {renderProgressBar('Extracurriculars / Interest', candidate.scores.interestEngaging ?? 0, 5, COLOR_OVERALL)}
                                         </div>
-                                    </Card>
+                                            </Card>
+                                        </div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -848,7 +1092,7 @@ export function DeliberationPage() {
                                 </div>
 
                                 {/* Tab Content Area (Scrollable) */}
-                                <div className="flex-1 relative overflow-hidden">
+                                <div className="flex-1 min-h-0 relative overflow-hidden">
                                     <AnimatePresence mode="wait" custom={tabDirection}>
                                         <motion.div
                                             key={activeTab}
@@ -858,7 +1102,7 @@ export function DeliberationPage() {
                                             animate="center"
                                             exit="exit"
                                             transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-                                            className="h-full overflow-y-auto p-6 md:p-8"
+                                            className="h-full min-h-0 overflow-y-auto p-6 md:p-8"
                                         >
                                             {activeTab === 'seminar' && (
                                                 <div className="space-y-8">
@@ -1012,13 +1256,13 @@ export function DeliberationPage() {
                                                                         )}
                                                                         {note.flyFromInterview && (
                                                                             <p className="text-xs text-secondary mb-1">
-                                                                                Fly from (interview):{' '}
+                                                                                Fly from:{' '}
                                                                                 <span className="font-medium text-primary">{note.flyFromInterview}</span>
                                                                             </p>
                                                                         )}
                                                                         {note.flyToInterview && (
                                                                             <p className="text-xs text-secondary">
-                                                                                Fly to (interview):{' '}
+                                                                                Fly to:{' '}
                                                                                 <span className="font-medium text-primary">{note.flyToInterview}</span>
                                                                             </p>
                                                                         )}
@@ -1038,8 +1282,8 @@ export function DeliberationPage() {
 
                                             {activeTab === 'visualizations' && (
                                         <div className="space-y-10">
-                                            {/* Written vs Interview summary */}
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {/* Written vs Interview vs Empirical summary */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                                 <motion.div
                                                     initial={{ opacity: 0, y: 8 }}
                                                     animate={{ opacity: 1, y: 0 }}
@@ -1051,10 +1295,14 @@ export function DeliberationPage() {
                                                         <span className="text-2xl font-bold text-primary">{writtenOverall != null ? writtenOverall.toFixed(2) : '—'}</span>
                                                         <span className="text-sm text-secondary">/ 5</span>
                                                     </div>
+                                                    <p className="mt-1 text-xs text-secondary">
+                                                        Percentile: {writtenAvgPercentile != null ? `${writtenAvgPercentile}th` : '—'}
+                                                    </p>
                                                     {hasWrittenScores && (
                                                         <div className="mt-2 h-2 w-full bg-surfaceHover rounded-full overflow-hidden">
                                                             <motion.div
-                                                                className="h-full bg-violet-500 rounded-full"
+                                                                className="h-full rounded-full"
+                                                                style={{ backgroundColor: COLOR_WRITTEN }}
                                                                 initial={{ width: 0 }}
                                                                 animate={{ width: `${((writtenOverall ?? 0) / 5) * 100}%` }}
                                                                 transition={{ type: 'spring', stiffness: 160, damping: 22 }}
@@ -1073,12 +1321,42 @@ export function DeliberationPage() {
                                                         <span className="text-2xl font-bold text-primary">{interviewOverallAvg != null ? interviewOverallAvg.toFixed(2) : '—'}</span>
                                                         <span className="text-sm text-secondary">/ 10</span>
                                                     </div>
+                                                    <p className="mt-1 text-xs text-secondary">
+                                                        Percentile: {overallPercentile != null ? `${overallPercentile}th` : '—'}
+                                                    </p>
                                                     {hasInterviewOverall && (
                                                         <div className="mt-2 h-2 w-full bg-surfaceHover rounded-full overflow-hidden">
                                                             <motion.div
-                                                                className="h-full bg-emerald-500 rounded-full"
+                                                                className="h-full rounded-full"
+                                                                style={{ backgroundColor: COLOR_OVERALL }}
                                                                 initial={{ width: 0 }}
                                                                 animate={{ width: `${((interviewOverallAvg ?? 0) / 10) * 100}%` }}
+                                                                transition={{ type: 'spring', stiffness: 160, damping: 22 }}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </motion.div>
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 8 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.1 }}
+                                                    className="p-4 rounded-xl border border-border bg-surface/50 dark:bg-surfaceHover/30"
+                                                >
+                                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Empirical (overall)</p>
+                                                    <div className="flex items-baseline gap-2">
+                                                        <span className="text-2xl font-bold text-primary">{currentEmpirical != null ? currentEmpirical.toFixed(1) : '—'}</span>
+                                                        <span className="text-sm text-secondary">/ 10</span>
+                                                    </div>
+                                                    <p className="mt-1 text-xs text-secondary">
+                                                        Percentile: {empiricalPercentile != null ? `${empiricalPercentile}th` : '—'}
+                                                    </p>
+                                                    {currentEmpirical != null && (
+                                                        <div className="mt-2 h-2 w-full bg-surfaceHover rounded-full overflow-hidden">
+                                                            <motion.div
+                                                                className="h-full rounded-full"
+                                                                style={{ backgroundColor: COLOR_EMPIRICAL }}
+                                                                initial={{ width: 0 }}
+                                                                animate={{ width: `${(currentEmpirical / 10) * 100}%` }}
                                                                 transition={{ type: 'spring', stiffness: 160, damping: 22 }}
                                                             />
                                                         </div>
@@ -1099,21 +1377,24 @@ export function DeliberationPage() {
                                                             <button
                                                                 type="button"
                                                                 onClick={() => setDistributionMode('written')}
-                                                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'written' ? 'bg-accent text-white' : 'text-secondary hover:text-primary'}`}
+                                                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'written' ? 'text-white' : 'text-secondary hover:text-primary'}`}
+                                                                style={distributionMode === 'written' ? { backgroundColor: COLOR_WRITTEN } : undefined}
                                                             >
                                                                 Written (avg)
                                                             </button>
                                                             <button
                                                                 type="button"
                                                                 onClick={() => setDistributionMode('interview')}
-                                                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'interview' ? 'bg-accent text-white' : 'text-secondary hover:text-primary'}`}
+                                                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'interview' ? 'text-white' : 'text-secondary hover:text-primary'}`}
+                                                                style={distributionMode === 'interview' ? { backgroundColor: COLOR_OVERALL } : undefined}
                                                             >
                                                                 Interview (avg overall)
                                                             </button>
                                                             <button
                                                                 type="button"
                                                                 onClick={() => setDistributionMode('empirical')}
-                                                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'empirical' ? 'bg-accent text-white' : 'text-secondary hover:text-primary'}`}
+                                                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'empirical' ? 'text-white' : 'text-secondary hover:text-primary'}`}
+                                                                style={distributionMode === 'empirical' ? { backgroundColor: COLOR_EMPIRICAL } : undefined}
                                                             >
                                                                 Empirical overall
                                                             </button>
@@ -1127,7 +1408,7 @@ export function DeliberationPage() {
                                                                 {currentOverall != null && overallPercentile != null && (
                                                                     <span className="ml-1 font-medium text-primary">
                                                                         {candidate.name} is at{' '}
-                                                                        <span className="text-accent">{overallPercentile}th percentile</span> (score{' '}
+                                                                        <span style={{ color: COLOR_OVERALL }}>{overallPercentile}th percentile</span> (score{' '}
                                                                         {currentOverall.toFixed(1)}).
                                                                     </span>
                                                                 )}
@@ -1139,7 +1420,7 @@ export function DeliberationPage() {
                                                                 {currentWrittenAvg != null && writtenAvgPercentile != null && (
                                                                     <span className="ml-1 font-medium text-primary">
                                                                         {candidate.name} is at{' '}
-                                                                        <span className="text-accent">{writtenAvgPercentile}th percentile</span> (avg{' '}
+                                                                        <span style={{ color: COLOR_WRITTEN }}>{writtenAvgPercentile}th percentile</span> (avg{' '}
                                                                         {currentWrittenAvg.toFixed(2)}/5).
                                                                     </span>
                                                                 )}
@@ -1151,7 +1432,7 @@ export function DeliberationPage() {
                                                                 {currentEmpirical != null && empiricalPercentile != null && (
                                                                     <span className="ml-1 font-medium text-primary">
                                                                         {candidate.name} is at{' '}
-                                                                        <span className="text-accent">{empiricalPercentile}th percentile</span> (score{' '}
+                                                                        <span style={{ color: COLOR_EMPIRICAL }}>{empiricalPercentile}th percentile</span> (score{' '}
                                                                         {currentEmpirical.toFixed(1)}).
                                                                     </span>
                                                                 )}
@@ -1167,17 +1448,17 @@ export function DeliberationPage() {
                                                                     <AreaChart data={overallKdeData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
                                                                         <defs>
                                                                             <linearGradient id="overallKdeFill" x1="0" y1="0" x2="0" y2="1">
-                                                                                <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.4} />
-                                                                                <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
+                                                                                <stop offset="0%" stopColor={COLOR_OVERALL} stopOpacity={0.4} />
+                                                                                <stop offset="100%" stopColor={COLOR_OVERALL} stopOpacity={0} />
                                                                             </linearGradient>
                                                                         </defs>
                                                                         <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                                                                         <XAxis dataKey="x" type="number" domain={[0, 10]} tick={{ fontSize: 10, fill: '#6B7280' }} />
                                                                         <YAxis hide domain={[0, 1.15]} />
                                                                         <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => ['density', v != null ? v.toFixed(3) : '—']} labelFormatter={(l: unknown) => `Score ${l}`} />
-                                                                        <Area type="monotone" dataKey="density" stroke="#8b5cf6" strokeWidth={2} fill="url(#overallKdeFill)" />
+                                                                        <Area type="monotone" dataKey="density" stroke={COLOR_OVERALL} strokeWidth={2} fill="url(#overallKdeFill)" />
                                                                         {typeof currentOverall === 'number' && (
-                                                                            <ReferenceLine x={currentOverall} stroke="#dc2626" strokeWidth={2} strokeDasharray="4 2" label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }} />
+                                                                            <ReferenceLine x={currentOverall} stroke={COLOR_CANDIDATE} strokeWidth={2} strokeDasharray="4 2" label={{ value: 'Candidate', position: 'top', fill: COLOR_CANDIDATE, fontSize: 11 }} />
                                                                         )}
                                                                     </AreaChart>
                                                                 </ResponsiveContainer>
@@ -1190,9 +1471,9 @@ export function DeliberationPage() {
                                                                         <XAxis dataKey="x" type="number" domain={[0, 10]} tick={{ fontSize: 10, fill: '#6B7280' }} />
                                                                         <YAxis domain={[0, 1]} tick={{ fontSize: 10, fill: '#6B7280' }} tickFormatter={(v) => `${Math.round(v * 100)}%`} />
                                                                         <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? `${(v * 100).toFixed(0)}%` : '—', 'CDF']} labelFormatter={(l: unknown) => `Score ${l}`} />
-                                                                        <Line type="monotone" dataKey="cdf" stroke="#8b5cf6" strokeWidth={2} dot={false} />
+                                                                        <Line type="monotone" dataKey="cdf" stroke={COLOR_OVERALL} strokeWidth={2} dot={false} />
                                                                         {typeof currentOverall === 'number' && (
-                                                                            <ReferenceLine x={currentOverall} stroke="#dc2626" strokeWidth={2} strokeDasharray="4 2" label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }} />
+                                                                            <ReferenceLine x={currentOverall} stroke={COLOR_CANDIDATE} strokeWidth={2} strokeDasharray="4 2" label={{ value: 'Candidate', position: 'top', fill: COLOR_CANDIDATE, fontSize: 11 }} />
                                                                         )}
                                                                     </LineChart>
                                                                 </ResponsiveContainer>
@@ -1208,17 +1489,17 @@ export function DeliberationPage() {
                                                                     <AreaChart data={writtenAvgKdeData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
                                                                         <defs>
                                                                             <linearGradient id="writtenAvgKdeFill" x1="0" y1="0" x2="0" y2="1">
-                                                                                <stop offset="0%" stopColor="#059669" stopOpacity={0.4} />
-                                                                                <stop offset="100%" stopColor="#059669" stopOpacity={0} />
+                                                                                <stop offset="0%" stopColor={COLOR_WRITTEN} stopOpacity={0.4} />
+                                                                                <stop offset="100%" stopColor={COLOR_WRITTEN} stopOpacity={0} />
                                                                             </linearGradient>
                                                                         </defs>
                                                                         <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                                                                         <XAxis dataKey="x" type="number" domain={[0, 5]} tick={{ fontSize: 10, fill: '#6B7280' }} />
                                                                         <YAxis hide domain={[0, 1.15]} />
                                                                         <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => ['density', v != null ? v.toFixed(3) : '—']} labelFormatter={(l: unknown) => `Avg ${l}`} />
-                                                                        <Area type="monotone" dataKey="density" stroke="#059669" strokeWidth={2} fill="url(#writtenAvgKdeFill)" />
+                                                                        <Area type="monotone" dataKey="density" stroke={COLOR_WRITTEN} strokeWidth={2} fill="url(#writtenAvgKdeFill)" />
                                                                         {currentWrittenAvg != null && (
-                                                                            <ReferenceLine x={currentWrittenAvg} stroke="#dc2626" strokeWidth={2} strokeDasharray="4 2" label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }} />
+                                                                            <ReferenceLine x={currentWrittenAvg} stroke={COLOR_CANDIDATE} strokeWidth={2} strokeDasharray="4 2" label={{ value: 'Candidate', position: 'top', fill: COLOR_CANDIDATE, fontSize: 11 }} />
                                                                         )}
                                                                     </AreaChart>
                                                                 </ResponsiveContainer>
@@ -1231,9 +1512,9 @@ export function DeliberationPage() {
                                                                         <XAxis dataKey="x" type="number" domain={[0, 5]} tick={{ fontSize: 10, fill: '#6B7280' }} />
                                                                         <YAxis domain={[0, 1]} tick={{ fontSize: 10, fill: '#6B7280' }} tickFormatter={(v) => `${Math.round(v * 100)}%`} />
                                                                         <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? `${(v * 100).toFixed(0)}%` : '—', 'CDF']} labelFormatter={(l: unknown) => `Sum ${l}`} />
-                                                                        <Line type="monotone" dataKey="cdf" stroke="#059669" strokeWidth={2} dot={false} />
+                                                                        <Line type="monotone" dataKey="cdf" stroke={COLOR_WRITTEN} strokeWidth={2} dot={false} />
                                                                         {currentWrittenAvg != null && (
-                                                                            <ReferenceLine x={currentWrittenAvg} stroke="#dc2626" strokeWidth={2} strokeDasharray="4 2" label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }} />
+                                                                            <ReferenceLine x={currentWrittenAvg} stroke={COLOR_CANDIDATE} strokeWidth={2} strokeDasharray="4 2" label={{ value: 'Candidate', position: 'top', fill: COLOR_CANDIDATE, fontSize: 11 }} />
                                                                         )}
                                                                     </LineChart>
                                                                 </ResponsiveContainer>
@@ -1249,8 +1530,8 @@ export function DeliberationPage() {
                                                                     <AreaChart data={empiricalKdeData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
                                                                         <defs>
                                                                             <linearGradient id="empiricalKdeFill" x1="0" y1="0" x2="0" y2="1">
-                                                                                <stop offset="0%" stopColor="#f97316" stopOpacity={0.4} />
-                                                                                <stop offset="100%" stopColor="#f97316" stopOpacity={0} />
+                                                                                <stop offset="0%" stopColor={COLOR_EMPIRICAL} stopOpacity={0.4} />
+                                                                                <stop offset="100%" stopColor={COLOR_EMPIRICAL} stopOpacity={0} />
                                                                             </linearGradient>
                                                                         </defs>
                                                                         <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
@@ -1261,14 +1542,14 @@ export function DeliberationPage() {
                                                                             formatter={(v: number | undefined) => ['density', v != null ? v.toFixed(3) : '—']}
                                                                             labelFormatter={(l: unknown) => `Score ${l}`}
                                                                         />
-                                                                        <Area type="monotone" dataKey="density" stroke="#f97316" strokeWidth={2} fill="url(#empiricalKdeFill)" />
+                                                                        <Area type="monotone" dataKey="density" stroke={COLOR_EMPIRICAL} strokeWidth={2} fill="url(#empiricalKdeFill)" />
                                                                         {currentEmpirical != null && (
                                                                             <ReferenceLine
                                                                                 x={currentEmpirical}
-                                                                                stroke="#dc2626"
+                                                                                stroke={COLOR_CANDIDATE}
                                                                                 strokeWidth={2}
                                                                                 strokeDasharray="4 2"
-                                                                                label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }}
+                                                                                label={{ value: 'Candidate', position: 'top', fill: COLOR_CANDIDATE, fontSize: 11 }}
                                                                             />
                                                                         )}
                                                                     </AreaChart>
@@ -1290,14 +1571,14 @@ export function DeliberationPage() {
                                                                             formatter={(v: number | undefined) => [v != null ? `${(v * 100).toFixed(0)}%` : '—', 'CDF']}
                                                                             labelFormatter={(l: unknown) => `Score ${l}`}
                                                                         />
-                                                                        <Line type="monotone" dataKey="cdf" stroke="#f97316" strokeWidth={2} dot={false} />
+                                                                        <Line type="monotone" dataKey="cdf" stroke={COLOR_EMPIRICAL} strokeWidth={2} dot={false} />
                                                                         {currentEmpirical != null && (
                                                                             <ReferenceLine
                                                                                 x={currentEmpirical}
-                                                                                stroke="#dc2626"
+                                                                                stroke={COLOR_CANDIDATE}
                                                                                 strokeWidth={2}
                                                                                 strokeDasharray="4 2"
-                                                                                label={{ value: 'You', position: 'top', fill: '#dc2626', fontSize: 11 }}
+                                                                                label={{ value: 'Candidate', position: 'top', fill: COLOR_CANDIDATE, fontSize: 11 }}
                                                                             />
                                                                         )}
                                                                     </LineChart>
@@ -1323,7 +1604,7 @@ export function DeliberationPage() {
                                                                 <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 11, fill: '#6B7280' }} />
                                                                 <YAxis type="category" dataKey="name" width={56} tick={{ fontSize: 11, fill: '#374151' }} />
                                                                 <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? `${v.toFixed(1)} / 5` : '—', 'Score']} />
-                                                                <Bar dataKey="score" radius={[0, 4, 4, 0]} fill="#8b5cf6" />
+                                                                <Bar dataKey="score" radius={[0, 4, 4, 0]} fill={COLOR_WRITTEN} />
                                                             </BarChart>
                                                         </ResponsiveContainer>
                                                     </div>
@@ -1337,15 +1618,15 @@ export function DeliberationPage() {
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.1 }}
                                                 >
-                                                    <h3 className="text-sm font-semibold text-primary mb-3">Interview dimensions — average (out of 10)</h3>
+                                                    <h3 className="text-sm font-semibold text-primary mb-3">Interview dimensions — average (out of 5)</h3>
                                                     <div className="h-64">
                                                         <ResponsiveContainer width="100%" height="100%">
                                                             <BarChart data={interviewBarData} layout="vertical" margin={{ top: 14, right: 16, left: 80, bottom: 4 }}>
                                                                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                                                <XAxis type="number" domain={[0, 10]} tick={{ fontSize: 11, fill: '#6B7280' }} />
+                                                                <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 11, fill: '#6B7280' }} />
                                                                 <YAxis type="category" dataKey="name" width={76} tick={{ fontSize: 11, fill: '#374151' }} />
-                                                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? `${v.toFixed(1)} / 10` : '—', 'Score']} />
-                                                                <Bar dataKey="score" radius={[0, 4, 4, 0]} fill="#059669" />
+                                                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? `${v.toFixed(1)} / 5` : '—', 'Score']} />
+                                                                <Bar dataKey="score" radius={[0, 4, 4, 0]} fill={COLOR_OVERALL} />
                                                             </BarChart>
                                                         </ResponsiveContainer>
                                                     </div>
