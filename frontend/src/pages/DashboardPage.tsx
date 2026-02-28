@@ -1,4 +1,5 @@
 import { Card } from '../components/ui/Card';
+import { Select } from '../components/ui/Select';
 import { Users, CheckCircle2, Clock, XCircle, TrendingUp, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
     BarChart,
@@ -21,15 +22,15 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { standardizeCategory } from '../utils/categories';
 
-const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#f43f5e', '#14b8a6', '#f97316'];
+const COLORS = ['#2563eb', '#16a34a', '#d97706', '#9333ea', '#db2777', '#0891b2', '#ca8a04', '#475569'];
 
 export function DashboardPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [summaryStats, setSummaryStats] = useState([
-        { label: 'Total Applicants', value: 0, trend: '', icon: Users, color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
-        { label: 'Accepted', value: 0, trend: '', icon: CheckCircle2, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
-        { label: 'Waitlisted', value: 0, trend: '', icon: Clock, color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
-        { label: 'Rejected', value: 0, trend: '', icon: XCircle, color: 'text-rose-500', bgColor: 'bg-rose-500/10' },
+        { label: 'Total Applicants', value: 0, trend: '', icon: Users, color: 'text-primary', bgColor: 'bg-surfaceHover' },
+        { label: 'Accepted', value: 0, trend: '', icon: CheckCircle2, color: 'text-primary', bgColor: 'bg-surfaceHover' },
+        { label: 'Waitlisted', value: 0, trend: '', icon: Clock, color: 'text-primary', bgColor: 'bg-surfaceHover' },
+        { label: 'Rejected', value: 0, trend: '', icon: XCircle, color: 'text-primary', bgColor: 'bg-surfaceHover' },
     ]);
     const [seminarDist, setSeminarDist] = useState<{ name: string, value: number }[]>([]);
     const [classYearDist, setClassYearDist] = useState<{ name: string, applicants: number }[]>([]);
@@ -73,10 +74,10 @@ export function DashboardPage() {
                     setCohortFilter(accepted > 0 ? 'accepted' : 'all');
 
                     setSummaryStats([
-                        { label: 'Total Applicants', value: total, trend: '', icon: Users, color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
-                        { label: 'Accepted', value: accepted, trend: '', icon: CheckCircle2, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
-                        { label: 'Waitlisted', value: waitlisted, trend: '', icon: Clock, color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
-                        { label: 'Rejected', value: rejected, trend: '', icon: XCircle, color: 'text-rose-500', bgColor: 'bg-rose-500/10' },
+                        { label: 'Total Applicants', value: total, trend: '', icon: Users, color: 'text-primary', bgColor: 'bg-surfaceHover' },
+                        { label: 'Accepted', value: accepted, trend: '', icon: CheckCircle2, color: 'text-primary', bgColor: 'bg-surfaceHover' },
+                        { label: 'Waitlisted', value: waitlisted, trend: '', icon: Clock, color: 'text-primary', bgColor: 'bg-surfaceHover' },
+                        { label: 'Rejected', value: rejected, trend: '', icon: XCircle, color: 'text-primary', bgColor: 'bg-surfaceHover' },
                     ]);
 
                     // Reviewer List (for written PMFs)
@@ -350,18 +351,16 @@ export function DashboardPage() {
                                 <p className="text-sm font-medium text-secondary">{stat.label}</p>
                                 <p className="text-3xl font-bold text-primary">{stat.value}</p>
                             </div>
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${stat.bgColor} ${stat.color} transition-transform group-hover:scale-110`}>
+                            <div className={`w-10 h-10 rounded-sm flex items-center justify-center ${stat.bgColor} ${stat.color} transition-transform group-hover:scale-110`}>
                                 <stat.icon className="w-5 h-5" />
                             </div>
                         </div>
                         {stat.trend && (
-                            <div className="flex items-center text-xs font-medium text-emerald-500">
+                            <div className="flex items-center text-xs font-medium text-primary">
                                 <TrendingUp className="w-3 h-3 mr-1" />
                                 {stat.trend} from last year
                             </div>
                         )}
-                        {/* Decorative background gradient */}
-                        <div className={`absolute -right-6 -bottom-6 w-24 h-24 rounded-full ${stat.bgColor} blur-2xl opacity-50 pointer-events-none transition-opacity group-hover:opacity-80`} />
                     </Card>
                 ))}
             </div>
@@ -370,99 +369,101 @@ export function DashboardPage() {
             <div className="space-y-4">
                 <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-sm text-secondary">Category & class distributions:</span>
-                    <select
-                        value={cohortFilter}
-                        onChange={(e) => setCohortFilter(e.target.value as 'accepted' | 'all')}
-                        className="border border-border rounded-md px-3 py-1.5 bg-surface text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent/40"
-                    >
-                        <option value="accepted">Accepted only</option>
-                        <option value="all">Entire cohort</option>
-                    </select>
+                    <div className="w-40 shrink-0">
+                        <Select
+                            value={cohortFilter}
+                            onChange={(val) => setCohortFilter(val as 'accepted' | 'all')}
+                            options={[
+                                { value: 'accepted', label: 'Accepted only' },
+                                { value: 'all', label: 'Entire cohort' }
+                            ]}
+                        />
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                {/* Seminar Category Distribution */}
-                <Card className="p-6 flex flex-col">
-                    <div className="mb-6">
-                        <h3 className="text-lg font-semibold text-primary">Seminar Category Distribution</h3>
-                        <p className="text-sm text-secondary">Breakdown of proposed seminars by category.</p>
-                    </div>
-                    <div className="w-full" style={{ height: 420 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart margin={{ bottom: 48 }}>
-                                <Pie
-                                    data={seminarDist}
-                                    cx="50%"
-                                    cy="45%"
-                                    innerRadius={80}
-                                    outerRadius={120}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                    stroke="transparent"
+                    {/* Seminar Category Distribution */}
+                    <Card className="p-6 flex flex-col">
+                        <div className="mb-6">
+                            <h3 className="text-lg font-semibold text-primary">Seminar Category Distribution</h3>
+                            <p className="text-sm text-secondary">Breakdown of proposed seminars by category.</p>
+                        </div>
+                        <div className="w-full" style={{ height: 420 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart margin={{ bottom: 48 }}>
+                                    <Pie
+                                        data={seminarDist}
+                                        cx="50%"
+                                        cy="45%"
+                                        innerRadius={80}
+                                        outerRadius={120}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                        stroke="transparent"
+                                    >
+                                        {seminarDist.map((_, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                                        itemStyle={{ color: '#111827', fontWeight: 500 }}
+                                    />
+                                    <Legend
+                                        verticalAlign="bottom"
+                                        height={40}
+                                        iconType="circle"
+                                        wrapperStyle={{ fontSize: '14px' }}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </Card>
+
+                    {/* Class Year Distribution */}
+                    <Card className="p-6 flex flex-col min-h-[400px]">
+                        <div className="mb-6">
+                            <h3 className="text-lg font-semibold text-primary">Class Year Distribution</h3>
+                            <p className="text-sm text-secondary">Number of applicants by current college year.</p>
+                        </div>
+                        <div className="flex-1 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart
+                                    data={classYearDist}
+                                    margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
                                 >
-                                    {seminarDist.map((_, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip
-                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
-                                    itemStyle={{ color: '#111827', fontWeight: 500 }}
-                                />
-                                <Legend
-                                    verticalAlign="bottom"
-                                    height={40}
-                                    iconType="circle"
-                                    wrapperStyle={{ fontSize: '14px' }}
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
-                </Card>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                    <XAxis
+                                        dataKey="name"
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: '#6B7280', fontSize: 12 }}
+                                        dy={10}
+                                    />
+                                    <YAxis
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: '#6B7280', fontSize: 12 }}
+                                        dx={-10}
+                                    />
+                                    <Tooltip
+                                        cursor={{ fill: '#F3F4F6' }}
+                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                                    />
+                                    <Bar
+                                        dataKey="applicants"
+                                        fill="#1e293b"
+                                        radius={[4, 4, 0, 0]}
+                                        barSize={40}
+                                        animationDuration={1500}
+                                    />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </Card>
 
-                {/* Class Year Distribution */}
-                <Card className="p-6 flex flex-col min-h-[400px]">
-                    <div className="mb-6">
-                        <h3 className="text-lg font-semibold text-primary">Class Year Distribution</h3>
-                        <p className="text-sm text-secondary">Number of applicants by current college year.</p>
-                    </div>
-                    <div className="flex-1 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                                data={classYearDist}
-                                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
-                            >
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                <XAxis
-                                    dataKey="name"
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: '#6B7280', fontSize: 12 }}
-                                    dy={10}
-                                />
-                                <YAxis
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: '#6B7280', fontSize: 12 }}
-                                    dx={-10}
-                                />
-                                <Tooltip
-                                    cursor={{ fill: '#F3F4F6' }}
-                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
-                                />
-                                <Bar
-                                    dataKey="applicants"
-                                    fill="#ec4899"
-                                    radius={[4, 4, 0, 0]}
-                                    barSize={40}
-                                    animationDuration={1500}
-                                />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </Card>
-
-                {/* Overall Score Distribution (PMF) */}
-                {/* <Card className="p-6 flex flex-col min-h-[400px] xl:col-span-2">
+                    {/* Overall Score Distribution (PMF) */}
+                    {/* <Card className="p-6 flex flex-col min-h-[400px] xl:col-span-2">
                     <div className="mb-6">
                         <h3 className="text-lg font-semibold text-primary">Candidate Assessment Scores PMF</h3>
                         <p className="text-sm text-secondary">Distribution of Overall Standardized Scores from 0 to 10.</p>
@@ -504,581 +505,579 @@ export function DashboardPage() {
                     </div>
                 </Card> */}
 
-                {/* Score Distributions (Written / Empirical / Interview): PMF + CDF, navigable */}
-                <Card className="p-6 flex flex-col min-h-[380px] xl:col-span-2">
-                    <div className="mb-4 flex items-start justify-between gap-3">
-                        <div>
-                            <h3 className="text-lg font-semibold text-primary">
-                                {scoreView === 'written' && 'Summed Written Score (PMF & CDF)'}
-                                {scoreView === 'interview' && 'Overall Interview Score (PMF & CDF)'}
-                                {scoreView === 'empirical' && 'Empirical Score (PMF & CDF)'}
-                            </h3>
-                            <p className="text-sm text-secondary">
-                                {scoreView === 'written' && (
-                                    <>
-                                        Distribution of total written score (Interest + Teaching + Seminar + Personal, 0–20). Filtered by reviewer when selected above.
-                                    </>
-                                )}
-                                {scoreView === 'interview' && (
-                                    <>Distribution of overall interview score (0–10). Bins of 0.5.</>
-                                )}
-                                {scoreView === 'empirical' && (
-                                    <>Distribution of empirical standardized score (0–10). Bins of 0.5.</>
-                                )}
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                            <button
-                                type="button"
-                                onClick={goPrevScoreView}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface hover:bg-surfaceHover text-secondary hover:text-primary transition-colors"
-                                aria-label="Previous score distribution"
-                            >
-                                <ChevronLeft className="w-4 h-4" />
-                            </button>
-                            <span className="text-xs font-medium uppercase tracking-wide text-secondary">
-                                {scoreView === 'written' && 'Written'}
-                                {scoreView === 'interview' && 'Interview'}
-                                {scoreView === 'empirical' && 'Empirical'}
-                            </span>
-                            <button
-                                type="button"
-                                onClick={goNextScoreView}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface hover:bg-surfaceHover text-secondary hover:text-primary transition-colors"
-                                aria-label="Next score distribution"
-                            >
-                                <ChevronRight className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* PMF */}
-                        <div>
-                            <p className="text-xs font-semibold text-muted mb-2">PMF</p>
-                            <div className="h-48 w-full">
-                                <ResponsiveContainer width="100%" height="100%">
+                    {/* Score Distributions (Written / Empirical / Interview): PMF + CDF, navigable */}
+                    <Card className="p-6 flex flex-col min-h-[380px] xl:col-span-2">
+                        <div className="mb-4 flex items-start justify-between gap-3">
+                            <div>
+                                <h3 className="text-lg font-semibold text-primary">
+                                    {scoreView === 'written' && 'Summed Written Score (PMF & CDF)'}
+                                    {scoreView === 'interview' && 'Overall Interview Score (PMF & CDF)'}
+                                    {scoreView === 'empirical' && 'Empirical Score (PMF & CDF)'}
+                                </h3>
+                                <p className="text-sm text-secondary">
                                     {scoreView === 'written' && (
-                                        <BarChart data={summedWrittenData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                            <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-                                            <YAxis
-                                                domain={[0, (dataMax: number) => Math.max(dataMax * 1.15, 0.05)]}
-                                                tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                axisLine={false}
-                                                tickLine={false}
-                                                width={28}
-                                                tickFormatter={(v) => v.toFixed(2)}
-                                            />
-                                            <Tooltip
-                                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                formatter={(v: number | undefined) => [v != null ? v.toFixed(3) : '—', 'Proportion']}
-                                            />
-                                            <Bar dataKey="proportion" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Proportion" />
-                                        </BarChart>
+                                        <>
+                                            Distribution of total written score (Interest + Teaching + Seminar + Personal, 0–20). Filtered by reviewer when selected above.
+                                        </>
                                     )}
                                     {scoreView === 'interview' && (
-                                        <BarChart data={overallInterviewData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                            <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-                                            <YAxis
-                                                tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                axisLine={false}
-                                                tickLine={false}
-                                                width={28}
-                                                tickFormatter={(v) => v.toFixed(2)}
-                                            />
-                                            <Tooltip
-                                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                formatter={(v: number | undefined) => [v != null ? v.toFixed(3) : '—', 'Proportion']}
-                                            />
-                                            <Bar dataKey="proportion" fill="#10b981" radius={[4, 4, 0, 0]} name="Proportion" />
-                                        </BarChart>
+                                        <>Distribution of overall interview score (0–10). Bins of 0.5.</>
                                     )}
                                     {scoreView === 'empirical' && (
-                                        <BarChart data={empiricalScoreData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                            <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-                                            <YAxis
-                                                tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                axisLine={false}
-                                                tickLine={false}
-                                                width={28}
-                                                tickFormatter={(v) => v.toFixed(2)}
-                                            />
-                                            <Tooltip
-                                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                formatter={(v: number | undefined) => [v != null ? v.toFixed(3) : '—', 'Proportion']}
-                                            />
-                                            <Bar dataKey="proportion" fill="#f97316" radius={[4, 4, 0, 0]} name="Proportion" />
-                                        </BarChart>
+                                        <>Distribution of empirical standardized score (0–10). Bins of 0.5.</>
                                     )}
-                                </ResponsiveContainer>
+                                </p>
                             </div>
-                        </div>
-
-                        {/* CDF */}
-                        <div>
-                            <p className="text-xs font-semibold text-muted mb-2">CDF</p>
-                            <div className="h-48 w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    {scoreView === 'written' && (
-                                        <AreaChart data={summedWrittenData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                            <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-                                            <YAxis
-                                                domain={[0, 1]}
-                                                tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                axisLine={false}
-                                                tickLine={false}
-                                                width={28}
-                                                tickFormatter={(v) => v.toFixed(1)}
-                                            />
-                                            <Tooltip
-                                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                formatter={(v: number | undefined) => [v != null ? v.toFixed(3) : '—', 'CDF']}
-                                            />
-                                            <ReferenceLine y={1} stroke="#9CA3AF" strokeDasharray="2 2" />
-                                            <Area
-                                                type="monotone"
-                                                dataKey="cdf"
-                                                stroke="#8b5cf6"
-                                                fill="#8b5cf6"
-                                                fillOpacity={0.3}
-                                                strokeWidth={2}
-                                                name="CDF"
-                                            />
-                                        </AreaChart>
-                                    )}
-                                    {scoreView === 'interview' && (
-                                        <AreaChart data={overallInterviewData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                            <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-                                            <YAxis
-                                                domain={[0, 1]}
-                                                tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                axisLine={false}
-                                                tickLine={false}
-                                                width={28}
-                                                tickFormatter={(v) => v.toFixed(1)}
-                                            />
-                                            <Tooltip
-                                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                formatter={(v: number | undefined) => [v != null ? v.toFixed(3) : '—', 'CDF']}
-                                            />
-                                            <ReferenceLine y={1} stroke="#9CA3AF" strokeDasharray="2 2" />
-                                            <Area
-                                                type="monotone"
-                                                dataKey="cdf"
-                                                stroke="#10b981"
-                                                fill="#10b981"
-                                                fillOpacity={0.3}
-                                                strokeWidth={2}
-                                                name="CDF"
-                                            />
-                                        </AreaChart>
-                                    )}
-                                    {scoreView === 'empirical' && (
-                                        <AreaChart data={empiricalScoreData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                            <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-                                            <YAxis
-                                                domain={[0, 1]}
-                                                tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                axisLine={false}
-                                                tickLine={false}
-                                                width={28}
-                                                tickFormatter={(v) => v.toFixed(1)}
-                                            />
-                                            <Tooltip
-                                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                formatter={(v: number | undefined) => [v != null ? v.toFixed(3) : '—', 'CDF']}
-                                            />
-                                            <ReferenceLine y={1} stroke="#9CA3AF" strokeDasharray="2 2" />
-                                            <Area
-                                                type="monotone"
-                                                dataKey="cdf"
-                                                stroke="#f97316"
-                                                fill="#f97316"
-                                                fillOpacity={0.3}
-                                                strokeWidth={2}
-                                                name="CDF"
-                                            />
-                                        </AreaChart>
-                                    )}
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-                    </div>
-                </Card>
-
-                {/* Written vs Interview Score Distributions (PMFs) */}
-                <Card className="p-6 flex flex-col min-h-[420px] xl:col-span-2">
-                    <div className="mb-4 md:mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                        <div>
-                            <h3 className="text-lg font-semibold text-primary">
-                                {rubricView === 'written' ? 'Written Application Score PMFs' : 'Interview Score PMFs'}
-                            </h3>
-                            <p className="text-sm text-secondary">
-                                {rubricView === 'written'
-                                    ? 'Distributions of written rubric scores (0–5) by component. Use the filter to see a specific reviewer.'
-                                    : 'Distributions of interview rubric scores (0–5) by component, aggregated across all interview notes.'}
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            {rubricView === 'written' && (
-                                <div className="flex items-center gap-2 text-sm">
-                                    <span className="text-secondary whitespace-nowrap">Filter by reviewer</span>
-                                    <select
-                                        value={selectedReviewer}
-                                        onChange={(e) => setSelectedReviewer(e.target.value)}
-                                        className="border border-border rounded-md px-3 py-1.5 bg-surface text-primary focus:outline-none focus:ring-2 focus:ring-accent/40"
-                                    >
-                                        <option value="all">All reviewers</option>
-                                        {reviewers.map((name) => (
-                                            <option key={name} value={name}>
-                                                {name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
                             <div className="flex items-center gap-2 shrink-0">
                                 <button
                                     type="button"
-                                    onClick={goPrevRubricView}
+                                    onClick={goPrevScoreView}
                                     className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface hover:bg-surfaceHover text-secondary hover:text-primary transition-colors"
-                                    aria-label="Previous rubric distribution view"
+                                    aria-label="Previous score distribution"
                                 >
                                     <ChevronLeft className="w-4 h-4" />
                                 </button>
                                 <span className="text-xs font-medium uppercase tracking-wide text-secondary">
-                                    {rubricView === 'written' ? 'Written' : 'Interview'}
+                                    {scoreView === 'written' && 'Written'}
+                                    {scoreView === 'interview' && 'Interview'}
+                                    {scoreView === 'empirical' && 'Empirical'}
                                 </span>
                                 <button
                                     type="button"
-                                    onClick={goNextRubricView}
+                                    onClick={goNextScoreView}
                                     className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface hover:bg-surfaceHover text-secondary hover:text-primary transition-colors"
-                                    aria-label="Next rubric distribution view"
+                                    aria-label="Next score distribution"
                                 >
                                     <ChevronRight className="w-4 h-4" />
                                 </button>
                             </div>
                         </div>
-                    </div>
-                    <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
-                        {rubricView === 'written' ? (
-                            <>
-                                <div className="flex flex-col">
-                                    <p className="text-sm font-semibold text-primary mb-2">Interest</p>
-                                    <div className="h-40 w-full">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart
-                                                data={writtenInterestDist}
-                                                margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
-                                            >
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* PMF */}
+                            <div>
+                                <p className="text-xs font-semibold text-muted mb-2">PMF</p>
+                                <div className="h-48 w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        {scoreView === 'written' && (
+                                            <BarChart data={summedWrittenData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                                <XAxis
-                                                    dataKey="scoreRange"
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                    dy={8}
-                                                />
+                                                <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
                                                 <YAxis
+                                                    domain={[0, (dataMax: number) => Math.max(dataMax * 1.15, 0.05)]}
+                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
                                                     axisLine={false}
                                                     tickLine={false}
-                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                    dx={-8}
-                                                    allowDecimals={false}
+                                                    width={28}
+                                                    tickFormatter={(v) => v.toFixed(2)}
                                                 />
                                                 <Tooltip
-                                                    cursor={{ fill: '#F3F4F6' }}
-                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                    formatter={(v: number | undefined) => [v != null ? v.toFixed(3) : '—', 'Proportion']}
                                                 />
-                                                <Bar
-                                                    dataKey="count"
-                                                    fill="#3b82f6"
-                                                    radius={[4, 4, 0, 0]}
-                                                    barSize={24}
-                                                    animationDuration={1500}
-                                                />
+                                                <Bar dataKey="proportion" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Proportion" />
                                             </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col">
-                                    <p className="text-sm font-semibold text-primary mb-2">Teaching</p>
-                                    <div className="h-40 w-full">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart
-                                                data={writtenTeachingDist}
-                                                margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
-                                            >
+                                        )}
+                                        {scoreView === 'interview' && (
+                                            <BarChart data={overallInterviewData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                                <XAxis
-                                                    dataKey="scoreRange"
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                    dy={8}
-                                                />
+                                                <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
                                                 <YAxis
+                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
                                                     axisLine={false}
                                                     tickLine={false}
-                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                    dx={-8}
-                                                    allowDecimals={false}
+                                                    width={28}
+                                                    tickFormatter={(v) => v.toFixed(2)}
                                                 />
                                                 <Tooltip
-                                                    cursor={{ fill: '#F3F4F6' }}
-                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                    formatter={(v: number | undefined) => [v != null ? v.toFixed(3) : '—', 'Proportion']}
                                                 />
-                                                <Bar
-                                                    dataKey="count"
+                                                <Bar dataKey="proportion" fill="#10b981" radius={[4, 4, 0, 0]} name="Proportion" />
+                                            </BarChart>
+                                        )}
+                                        {scoreView === 'empirical' && (
+                                            <BarChart data={empiricalScoreData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                                <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                                <YAxis
+                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
+                                                    axisLine={false}
+                                                    tickLine={false}
+                                                    width={28}
+                                                    tickFormatter={(v) => v.toFixed(2)}
+                                                />
+                                                <Tooltip
+                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                    formatter={(v: number | undefined) => [v != null ? v.toFixed(3) : '—', 'Proportion']}
+                                                />
+                                                <Bar dataKey="proportion" fill="#f97316" radius={[4, 4, 0, 0]} name="Proportion" />
+                                            </BarChart>
+                                        )}
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            {/* CDF */}
+                            <div>
+                                <p className="text-xs font-semibold text-muted mb-2">CDF</p>
+                                <div className="h-48 w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        {scoreView === 'written' && (
+                                            <AreaChart data={summedWrittenData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                                <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                                <YAxis
+                                                    domain={[0, 1]}
+                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
+                                                    axisLine={false}
+                                                    tickLine={false}
+                                                    width={28}
+                                                    tickFormatter={(v) => v.toFixed(1)}
+                                                />
+                                                <Tooltip
+                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                    formatter={(v: number | undefined) => [v != null ? v.toFixed(3) : '—', 'CDF']}
+                                                />
+                                                <ReferenceLine y={1} stroke="#9CA3AF" strokeDasharray="2 2" />
+                                                <Area
+                                                    type="monotone"
+                                                    dataKey="cdf"
+                                                    stroke="#8b5cf6"
                                                     fill="#8b5cf6"
-                                                    radius={[4, 4, 0, 0]}
-                                                    barSize={24}
-                                                    animationDuration={1500}
+                                                    fillOpacity={0.3}
+                                                    strokeWidth={2}
+                                                    name="CDF"
                                                 />
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col">
-                                    <p className="text-sm font-semibold text-primary mb-2">Seminar</p>
-                                    <div className="h-40 w-full">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart
-                                                data={writtenSeminarDist}
-                                                margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
-                                            >
+                                            </AreaChart>
+                                        )}
+                                        {scoreView === 'interview' && (
+                                            <AreaChart data={overallInterviewData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                                <XAxis
-                                                    dataKey="scoreRange"
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                    dy={8}
-                                                />
+                                                <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
                                                 <YAxis
+                                                    domain={[0, 1]}
+                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
                                                     axisLine={false}
                                                     tickLine={false}
-                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                    dx={-8}
-                                                    allowDecimals={false}
+                                                    width={28}
+                                                    tickFormatter={(v) => v.toFixed(1)}
                                                 />
                                                 <Tooltip
-                                                    cursor={{ fill: '#F3F4F6' }}
-                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                    formatter={(v: number | undefined) => [v != null ? v.toFixed(3) : '—', 'CDF']}
                                                 />
-                                                <Bar
-                                                    dataKey="count"
-                                                    fill="#f97316"
-                                                    radius={[4, 4, 0, 0]}
-                                                    barSize={24}
-                                                    animationDuration={1500}
-                                                />
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col">
-                                    <p className="text-sm font-semibold text-primary mb-2">Personal</p>
-                                    <div className="h-40 w-full">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart
-                                                data={writtenPersonalDist}
-                                                margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
-                                            >
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                                <XAxis
-                                                    dataKey="scoreRange"
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                    dy={8}
-                                                />
-                                                <YAxis
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                    dx={-8}
-                                                    allowDecimals={false}
-                                                />
-                                                <Tooltip
-                                                    cursor={{ fill: '#F3F4F6' }}
-                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
-                                                />
-                                                <Bar
-                                                    dataKey="count"
+                                                <ReferenceLine y={1} stroke="#9CA3AF" strokeDasharray="2 2" />
+                                                <Area
+                                                    type="monotone"
+                                                    dataKey="cdf"
+                                                    stroke="#10b981"
                                                     fill="#10b981"
-                                                    radius={[4, 4, 0, 0]}
-                                                    barSize={24}
-                                                    animationDuration={1500}
+                                                    fillOpacity={0.3}
+                                                    strokeWidth={2}
+                                                    name="CDF"
                                                 />
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <div className="flex flex-col">
-                                    <p className="text-sm font-semibold text-primary mb-2">Enthusiasm</p>
-                                    <div className="h-40 w-full">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart
-                                                data={interviewEnthusiasmDist}
-                                                margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
-                                            >
+                                            </AreaChart>
+                                        )}
+                                        {scoreView === 'empirical' && (
+                                            <AreaChart data={empiricalScoreData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                                <XAxis
-                                                    dataKey="scoreRange"
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                    dy={8}
-                                                />
+                                                <XAxis dataKey="score" tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
                                                 <YAxis
+                                                    domain={[0, 1]}
+                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
                                                     axisLine={false}
                                                     tickLine={false}
-                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                    dx={-8}
-                                                    allowDecimals={false}
+                                                    width={28}
+                                                    tickFormatter={(v) => v.toFixed(1)}
                                                 />
                                                 <Tooltip
-                                                    cursor={{ fill: '#F3F4F6' }}
-                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                    formatter={(v: number | undefined) => [v != null ? v.toFixed(3) : '—', 'CDF']}
                                                 />
-                                                <Bar
-                                                    dataKey="count"
-                                                    fill="#3b82f6"
-                                                    radius={[4, 4, 0, 0]}
-                                                    barSize={24}
-                                                    animationDuration={1500}
-                                                />
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col">
-                                    <p className="text-sm font-semibold text-primary mb-2">Quality</p>
-                                    <div className="h-40 w-full">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart
-                                                data={interviewQualityDist}
-                                                margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
-                                            >
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                                <XAxis
-                                                    dataKey="scoreRange"
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                    dy={8}
-                                                />
-                                                <YAxis
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                    dx={-8}
-                                                    allowDecimals={false}
-                                                />
-                                                <Tooltip
-                                                    cursor={{ fill: '#F3F4F6' }}
-                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
-                                                />
-                                                <Bar
-                                                    dataKey="count"
-                                                    fill="#8b5cf6"
-                                                    radius={[4, 4, 0, 0]}
-                                                    barSize={24}
-                                                    animationDuration={1500}
-                                                />
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col">
-                                    <p className="text-sm font-semibold text-primary mb-2">Teaching</p>
-                                    <div className="h-40 w-full">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart
-                                                data={interviewTeachingDist}
-                                                margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
-                                            >
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                                <XAxis
-                                                    dataKey="scoreRange"
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                    dy={8}
-                                                />
-                                                <YAxis
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                    dx={-8}
-                                                    allowDecimals={false}
-                                                />
-                                                <Tooltip
-                                                    cursor={{ fill: '#F3F4F6' }}
-                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
-                                                />
-                                                <Bar
-                                                    dataKey="count"
+                                                <ReferenceLine y={1} stroke="#9CA3AF" strokeDasharray="2 2" />
+                                                <Area
+                                                    type="monotone"
+                                                    dataKey="cdf"
+                                                    stroke="#f97316"
                                                     fill="#f97316"
-                                                    radius={[4, 4, 0, 0]}
-                                                    barSize={24}
-                                                    animationDuration={1500}
+                                                    fillOpacity={0.3}
+                                                    strokeWidth={2}
+                                                    name="CDF"
                                                 />
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
+                                            </AreaChart>
+                                        )}
+                                    </ResponsiveContainer>
                                 </div>
-                                <div className="flex flex-col">
-                                    <p className="text-sm font-semibold text-primary mb-2">Interest</p>
-                                    <div className="h-40 w-full">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart
-                                                data={interviewInterestDist}
-                                                margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
-                                            >
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                                <XAxis
-                                                    dataKey="scoreRange"
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                    dy={8}
-                                                />
-                                                <YAxis
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                    dx={-8}
-                                                    allowDecimals={false}
-                                                />
-                                                <Tooltip
-                                                    cursor={{ fill: '#F3F4F6' }}
-                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
-                                                />
-                                                <Bar
-                                                    dataKey="count"
-                                                    fill="#10b981"
-                                                    radius={[4, 4, 0, 0]}
-                                                    barSize={24}
-                                                    animationDuration={1500}
-                                                />
-                                            </BarChart>
-                                        </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </Card>
+
+                    {/* Written vs Interview Score Distributions (PMFs) */}
+                    <Card className="p-6 flex flex-col min-h-[420px] xl:col-span-2">
+                        <div className="mb-4 md:mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                            <div>
+                                <h3 className="text-lg font-semibold text-primary">
+                                    {rubricView === 'written' ? 'Written Application Score PMFs' : 'Interview Score PMFs'}
+                                </h3>
+                                <p className="text-sm text-secondary">
+                                    {rubricView === 'written'
+                                        ? 'Distributions of written rubric scores (0–5) by component. Use the filter to see a specific reviewer.'
+                                        : 'Distributions of interview rubric scores (0–5) by component, aggregated across all interview notes.'}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                {rubricView === 'written' && (
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <span className="text-secondary whitespace-nowrap">Filter by reviewer</span>
+                                        <div className="w-48 shrink-0">
+                                            <Select
+                                                value={selectedReviewer}
+                                                onChange={(val) => setSelectedReviewer(val)}
+                                                options={[
+                                                    { value: 'all', label: 'All reviewers' },
+                                                    ...reviewers.map((name) => ({ value: name, label: name }))
+                                                ]}
+                                            />
+                                        </div>
                                     </div>
+                                )}
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={goPrevRubricView}
+                                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface hover:bg-surfaceHover text-secondary hover:text-primary transition-colors"
+                                        aria-label="Previous rubric distribution view"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </button>
+                                    <span className="text-xs font-medium uppercase tracking-wide text-secondary">
+                                        {rubricView === 'written' ? 'Written' : 'Interview'}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={goNextRubricView}
+                                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface hover:bg-surfaceHover text-secondary hover:text-primary transition-colors"
+                                        aria-label="Next rubric distribution view"
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </button>
                                 </div>
-                            </>
-                        )}
-                    </div>
-                </Card>
+                            </div>
+                        </div>
+                        <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
+                            {rubricView === 'written' ? (
+                                <>
+                                    <div className="flex flex-col">
+                                        <p className="text-sm font-semibold text-primary mb-2">Interest</p>
+                                        <div className="h-40 w-full">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart
+                                                    data={writtenInterestDist}
+                                                    margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
+                                                >
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                                    <XAxis
+                                                        dataKey="scoreRange"
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fill: '#6B7280', fontSize: 11 }}
+                                                        dy={8}
+                                                    />
+                                                    <YAxis
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fill: '#6B7280', fontSize: 11 }}
+                                                        dx={-8}
+                                                        allowDecimals={false}
+                                                    />
+                                                    <Tooltip
+                                                        cursor={{ fill: '#F3F4F6' }}
+                                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                                                    />
+                                                    <Bar
+                                                        dataKey="count"
+                                                        fill="#8b5cf6"
+                                                        radius={[4, 4, 0, 0]}
+                                                        barSize={24}
+                                                        animationDuration={1500}
+                                                    />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <p className="text-sm font-semibold text-primary mb-2">Teaching</p>
+                                        <div className="h-40 w-full">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart
+                                                    data={writtenTeachingDist}
+                                                    margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
+                                                >
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                                    <XAxis
+                                                        dataKey="scoreRange"
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fill: '#6B7280', fontSize: 11 }}
+                                                        dy={8}
+                                                    />
+                                                    <YAxis
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fill: '#6B7280', fontSize: 11 }}
+                                                        dx={-8}
+                                                        allowDecimals={false}
+                                                    />
+                                                    <Tooltip
+                                                        cursor={{ fill: '#F3F4F6' }}
+                                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                                                    />
+                                                    <Bar
+                                                        dataKey="count"
+                                                        fill="#8b5cf6"
+                                                        radius={[4, 4, 0, 0]}
+                                                        barSize={24}
+                                                        animationDuration={1500}
+                                                    />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <p className="text-sm font-semibold text-primary mb-2">Seminar</p>
+                                        <div className="h-40 w-full">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart
+                                                    data={writtenSeminarDist}
+                                                    margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
+                                                >
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                                    <XAxis
+                                                        dataKey="scoreRange"
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fill: '#6B7280', fontSize: 11 }}
+                                                        dy={8}
+                                                    />
+                                                    <YAxis
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fill: '#6B7280', fontSize: 11 }}
+                                                        dx={-8}
+                                                        allowDecimals={false}
+                                                    />
+                                                    <Tooltip
+                                                        cursor={{ fill: '#F3F4F6' }}
+                                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                                                    />
+                                                    <Bar
+                                                        dataKey="count"
+                                                        fill="#f97316"
+                                                        radius={[4, 4, 0, 0]}
+                                                        barSize={24}
+                                                        animationDuration={1500}
+                                                    />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <p className="text-sm font-semibold text-primary mb-2">Personal</p>
+                                        <div className="h-40 w-full">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart
+                                                    data={writtenPersonalDist}
+                                                    margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
+                                                >
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                                    <XAxis
+                                                        dataKey="scoreRange"
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fill: '#6B7280', fontSize: 11 }}
+                                                        dy={8}
+                                                    />
+                                                    <YAxis
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fill: '#6B7280', fontSize: 11 }}
+                                                        dx={-8}
+                                                        allowDecimals={false}
+                                                    />
+                                                    <Tooltip
+                                                        cursor={{ fill: '#F3F4F6' }}
+                                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                                                    />
+                                                    <Bar
+                                                        dataKey="count"
+                                                        fill="#10b981"
+                                                        radius={[4, 4, 0, 0]}
+                                                        barSize={24}
+                                                        animationDuration={1500}
+                                                    />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="flex flex-col">
+                                        <p className="text-sm font-semibold text-primary mb-2">Enthusiasm</p>
+                                        <div className="h-40 w-full">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart
+                                                    data={interviewEnthusiasmDist}
+                                                    margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
+                                                >
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                                    <XAxis
+                                                        dataKey="scoreRange"
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fill: '#6B7280', fontSize: 11 }}
+                                                        dy={8}
+                                                    />
+                                                    <YAxis
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fill: '#6B7280', fontSize: 11 }}
+                                                        dx={-8}
+                                                        allowDecimals={false}
+                                                    />
+                                                    <Tooltip
+                                                        cursor={{ fill: '#F3F4F6' }}
+                                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                                                    />
+                                                    <Bar
+                                                        dataKey="count"
+                                                        fill="#8b5cf6"
+                                                        radius={[4, 4, 0, 0]}
+                                                        barSize={24}
+                                                        animationDuration={1500}
+                                                    />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <p className="text-sm font-semibold text-primary mb-2">Quality</p>
+                                        <div className="h-40 w-full">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart
+                                                    data={interviewQualityDist}
+                                                    margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
+                                                >
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                                    <XAxis
+                                                        dataKey="scoreRange"
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fill: '#6B7280', fontSize: 11 }}
+                                                        dy={8}
+                                                    />
+                                                    <YAxis
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fill: '#6B7280', fontSize: 11 }}
+                                                        dx={-8}
+                                                        allowDecimals={false}
+                                                    />
+                                                    <Tooltip
+                                                        cursor={{ fill: '#F3F4F6' }}
+                                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                                                    />
+                                                    <Bar
+                                                        dataKey="count"
+                                                        fill="#8b5cf6"
+                                                        radius={[4, 4, 0, 0]}
+                                                        barSize={24}
+                                                        animationDuration={1500}
+                                                    />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <p className="text-sm font-semibold text-primary mb-2">Teaching</p>
+                                        <div className="h-40 w-full">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart
+                                                    data={interviewTeachingDist}
+                                                    margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
+                                                >
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                                    <XAxis
+                                                        dataKey="scoreRange"
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fill: '#6B7280', fontSize: 11 }}
+                                                        dy={8}
+                                                    />
+                                                    <YAxis
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fill: '#6B7280', fontSize: 11 }}
+                                                        dx={-8}
+                                                        allowDecimals={false}
+                                                    />
+                                                    <Tooltip
+                                                        cursor={{ fill: '#F3F4F6' }}
+                                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                                                    />
+                                                    <Bar
+                                                        dataKey="count"
+                                                        fill="#f97316"
+                                                        radius={[4, 4, 0, 0]}
+                                                        barSize={24}
+                                                        animationDuration={1500}
+                                                    />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <p className="text-sm font-semibold text-primary mb-2">Interest</p>
+                                        <div className="h-40 w-full">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart
+                                                    data={interviewInterestDist}
+                                                    margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
+                                                >
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                                    <XAxis
+                                                        dataKey="scoreRange"
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fill: '#6B7280', fontSize: 11 }}
+                                                        dy={8}
+                                                    />
+                                                    <YAxis
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fill: '#6B7280', fontSize: 11 }}
+                                                        dx={-8}
+                                                        allowDecimals={false}
+                                                    />
+                                                    <Tooltip
+                                                        cursor={{ fill: '#F3F4F6' }}
+                                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                                                    />
+                                                    <Bar
+                                                        dataKey="count"
+                                                        fill="#10b981"
+                                                        radius={[4, 4, 0, 0]}
+                                                        barSize={24}
+                                                        animationDuration={1500}
+                                                    />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </Card>
 
                 </div>
             </div>

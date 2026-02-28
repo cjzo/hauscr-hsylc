@@ -18,10 +18,19 @@ export default {
                 accent: 'var(--color-accent)',
                 'accent-hover': 'var(--color-accent-hover)',
             },
+            borderRadius: {
+                'sm': '2px',
+                DEFAULT: '4px',
+                'md': '4px',
+                'lg': '6px',
+                'xl': '8px',
+                '2xl': '12px',
+                '3xl': '16px',
+            },
             boxShadow: {
                 'stripe': '0 2px 5px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.02)',
                 'stripe-hover': '0 5px 15px rgba(0,0,0,0.08), 0 3px 6px rgba(0,0,0,0.04)',
-                'stripe-focus': '0 0 0 2px #fff, 0 0 0 4px #635bff',
+                'stripe-focus': '0 0 0 2px var(--color-bg-primary), 0 0 0 4px var(--color-accent)',
             },
             fontFamily: {
                 sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],

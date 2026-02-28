@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { Select } from '../components/ui/Select';
 import { Trash2, Download, Loader2 } from 'lucide-react';
 
 type Role = 'blocked' | 'member' | 'admin';
@@ -204,8 +205,8 @@ export function UserManagementPage() {
         status === 'approved'
           ? 'accepted'
           : status === 'waitlisted'
-          ? 'waitlisted'
-          : 'rejected';
+            ? 'waitlisted'
+            : 'rejected';
 
       const dateStr = new Date().toISOString().slice(0, 10);
       link.href = url;
@@ -347,17 +348,19 @@ export function UserManagementPage() {
               value={userIdInput}
               onChange={(e) => setUserIdInput(e.target.value)}
               placeholder="User ID (UUID)"
-              className="flex-1 px-3 py-2 rounded-md border border-border bg-surface text-sm text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/40"
+              className="flex-1 h-10 px-3 py-2 rounded-md border border-border bg-surface text-sm text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/40"
             />
-            <select
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value as Role)}
-              className="px-3 py-2 rounded-md border border-border bg-surface text-sm text-primary focus:outline-none focus:ring-2 focus:ring-accent/40"
-            >
-              <option value="blocked">blocked</option>
-              <option value="member">member</option>
-              <option value="admin">admin</option>
-            </select>
+            <div className="w-full sm:w-40 shrink-0">
+              <Select
+                value={selectedRole}
+                onChange={(val) => setSelectedRole(val as Role)}
+                options={[
+                  { value: 'blocked', label: 'blocked' },
+                  { value: 'member', label: 'member' },
+                  { value: 'admin', label: 'admin' },
+                ]}
+              />
+            </div>
             <Button onClick={handleSave} disabled={saving}>
               {saving ? 'Saving…' : 'Save role'}
             </Button>

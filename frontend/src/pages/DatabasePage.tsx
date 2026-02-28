@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { Select } from '../components/ui/Select';
 import { useConfirm } from '../components/ui/ConfirmModal';
 import { standardizeCategory } from '../utils/categories';
 import { useAuth } from '../context/AuthContext';
@@ -262,51 +263,53 @@ export function DatabasePage() {
                 </div>
 
                 <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-muted uppercase tracking-wider">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-secondary uppercase tracking-wider">
                         <SlidersHorizontal className="w-4 h-4" />
                         Filters & Sorting
                     </div>
                     <div className="flex flex-wrap items-center gap-3 w-full">
                         <div className="flex items-center gap-2">
-                            <label className="text-xs font-semibold text-muted uppercase tracking-wider">Category</label>
-                            <select
-                                value={categoryFilter}
-                                onChange={(e) => setCategoryFilter(e.target.value)}
-                                className="min-w-[200px] px-3 py-2 text-sm bg-surface border border-border rounded-lg text-primary focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent"
-                            >
-                                <option value="all">All categories</option>
-                                {categoryOptions.map((category) => (
-                                    <option key={category} value={category}>
-                                        {category}
-                                    </option>
-                                ))}
-                            </select>
+                            <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Category</label>
+                            <div className="w-48 shrink-0 z-20">
+                                <Select
+                                    value={categoryFilter}
+                                    onChange={(val) => setCategoryFilter(val)}
+                                    options={[
+                                        { value: 'all', label: 'All categories' },
+                                        ...categoryOptions.map((category) => ({ value: category, label: category }))
+                                    ]}
+                                />
+                            </div>
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <label className="text-xs font-semibold text-muted uppercase tracking-wider">Type</label>
-                            <select
-                                value={candidateTypeFilter}
-                                onChange={(e) => setCandidateTypeFilter(e.target.value as any)}
-                                className="min-w-[160px] px-3 py-2 text-sm bg-surface border border-border rounded-lg text-primary focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent"
-                            >
-                                <option value="all">All types</option>
-                                <option value="New">New</option>
-                                <option value="Returning">Returning</option>
-                            </select>
+                            <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Type</label>
+                            <div className="w-40 shrink-0 z-10">
+                                <Select
+                                    value={candidateTypeFilter}
+                                    onChange={(val) => setCandidateTypeFilter(val as any)}
+                                    options={[
+                                        { value: 'all', label: 'All types' },
+                                        { value: 'New', label: 'New' },
+                                        { value: 'Returning', label: 'Returning' }
+                                    ]}
+                                />
+                            </div>
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <label className="text-xs font-semibold text-muted uppercase tracking-wider">Sort</label>
-                            <select
-                                value={sortKey}
-                                onChange={(e) => setSortKey(e.target.value as any)}
-                                className="min-w-[170px] px-3 py-2 text-sm bg-surface border border-border rounded-lg text-primary focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent"
-                            >
-                                <option value="score_overall">Score (Interview)</option>
-                                <option value="written_avg">Score (Written)</option>
-                                <option value="name">Name (A-Z)</option>
-                            </select>
+                            <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Sort</label>
+                            <div className="w-48 shrink-0 z-30">
+                                <Select
+                                    value={sortKey}
+                                    onChange={(val) => setSortKey(val as any)}
+                                    options={[
+                                        { value: 'score_overall', label: 'Score (Interview)' },
+                                        { value: 'written_avg', label: 'Score (Written)' },
+                                        { value: 'name', label: 'Name (A-Z)' }
+                                    ]}
+                                />
+                            </div>
                             <button
                                 type="button"
                                 onClick={() => setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
@@ -493,7 +496,7 @@ export function DatabasePage() {
 
                         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
                             <div className="flex flex-wrap items-center gap-3">
-                                <span className="text-xs font-semibold text-muted uppercase tracking-wider">Decision</span>
+                                <span className="text-xs font-semibold text-secondary uppercase tracking-wider">Decision</span>
                                 <span className="px-2 py-1 rounded-full text-xs font-semibold bg-surfaceHover text-secondary">
                                     {selectedCandidate.deliberation_status || 'pending'}
                                 </span>
@@ -532,15 +535,15 @@ export function DatabasePage() {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Email</p>
+                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Email</p>
                                     <p className="text-sm text-primary break-all">{selectedCandidate.email}</p>
                                 </div>
                                 <div className="space-y-2">
-                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Nationality</p>
+                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Nationality</p>
                                     <p className="text-sm text-primary">{selectedCandidate.nationality || 'N/A'}</p>
                                 </div>
                                 <div className="space-y-2">
-                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Seminar Category</p>
+                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Seminar Category</p>
                                     <p
                                         className="inline-block px-2.5 py-1 rounded-full bg-accent/10 text-accent text-xs font-semibold"
                                         title={selectedCandidate.seminar_category || selectedCandidate.seminar_title || undefined}
@@ -551,7 +554,7 @@ export function DatabasePage() {
                                     </p>
                                 </div>
                                 <div className="space-y-2">
-                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Overall Score</p>
+                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Overall Score</p>
                                     <p className="text-sm text-primary font-semibold">
                                         {typeof selectedCandidate.score_overall === 'number'
                                             ? selectedCandidate.score_overall.toFixed(1)
@@ -561,12 +564,12 @@ export function DatabasePage() {
                             </div>
 
                             <div className="space-y-3">
-                                <p className="text-xs font-semibold text-muted uppercase tracking-wider">Seminar Title & Description</p>
+                                <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Seminar Title & Description</p>
                                 <p className="text-sm font-medium text-primary">
                                     {selectedCandidate.seminar_title || 'N/A'}
                                 </p>
                                 {selectedCandidate.seminar_description && (
-                                    <p className="text-sm text-secondary leading-relaxed bg-surface/60 dark:bg-surfaceHover p-3 rounded-lg border border-border">
+                                    <p className="text-sm text-primary leading-relaxed bg-surface/60 dark:bg-surfaceHover p-3 rounded-lg border border-border">
                                         {selectedCandidate.seminar_description}
                                     </p>
                                 )}
@@ -574,14 +577,14 @@ export function DatabasePage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Tangible Final Product</p>
-                                    <p className="text-sm text-secondary leading-relaxed">
+                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Tangible Final Product</p>
+                                    <p className="text-sm text-primary leading-relaxed">
                                         {selectedCandidate.final_product || 'N/A'}
                                     </p>
                                 </div>
                                 <div className="space-y-2">
-                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Other Potential Topics</p>
-                                    <p className="text-sm text-secondary leading-relaxed">
+                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Other Potential Topics</p>
+                                    <p className="text-sm text-primary leading-relaxed">
                                         {selectedCandidate.more_topics || 'N/A'}
                                     </p>
                                 </div>
@@ -589,14 +592,14 @@ export function DatabasePage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Interest in HSYLC Mission</p>
-                                    <p className="text-sm text-secondary leading-relaxed bg-surface/60 dark:bg-surfaceHover p-3 rounded-lg border border-border">
+                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Interest in HSYLC Mission</p>
+                                    <p className="text-sm text-primary leading-relaxed bg-surface/60 dark:bg-surfaceHover p-3 rounded-lg border border-border">
                                         {selectedCandidate.interest_reason || 'N/A'}
                                     </p>
                                 </div>
                                 <div className="space-y-2">
-                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Teaching & Mentoring Experience</p>
-                                    <p className="text-sm text-secondary leading-relaxed bg-surface/60 dark:bg-surfaceHover p-3 rounded-lg border border-border">
+                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Teaching & Mentoring Experience</p>
+                                    <p className="text-sm text-primary leading-relaxed bg-surface/60 dark:bg-surfaceHover p-3 rounded-lg border border-border">
                                         {selectedCandidate.teaching_exp || 'N/A'}
                                     </p>
                                 </div>
@@ -604,21 +607,21 @@ export function DatabasePage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Self Introduction</p>
-                                    <p className="text-sm text-secondary leading-relaxed bg-surface/60 dark:bg-surfaceHover p-3 rounded-lg border border-border">
+                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Self Introduction</p>
+                                    <p className="text-sm text-primary leading-relaxed bg-surface/60 dark:bg-surfaceHover p-3 rounded-lg border border-border">
                                         {selectedCandidate.self_intro || 'N/A'}
                                     </p>
                                 </div>
                                 <div className="space-y-2">
-                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider">Advice for a High Schooler</p>
-                                    <p className="text-sm text-secondary leading-relaxed bg-surface/60 dark:bg-surfaceHover p-3 rounded-lg border border-border italic">
+                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Advice for a High Schooler</p>
+                                    <p className="text-sm text-primary leading-relaxed bg-surface/60 dark:bg-surfaceHover p-3 rounded-lg border border-border italic">
                                         {selectedCandidate.advice ? `"${selectedCandidate.advice}"` : 'N/A'}
                                     </p>
                                 </div>
                             </div>
 
                             <div className="space-y-3">
-                                <p className="text-xs font-semibold text-muted uppercase tracking-wider">Written Scores (out of 5)</p>
+                                <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Written Scores (out of 5)</p>
                                 <div className="flex flex-wrap gap-3 text-xs">
                                     <span className="px-2 py-1 rounded-full bg-surfaceHover text-secondary">
                                         Interest:{' '}

@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Database, CheckSquare, PanelLeft, LogOut, Shield } from 'lucide-react';
+import { Home, FileCheck, Users, PanelLeft, LogOut, Shield } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useAuth } from '../../context/AuthContext';
 import logoUrl from '../../assets/logo.svg';
 
 const navItems = [
-    { icon: Home, label: 'Dashboard', to: '/dashboard' },
-    { icon: CheckSquare, label: 'Deliberations', to: '/deliberate' },
-    { icon: Database, label: 'Data Base', to: '/data' },
+    { icon: Home, label: 'Home', to: '/dashboard' },
+    { icon: FileCheck, label: 'Deliberations', to: '/deliberate' },
+    { icon: Users, label: 'Candidates', to: '/data' },
 ];
 
 function getInitials(name?: string | null, email?: string | null): string {
@@ -31,6 +31,7 @@ function getDisplayName(user: { user_metadata?: Record<string, unknown>; email?:
 
 export function Sidebar() {
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
     const { user, role, signOut } = useAuth();
 
     const displayName = getDisplayName(user);
@@ -83,12 +84,15 @@ export function Sidebar() {
                         {!isCollapsed && <span className="text-sm font-medium truncate">{item.label}</span>}
                     </NavLink>
                 ))}
+            </div>
+
+            <div className="px-3 pb-3">
                 {role === 'admin' && (
                     <NavLink
                         to="/admin/users"
                         className={({ isActive }) =>
                             cn(
-                                "mt-4 flex items-center gap-3 px-3 py-2 rounded-md transition-colors duration-150 text-xs",
+                                "flex items-center gap-3 px-3 py-2 rounded-md transition-colors duration-150",
                                 isActive
                                     ? "bg-accent/10 text-accent dark:bg-accent/20"
                                     : "text-secondary hover:text-primary hover:bg-surfaceHover",
@@ -97,42 +101,54 @@ export function Sidebar() {
                         }
                         title={isCollapsed ? "Admin" : undefined}
                     >
-                        <Shield className="w-4 h-4 shrink-0" />
-                        {!isCollapsed && <span className="font-medium truncate">Admin</span>}
+                        <Shield className="w-5 h-5 shrink-0" />
+                        {!isCollapsed && <span className="text-sm font-medium truncate">Admin</span>}
                     </NavLink>
                 )}
             </div>
-            <div className="p-4 border-t border-border">
-                <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-3")}>
+            <div className="p-4 border-t border-border relative">
+                <button
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                    className={cn(
+                        "w-full flex items-center p-1.5 -m-1.5 rounded-md hover:bg-surfaceHover transition-colors focus:outline-none",
+                        isCollapsed ? "justify-center" : "gap-3"
+                    )}
+                >
                     <div className="w-8 h-8 shrink-0 rounded-full bg-accent text-white flex items-center justify-center font-semibold text-xs">
                         {initials}
                     </div>
                     {!isCollapsed && (
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 text-left">
                             <div className="text-sm font-medium text-primary truncate">{displayName}</div>
                             {role && (
                                 <div className="text-[11px] text-secondary capitalize">{role}</div>
                             )}
                         </div>
                     )}
-                    {!isCollapsed && (
-                        <button
-                            onClick={signOut}
-                            className="p-1.5 rounded-md text-secondary hover:text-primary hover:bg-surfaceHover transition-colors"
-                            title="Sign out"
-                        >
-                            <LogOut className="w-4 h-4" />
-                        </button>
-                    )}
-                </div>
-                {isCollapsed && (
-                    <button
-                        onClick={signOut}
-                        className="mt-2 w-full flex items-center justify-center p-1.5 rounded-md text-secondary hover:text-primary hover:bg-surfaceHover transition-colors"
-                        title="Sign out"
-                    >
-                        <LogOut className="w-4 h-4" />
-                    </button>
+                </button>
+
+                {isUserMenuOpen && (
+                    <>
+                        <div
+                            className="fixed inset-0 z-40"
+                            onClick={() => setIsUserMenuOpen(false)}
+                        />
+                        <div className={cn(
+                            "absolute bottom-full mb-2 bg-surface text-primary border border-border rounded-md shadow-md py-1 z-50",
+                            isCollapsed ? "left-2 w-48" : "left-4 right-4"
+                        )}>
+                            <button
+                                onClick={() => {
+                                    setIsUserMenuOpen(false);
+                                    signOut();
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:text-primary hover:bg-surfaceHover transition-colors text-left"
+                            >
+                                <LogOut className="w-4 h-4 shrink-0" />
+                                <span>Sign out</span>
+                            </button>
+                        </div>
+                    </>
                 )}
             </div>
         </div>

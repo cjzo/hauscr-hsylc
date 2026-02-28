@@ -853,188 +853,188 @@ export function DeliberationPage() {
                                                 <div className="flex items-center justify-between mb-2">
                                                     <div className="flex items-center gap-3">
                                                         <h2 className="text-2xl font-bold text-primary">{candidate.name}</h2>
-                                                        <span className={`px-2 py-1 text-xs font-bold rounded-full ${candidate.candidateType === 'Returning' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'}`}>
+                                                        {/* <span className={`px-2 py-1 text-xs font-bold rounded-full ${candidate.candidateType === 'Returning' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'}`}>
                                                             {candidate.candidateType}
-                                                        </span>
+                                                        </span> */}
                                                     </div>
                                                 </div>
 
-                                        <div className="space-y-2 mt-2">
-                                            <div className="flex items-center text-sm text-secondary">
-                                                <GraduationCap className="w-4 h-4 mr-3 text-muted shrink-0" />
-                                                {candidate.school}, {formatClassYear(candidate.year)}
-                                            </div>
-                                            {candidate.nationality && (
-                                                <div className="flex items-center text-sm text-secondary">
-                                                    <MapPin className="w-4 h-4 mr-3 text-muted shrink-0" />
-                                                    <span className="truncate">From {candidate.nationality}</span>
+                                                <div className="space-y-2 mt-2">
+                                                    <div className="flex items-center text-sm text-secondary">
+                                                        <GraduationCap className="w-4 h-4 mr-3 text-muted shrink-0" />
+                                                        {candidate.school}, {formatClassYear(candidate.year)}
+                                                    </div>
+                                                    {candidate.nationality && (
+                                                        <div className="flex items-center text-sm text-secondary">
+                                                            <MapPin className="w-4 h-4 mr-3 text-muted shrink-0" />
+                                                            <span className="truncate">From {candidate.nationality}</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex items-center text-sm text-secondary">
+                                                        <Mail className="w-4 h-4 mr-3 text-muted shrink-0" />
+                                                        <span className="truncate">{candidate.email}</span>
+                                                    </div>
                                                 </div>
-                                            )}
-                                            <div className="flex items-center text-sm text-secondary">
-                                                <Mail className="w-4 h-4 mr-3 text-muted shrink-0" />
-                                                <span className="truncate">{candidate.email}</span>
-                                            </div>
-                                        </div>
-                                        <div className="mt-4 pt-4 border-t border-border">
-                                            <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-1">Major / Concentration</p>
-                                            <p className="text-sm font-medium text-primary">{candidate.major}</p>
-                                        </div>
+                                                <div className="mt-4 pt-4 border-t border-border">
+                                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-1">Major / Concentration</p>
+                                                    <p className="text-sm font-medium text-primary">{candidate.major}</p>
+                                                </div>
 
-                                        {/* Travel Preferences */}
-                                        {(candidate.flyFrom || candidate.flyTo || candidate.availability) && (
-                                            <div className="mt-4 pt-4 border-t border-border">
-                                                <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Travel & Availability</p>
+                                                {/* Travel Preferences */}
+                                                {(candidate.flyFrom || candidate.flyTo || candidate.availability) && (
+                                                    <div className="mt-4 pt-4 border-t border-border">
+                                                        <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Travel & Availability</p>
 
-                                                {candidate.flyFrom && (
-                                                    <div className="flex items-center justify-between text-sm text-secondary mb-1">
-                                                        <span>Fly From:</span>
-                                                        <span className="font-medium text-primary">{candidate.flyFrom}</span>
+                                                        {candidate.flyFrom && (
+                                                            <div className="flex items-center justify-between text-sm text-secondary mb-1">
+                                                                <span>Fly From:</span>
+                                                                <span className="font-medium text-primary">{candidate.flyFrom}</span>
+                                                            </div>
+                                                        )}
+                                                        {candidate.flyTo && (
+                                                            <div className="flex items-center justify-between text-sm text-secondary mb-1">
+                                                                <span>Fly To:</span>
+                                                                <span className="font-medium text-primary">{candidate.flyTo}</span>
+                                                            </div>
+                                                        )}
+                                                        {candidate.availability && (
+                                                            <div className="flex items-center justify-between text-sm text-secondary mb-1">
+                                                                <span>Availability:</span>
+                                                                <span className="font-medium text-primary text-right max-w-[150px]">{candidate.availability}</span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
-                                                {candidate.flyTo && (
-                                                    <div className="flex items-center justify-between text-sm text-secondary mb-1">
-                                                        <span>Fly To:</span>
-                                                        <span className="font-medium text-primary">{candidate.flyTo}</span>
-                                                    </div>
-                                                )}
-                                                {candidate.availability && (
-                                                    <div className="flex items-center justify-between text-sm text-secondary mb-1">
-                                                        <span>Availability:</span>
-                                                        <span className="font-medium text-primary text-right max-w-[150px]">{candidate.availability}</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
 
-                                        {/* Removed Decision Buttons from here */}
+                                                {/* Removed Decision Buttons from here */}
                                             </Card>
 
                                             <Card className="flex-1 flex flex-col mb-4">
-                                        <div className="mb-4 shrink-0">
-                                            <div className="flex items-center gap-3">
-                                                <span className="block flex-1 border-t border-border" aria-hidden="true" />
-                                                <p className="text-[11px] font-semibold text-muted uppercase tracking-wider whitespace-nowrap">
-                                                    Standardized Scores
-                                                </p>
-                                                <span className="block flex-1 border-t border-border" aria-hidden="true" />
-                                            </div>
-
-                                            <div className="mt-2 grid grid-cols-1 gap-3">
-                                                {/* Overall standardized (interview-based) */}
-                                                <div>
-                                                    <div className="mb-0.5">
-                                                        <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Overall</span>
+                                                <div className="mb-4 shrink-0">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="block flex-1 border-t border-border" aria-hidden="true" />
+                                                        <p className="text-[11px] font-semibold text-muted uppercase tracking-wider whitespace-nowrap">
+                                                            Standardized Scores
+                                                        </p>
+                                                        <span className="block flex-1 border-t border-border" aria-hidden="true" />
                                                     </div>
-                                                    <div className="flex items-baseline w-full gap-2">
-                                                        <div className="flex items-baseline gap-2">
-                                                            <ScoreTooltip
-                                                                label="Overall"
-                                                                lines={[
-                                                                    'Average standardized overall score across all interviews for this candidate.',
-                                                                    'Standardized by interviewer.',
-                                                                    'Scale: 0–10.',
-                                                                ]}
-                                                            >
-                                                                <span className="text-3xl font-semibold text-primary">
-                                                                    {overallStandardized != null ? overallStandardized.toFixed(1) : '—'}
+
+                                                    <div className="mt-2 grid grid-cols-1 gap-3">
+                                                        {/* Overall standardized (interview-based) */}
+                                                        <div>
+                                                            <div className="mb-0.5">
+                                                                <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Overall</span>
+                                                            </div>
+                                                            <div className="flex items-baseline w-full gap-2">
+                                                                <div className="flex items-baseline gap-2">
+                                                                    <ScoreTooltip
+                                                                        label="Overall"
+                                                                        lines={[
+                                                                            'Average standardized overall score across all interviews for this candidate.',
+                                                                            'Standardized by interviewer.',
+                                                                            'Scale: 0–10.',
+                                                                        ]}
+                                                                    >
+                                                                        <span className="text-3xl font-semibold text-primary">
+                                                                            {overallStandardized != null ? overallStandardized.toFixed(1) : '—'}
+                                                                        </span>
+                                                                    </ScoreTooltip>
+                                                                    <span className="text-xs text-secondary">/ 10</span>
+                                                                </div>
+                                                                <span className="ml-auto">
+                                                                    <PercentileMini percentileValue={overallPercentile} color={COLOR_OVERALL} label="Overall" />
                                                                 </span>
-                                                            </ScoreTooltip>
-                                                            <span className="text-xs text-secondary">/ 10</span>
+                                                            </div>
                                                         </div>
-                                                        <span className="ml-auto">
-                                                            <PercentileMini percentileValue={overallPercentile} color={COLOR_OVERALL} label="Overall" />
-                                                        </span>
+
+                                                        {/* Empirical standardized score */}
+                                                        {typeof candidate.scores.empirical === 'number' && (
+                                                            <div>
+                                                                <div className="mb-0.5">
+                                                                    <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Empirical</span>
+                                                                </div>
+                                                                <div className="flex items-baseline w-full gap-2">
+                                                                    <div className="flex items-baseline gap-2">
+                                                                        <ScoreTooltip
+                                                                            label="Empirical"
+                                                                            lines={[
+                                                                                'Weighted standardized metric combining written + interview + overall into one score.',
+                                                                                'Standardized by interviewer.',
+                                                                                'Scale: 0–10.',
+                                                                            ]}
+                                                                        >
+                                                                            <span className="text-3xl font-semibold text-primary">
+                                                                                {candidate.scores.empirical.toFixed(1)}
+                                                                            </span>
+                                                                        </ScoreTooltip>
+                                                                        <span className="text-xs text-secondary">/ 10</span>
+                                                                    </div>
+                                                                    <span className="ml-auto">
+                                                                        <PercentileMini
+                                                                            percentileValue={empiricalPercentile}
+                                                                            color={COLOR_EMPIRICAL}
+                                                                            label="Empirical"
+                                                                        />
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Written overall (average of dimensions) */}
+                                                        {hasWrittenScores && (
+                                                            <div>
+                                                                <div className="mb-0.5">
+                                                                    <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Written</span>
+                                                                </div>
+                                                                <div className="flex items-baseline w-full gap-2">
+                                                                    <div className="flex items-baseline gap-2">
+                                                                        <ScoreTooltip
+                                                                            label="Written"
+                                                                            lines={[
+                                                                                'Average of the 4 written scores (interest, teaching, seminar, personal).',
+                                                                                'Standardized across the cohort.',
+                                                                                'Scale: 0–5.',
+                                                                            ]}
+                                                                        >
+                                                                            <span className="text-3xl font-semibold text-primary">
+                                                                                {writtenOverall != null ? writtenOverall.toFixed(2) : '—'}
+                                                                            </span>
+                                                                        </ScoreTooltip>
+                                                                        <span className="text-xs text-secondary">/ 5</span>
+                                                                    </div>
+                                                                    <span className="ml-auto">
+                                                                        <PercentileMini
+                                                                            percentileValue={writtenAvgPercentile}
+                                                                            color={COLOR_WRITTEN}
+                                                                            label="Written"
+                                                                        />
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
 
-                                                {/* Empirical standardized score */}
-                                                {typeof candidate.scores.empirical === 'number' && (
-                                                    <div>
-                                                        <div className="mb-0.5">
-                                                            <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Empirical</span>
-                                                        </div>
-                                                        <div className="flex items-baseline w-full gap-2">
-                                                            <div className="flex items-baseline gap-2">
-                                                                <ScoreTooltip
-                                                                    label="Empirical"
-                                                                    lines={[
-                                                                        'Weighted standardized metric combining written + interview + overall into one score.',
-                                                                        'Standardized by interviewer.',
-                                                                        'Scale: 0–10.',
-                                                                    ]}
-                                                                >
-                                                                    <span className="text-3xl font-semibold text-primary">
-                                                                        {candidate.scores.empirical.toFixed(1)}
-                                                                    </span>
-                                                                </ScoreTooltip>
-                                                                <span className="text-xs text-secondary">/ 10</span>
-                                                            </div>
-                                                            <span className="ml-auto">
-                                                                <PercentileMini
-                                                                    percentileValue={empiricalPercentile}
-                                                                    color={COLOR_EMPIRICAL}
-                                                                    label="Empirical"
-                                                                />
-                                                            </span>
-                                                        </div>
+                                                <div className="space-y-1 mb-4">
+                                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Written Scores (out of 5)</p>
+                                                    {renderProgressBar('Interest', candidate.scores.writtenInterest, 5, COLOR_WRITTEN)}
+                                                    {renderProgressBar('Teaching', candidate.scores.writtenTeaching, 5, COLOR_WRITTEN)}
+                                                    {renderProgressBar('Seminar', candidate.scores.writtenSeminar, 5, COLOR_WRITTEN)}
+                                                    {renderProgressBar('Personal', candidate.scores.writtenPersonal, 5, COLOR_WRITTEN)}
+
+                                                    <div className="mt-3 pt-3 border-t border-border">
+                                                        <p className="text-xs font-semibold text-muted mb-1">Graded By: {candidate.grader}</p>
                                                     </div>
-                                                )}
+                                                </div>
 
-                                                {/* Written overall (average of dimensions) */}
-                                                {hasWrittenScores && (
-                                                    <div>
-                                                        <div className="mb-0.5">
-                                                            <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Written</span>
-                                                        </div>
-                                                        <div className="flex items-baseline w-full gap-2">
-                                                            <div className="flex items-baseline gap-2">
-                                                                <ScoreTooltip
-                                                                    label="Written"
-                                                                    lines={[
-                                                                        'Average of the 4 written scores (interest, teaching, seminar, personal).',
-                                                                        'Standardized across the cohort.',
-                                                                        'Scale: 0–5.',
-                                                                    ]}
-                                                                >
-                                                                    <span className="text-3xl font-semibold text-primary">
-                                                                        {writtenOverall != null ? writtenOverall.toFixed(2) : '—'}
-                                                                    </span>
-                                                                </ScoreTooltip>
-                                                                <span className="text-xs text-secondary">/ 5</span>
-                                                            </div>
-                                                            <span className="ml-auto">
-                                                                <PercentileMini
-                                                                    percentileValue={writtenAvgPercentile}
-                                                                    color={COLOR_WRITTEN}
-                                                                    label="Written"
-                                                                />
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-1 mb-4">
-                                            <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Written Scores (out of 5)</p>
-                                            {renderProgressBar('Interest', candidate.scores.writtenInterest, 5, COLOR_WRITTEN)}
-                                            {renderProgressBar('Teaching', candidate.scores.writtenTeaching, 5, COLOR_WRITTEN)}
-                                            {renderProgressBar('Seminar', candidate.scores.writtenSeminar, 5, COLOR_WRITTEN)}
-                                            {renderProgressBar('Personal', candidate.scores.writtenPersonal, 5, COLOR_WRITTEN)}
-
-                                            <div className="mt-3 pt-3 border-t border-border">
-                                                <p className="text-xs font-semibold text-muted mb-1">Graded By: {candidate.grader}</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-1 mb-2">
-                                            <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Interview Scores (out of 5)</p>
-                                            {renderProgressBar('Understanding', candidate.scores.understanding ?? 0, 5, COLOR_OVERALL)}
-                                            {renderProgressBar('Enthusiasm', candidate.scores.enthusiasm ?? 0, 5, COLOR_OVERALL)}
-                                            {renderProgressBar('Seminar Quality', candidate.scores.quality ?? 0, 5, COLOR_OVERALL)}
-                                            {renderProgressBar('Teaching', candidate.scores.teaching ?? 0, 5, COLOR_OVERALL)}
-                                            {renderProgressBar('Extracurriculars / Interest', candidate.scores.interestEngaging ?? 0, 5, COLOR_OVERALL)}
-                                        </div>
+                                                <div className="space-y-1 mb-2">
+                                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Interview Scores (out of 5)</p>
+                                                    {renderProgressBar('Understanding', candidate.scores.understanding ?? 0, 5, COLOR_OVERALL)}
+                                                    {renderProgressBar('Enthusiasm', candidate.scores.enthusiasm ?? 0, 5, COLOR_OVERALL)}
+                                                    {renderProgressBar('Seminar Quality', candidate.scores.quality ?? 0, 5, COLOR_OVERALL)}
+                                                    {renderProgressBar('Teaching', candidate.scores.teaching ?? 0, 5, COLOR_OVERALL)}
+                                                    {renderProgressBar('Extracurriculars / Interest', candidate.scores.interestEngaging ?? 0, 5, COLOR_OVERALL)}
+                                                </div>
                                             </Card>
                                         </div>
                                     </motion.div>
@@ -1042,12 +1042,12 @@ export function DeliberationPage() {
                             </AnimatePresence>
 
                             {/* Right Column: Detailed Context Tabs */}
-                                <motion.div
-                                    layout
-                                    transition={{ layout: { duration: 0.28, ease: 'easeOut' }, delay: 0.08 }}
-                                    className={`${hasSidebarSpace ? 'lg:col-span-9' : 'lg:col-span-12'} flex flex-col h-full bg-white dark:bg-surface border border-border rounded-md shadow-sm overflow-hidden transition-all duration-300 relative`}
-                                    initial={false}
-                                >
+                            <motion.div
+                                layout
+                                transition={{ layout: { duration: 0.28, ease: 'easeOut' }, delay: 0.08 }}
+                                className={`${hasSidebarSpace ? 'lg:col-span-9' : 'lg:col-span-12'} flex flex-col h-full bg-white dark:bg-surface border border-border rounded-md shadow-sm overflow-hidden transition-all duration-300 relative`}
+                                initial={false}
+                            >
                                 {/* Expand handle when sidebar is fully collapsed */}
                                 {!sidebarHasSpace && (
                                     <button
@@ -1106,567 +1106,567 @@ export function DeliberationPage() {
                                         >
                                             {activeTab === 'seminar' && (
                                                 <div className="space-y-8">
-                                            <div>
-                                                <div className="inline-block px-2.5 py-1 bg-accent/10 text-accent rounded-full text-xs font-semibold tracking-wide mb-3">
-                                                    {candidate.seminarCategory}
-                                                </div>
-                                                {/* <h2 className="text-2xl font-bold text-primary">{candidate.seminarTitle}</h2> */}
-                                                <h2 className="text-2xl font-bold text-primary truncate max-w-[60ch]">
-                                                {candidate.seminarTitle}
-                                                </h2>
-                                            </div>
+                                                    <div>
+                                                        <div className="inline-block px-2.5 py-1 bg-accent/10 text-accent rounded-full text-xs font-semibold tracking-wide mb-3">
+                                                            {candidate.seminarCategory}
+                                                        </div>
+                                                        {/* <h2 className="text-2xl font-bold text-primary">{candidate.seminarTitle}</h2> */}
+                                                        <h2 className="text-2xl font-bold text-primary truncate max-w-[60ch]">
+                                                            {candidate.seminarTitle}
+                                                        </h2>
+                                                    </div>
 
-                                            <div>
-                                                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted mb-2">Course Description</h3>
-                                                <p className="text-md text-primary leading-relaxed bg-surface/50 dark:bg-surfaceHover p-4 rounded-lg border border-border">
-                                                    {candidate.seminarDescription}
-                                                </p>
-                                            </div>
+                                                    <div>
+                                                        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted mb-2">Course Description</h3>
+                                                        <p className="text-md text-primary leading-relaxed bg-surface/50 dark:bg-surfaceHover p-4 rounded-lg border border-border">
+                                                            {candidate.seminarDescription}
+                                                        </p>
+                                                    </div>
 
-                                            <div>
-                                                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted mb-2">Tangible Final Product</h3>
-                                                <p className="text-sm text-secondary leading-relaxed bg-surface/50 dark:bg-surfaceHover p-4 rounded-lg border border-border">
-                                                    {candidate.finalProduct}
-                                                </p>
-                                            </div>
+                                                    <div>
+                                                        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted mb-2">Tangible Final Product</h3>
+                                                        <p className="text-sm text-primary leading-relaxed bg-surface/50 dark:bg-surfaceHover p-4 rounded-lg border border-border">
+                                                            {candidate.finalProduct}
+                                                        </p>
+                                                    </div>
 
-                                            <div>
-                                                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted mb-2">Other Potential Topics</h3>
-                                                <p className="text-sm text-secondary p-2">
-                                                    {candidate.moreTopics}
-                                                </p>
-                                            </div>
+                                                    <div>
+                                                        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted mb-2">Other Potential Topics</h3>
+                                                        <p className="text-sm text-primary p-2">
+                                                            {candidate.moreTopics}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             )}
 
                                             {activeTab === 'written' && (
                                                 <div className="space-y-8">
-                                            <div>
-                                                <h3 className="text-sm font-semibold text-primary mb-2">Self Introduction & Achievements</h3>
-                                                <p className="text-sm text-secondary leading-relaxed p-3 bg-surface rounded-md border border-border">
-                                                    {candidate.selfIntro}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <h3 className="text-sm font-semibold text-primary mb-2">Interest in HSYLC Mission</h3>
-                                                <p className="text-sm text-secondary leading-relaxed p-3 bg-surface rounded-md border border-border">
-                                                    {candidate.interestReason}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <h3 className="text-sm font-semibold text-primary mb-2">Teaching & Mentoring Experience</h3>
-                                                <p className="text-sm text-secondary leading-relaxed p-3 bg-surface rounded-md border border-border">
-                                                    {candidate.teachingExp}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <h3 className="text-sm font-semibold text-primary mb-2">Advice for a High Schooler</h3>
-                                                <p className="text-sm text-secondary leading-relaxed p-3 bg-surface rounded-md border border-border text-center italic">
-                                                    "{candidate.advice}"
-                                                </p>
-                                            </div>
+                                                    <div>
+                                                        <h3 className="text-sm font-semibold text-primary mb-2">Self Introduction & Achievements</h3>
+                                                        <p className="text-sm text-primary leading-relaxed p-3 bg-surface rounded-md border border-border">
+                                                            {candidate.selfIntro}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-sm font-semibold text-primary mb-2">Interest in HSYLC Mission</h3>
+                                                        <p className="text-sm text-primary leading-relaxed p-3 bg-surface rounded-md border border-border">
+                                                            {candidate.interestReason}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-sm font-semibold text-primary mb-2">Teaching & Mentoring Experience</h3>
+                                                        <p className="text-sm text-primary leading-relaxed p-3 bg-surface rounded-md border border-border">
+                                                            {candidate.teachingExp}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-sm font-semibold text-primary mb-2">Advice for a High Schooler</h3>
+                                                        <p className="text-sm text-primary leading-relaxed p-3 bg-surface rounded-md border border-border text-center italic">
+                                                            "{candidate.advice}"
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             )}
 
                                             {activeTab === 'interview' && (
                                                 <div className="space-y-8">
-                                            {candidate.sensitiveIssues && candidate.sensitiveIssues.toLowerCase() !== 'no' && (
-                                                <div className="p-4 bg-orange-50 dark:bg-orange-900/20 text-orange-800 dark:text-orange-200 border border-orange-200 dark:border-orange-800 rounded-lg">
-                                                    <h4 className="text-sm font-bold mb-1 flex items-center gap-2">⚠️ Sensitive Topics Alert</h4>
-                                                    <p className="text-sm">{candidate.sensitiveIssues}</p>
-                                                </div>
-                                            )}
-
-                                            {!candidate.interviewNotes || candidate.interviewNotes.length === 0 ? (
-                                                <div className="text-center text-secondary py-8">
-                                                    No interviews have been recorded for this candidate yet.
-                                                </div>
-                                            ) : (
-                                                <div className={`grid ${candidate.interviewNotes.length === 1 ? 'grid-cols-1' : candidate.interviewNotes.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3'} gap-0 md:gap-8 divide-y md:divide-y-0 md:divide-x divide-border`}>
-                                                    {candidate.interviewNotes.map((note: any, index: number) => (
-                                                        <div key={index} className="first:pl-0 last:pr-0 md:px-6 md:first:px-3 md:last:px-3 pt-6 first:pt-0 md:pt-0 pb-6 md:pb-0">
-                                                            <div className="flex items-center justify-between gap-3 mb-4">
-                                                                <div className="flex items-center gap-2">
-                                                                    <User className="w-4 h-4 text-accent" />
-                                                                    <span className="font-semibold text-primary">{note.interviewer || 'Unknown Interviewer'}</span>
-                                                                </div>
-                                                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-secondary">
-                                                                    <span>Enth <span className="font-semibold text-primary">{formatScore(note.score_enthusiasm)}</span></span>
-                                                                    <span>Qual <span className="font-semibold text-primary">{formatScore(note.score_quality)}</span></span>
-                                                                    <span>Teach <span className="font-semibold text-primary">{formatScore(note.score_teaching)}</span></span>
-                                                                    <span>Int <span className="font-semibold text-primary">{formatScore(note.score_interest)}</span></span>
-                                                                    <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent font-semibold">
-                                                                        Overall {formatScore(note.score_overall)}
-                                                                    </span>
-                                                                    {note.sensitiveFlag && (
-                                                                        <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-100 font-semibold">
-                                                                            Sensitive
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="space-y-6">
-                                                                <div>
-                                                                    <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Why SL & Understanding</h4>
-                                                                    <p className="text-sm text-primary leading-relaxed">{note.notes_why_sl || '—'}</p>
-                                                                </div>
-                                                                <div>
-                                                                    <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Seminar Feedback</h4>
-                                                                    <p className="text-sm text-primary leading-relaxed">{note.notes_seminar || '—'}</p>
-                                                                </div>
-                                                                <div>
-                                                                    <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Extracurricular Impact</h4>
-                                                                    <p className="text-sm text-primary leading-relaxed">{note.notes_extracurricular || '—'}</p>
-                                                                </div>
-                                                                <div>
-                                                                    <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Cross-Cultural Exchange</h4>
-                                                                    <p className="text-sm text-primary leading-relaxed">{note.notes_cross_cultural || '—'}</p>
-                                                                </div>
-                                                                <div>
-                                                                    <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">"Teach Me in 2 Minutes"</h4>
-                                                                    <p className="text-sm text-primary leading-relaxed">{note.notes_teach_me || '—'}</p>
-                                                                </div>
-                                                                <div>
-                                                                    <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Spring/Summer Commitment</h4>
-                                                                    <p className="text-sm text-primary leading-relaxed">{note.notes_commitment || '—'}</p>
-                                                                </div>
-                                                                {(note.availabilityAnswer || note.flyFromInterview || note.flyToInterview) && (
-                                                                    <div>
-                                                                        <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Logistics (Interview)</h4>
-                                                                        {note.availabilityAnswer && (
-                                                                            <p className="text-sm text-primary leading-relaxed mb-1">
-                                                                                {note.availabilityAnswer}
-                                                                            </p>
-                                                                        )}
-                                                                        {(note.availabilityShenzhen || note.availabilityShanghai || note.availabilityHangzhou || note.availabilityBeijing) && (
-                                                                            <p className="text-xs text-secondary mb-1">
-                                                                                Cities:{' '}
-                                                                                <span className="font-medium text-primary">
-                                                                                    {[
-                                                                                        note.availabilityShenzhen && 'Shenzhen',
-                                                                                        note.availabilityShanghai && 'Shanghai',
-                                                                                        note.availabilityHangzhou && 'Hangzhou',
-                                                                                        note.availabilityBeijing && 'Beijing',
-                                                                                    ]
-                                                                                        .filter(Boolean)
-                                                                                        .join(', ')}
-                                                                                </span>
-                                                                            </p>
-                                                                        )}
-                                                                        {note.flyFromInterview && (
-                                                                            <p className="text-xs text-secondary mb-1">
-                                                                                Fly from:{' '}
-                                                                                <span className="font-medium text-primary">{note.flyFromInterview}</span>
-                                                                            </p>
-                                                                        )}
-                                                                        {note.flyToInterview && (
-                                                                            <p className="text-xs text-secondary">
-                                                                                Fly to:{' '}
-                                                                                <span className="font-medium text-primary">{note.flyToInterview}</span>
-                                                                            </p>
-                                                                        )}
-                                                                    </div>
-                                                                )}
-                                                                <div className="pt-4 border-t border-border">
-                                                                    <h4 className="text-xs font-semibold text-accent uppercase tracking-wider mb-2">Overall Comments</h4>
-                                                                    <p className="text-sm font-medium text-primary leading-relaxed">{note.notes_comments || '—'}</p>
-                                                                </div>
-                                                            </div>
+                                                    {candidate.sensitiveIssues && candidate.sensitiveIssues.toLowerCase() !== 'no' && (
+                                                        <div className="p-4 bg-orange-50 dark:bg-orange-900/20 text-orange-800 dark:text-orange-200 border border-orange-200 dark:border-orange-800 rounded-lg">
+                                                            <h4 className="text-sm font-bold mb-1 flex items-center gap-2">⚠️ Sensitive Topics Alert</h4>
+                                                            <p className="text-sm">{candidate.sensitiveIssues}</p>
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            )}
+                                                    )}
+
+                                                    {!candidate.interviewNotes || candidate.interviewNotes.length === 0 ? (
+                                                        <div className="text-center text-secondary py-8">
+                                                            No interviews have been recorded for this candidate yet.
+                                                        </div>
+                                                    ) : (
+                                                        <div className={`grid ${candidate.interviewNotes.length === 1 ? 'grid-cols-1' : candidate.interviewNotes.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3'} gap-0 md:gap-8 divide-y md:divide-y-0 md:divide-x divide-border`}>
+                                                            {candidate.interviewNotes.map((note: any, index: number) => (
+                                                                <div key={index} className="first:pl-0 last:pr-0 md:px-6 md:first:px-3 md:last:px-3 pt-6 first:pt-0 md:pt-0 pb-6 md:pb-0">
+                                                                    <div className="flex items-center justify-between gap-3 mb-4">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <User className="w-4 h-4 text-accent" />
+                                                                            <span className="font-semibold text-primary">{note.interviewer || 'Unknown Interviewer'}</span>
+                                                                        </div>
+                                                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-secondary">
+                                                                            <span>Enth <span className="font-semibold text-primary">{formatScore(note.score_enthusiasm)}</span></span>
+                                                                            <span>Qual <span className="font-semibold text-primary">{formatScore(note.score_quality)}</span></span>
+                                                                            <span>Teach <span className="font-semibold text-primary">{formatScore(note.score_teaching)}</span></span>
+                                                                            <span>Int <span className="font-semibold text-primary">{formatScore(note.score_interest)}</span></span>
+                                                                            <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent font-semibold">
+                                                                                Overall {formatScore(note.score_overall)}
+                                                                            </span>
+                                                                            {note.sensitiveFlag && (
+                                                                                <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-100 font-semibold">
+                                                                                    Sensitive
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="space-y-6">
+                                                                        <div>
+                                                                            <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Why SL & Understanding</h4>
+                                                                            <p className="text-sm text-primary leading-relaxed">{note.notes_why_sl || '—'}</p>
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Seminar Feedback</h4>
+                                                                            <p className="text-sm text-primary leading-relaxed">{note.notes_seminar || '—'}</p>
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Extracurricular Impact</h4>
+                                                                            <p className="text-sm text-primary leading-relaxed">{note.notes_extracurricular || '—'}</p>
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Cross-Cultural Exchange</h4>
+                                                                            <p className="text-sm text-primary leading-relaxed">{note.notes_cross_cultural || '—'}</p>
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">"Teach Me in 2 Minutes"</h4>
+                                                                            <p className="text-sm text-primary leading-relaxed">{note.notes_teach_me || '—'}</p>
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Spring/Summer Commitment</h4>
+                                                                            <p className="text-sm text-primary leading-relaxed">{note.notes_commitment || '—'}</p>
+                                                                        </div>
+                                                                        {(note.availabilityAnswer || note.flyFromInterview || note.flyToInterview) && (
+                                                                            <div>
+                                                                                <h4 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Logistics (Interview)</h4>
+                                                                                {note.availabilityAnswer && (
+                                                                                    <p className="text-sm text-primary leading-relaxed mb-1">
+                                                                                        {note.availabilityAnswer}
+                                                                                    </p>
+                                                                                )}
+                                                                                {(note.availabilityShenzhen || note.availabilityShanghai || note.availabilityHangzhou || note.availabilityBeijing) && (
+                                                                                    <p className="text-xs text-secondary mb-1">
+                                                                                        Cities:{' '}
+                                                                                        <span className="font-medium text-primary">
+                                                                                            {[
+                                                                                                note.availabilityShenzhen && 'Shenzhen',
+                                                                                                note.availabilityShanghai && 'Shanghai',
+                                                                                                note.availabilityHangzhou && 'Hangzhou',
+                                                                                                note.availabilityBeijing && 'Beijing',
+                                                                                            ]
+                                                                                                .filter(Boolean)
+                                                                                                .join(', ')}
+                                                                                        </span>
+                                                                                    </p>
+                                                                                )}
+                                                                                {note.flyFromInterview && (
+                                                                                    <p className="text-xs text-secondary mb-1">
+                                                                                        Fly from:{' '}
+                                                                                        <span className="font-medium text-primary">{note.flyFromInterview}</span>
+                                                                                    </p>
+                                                                                )}
+                                                                                {note.flyToInterview && (
+                                                                                    <p className="text-xs text-secondary">
+                                                                                        Fly to:{' '}
+                                                                                        <span className="font-medium text-primary">{note.flyToInterview}</span>
+                                                                                    </p>
+                                                                                )}
+                                                                            </div>
+                                                                        )}
+                                                                        <div className="pt-4 border-t border-border">
+                                                                            <h4 className="text-xs font-semibold text-accent uppercase tracking-wider mb-2">Overall Comments</h4>
+                                                                            <p className="text-sm font-medium text-primary leading-relaxed">{note.notes_comments || '—'}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
 
                                             {activeTab === 'visualizations' && (
-                                        <div className="space-y-10">
-                                            {/* Written vs Interview vs Empirical summary */}
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                                <motion.div
-                                                    initial={{ opacity: 0, y: 8 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ type: 'spring', stiffness: 220, damping: 26 }}
-                                                    className="p-4 rounded-md border border-border bg-surface/50 dark:bg-surfaceHover/30"
-                                                >
-                                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Written application (avg)</p>
-                                                    <div className="flex items-baseline gap-2">
-                                                        <span className="text-2xl font-bold text-primary">{writtenOverall != null ? writtenOverall.toFixed(2) : '—'}</span>
-                                                        <span className="text-sm text-secondary">/ 5</span>
+                                                <div className="space-y-10">
+                                                    {/* Written vs Interview vs Empirical summary */}
+                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: 8 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ type: 'spring', stiffness: 220, damping: 26 }}
+                                                            className="p-4 rounded-md border border-border bg-surface/50 dark:bg-surfaceHover/30"
+                                                        >
+                                                            <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Written application (avg)</p>
+                                                            <div className="flex items-baseline gap-2">
+                                                                <span className="text-2xl font-bold text-primary">{writtenOverall != null ? writtenOverall.toFixed(2) : '—'}</span>
+                                                                <span className="text-sm text-secondary">/ 5</span>
+                                                            </div>
+                                                            <p className="mt-1 text-xs text-secondary">
+                                                                Percentile: {writtenAvgPercentile != null ? `${writtenAvgPercentile}th` : '—'}
+                                                            </p>
+                                                            {hasWrittenScores && (
+                                                                <div className="mt-2 h-2 w-full bg-surfaceHover rounded-full overflow-hidden">
+                                                                    <motion.div
+                                                                        className="h-full rounded-full"
+                                                                        style={{ backgroundColor: COLOR_WRITTEN }}
+                                                                        initial={{ width: 0 }}
+                                                                        animate={{ width: `${((writtenOverall ?? 0) / 5) * 100}%` }}
+                                                                        transition={{ type: 'spring', stiffness: 160, damping: 22 }}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </motion.div>
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: 8 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.05 }}
+                                                            className="p-4 rounded-md border border-border bg-surface/50 dark:bg-surfaceHover/30"
+                                                        >
+                                                            <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Interview (avg overall)</p>
+                                                            <div className="flex items-baseline gap-2">
+                                                                <span className="text-2xl font-bold text-primary">{interviewOverallAvg != null ? interviewOverallAvg.toFixed(2) : '—'}</span>
+                                                                <span className="text-sm text-secondary">/ 10</span>
+                                                            </div>
+                                                            <p className="mt-1 text-xs text-secondary">
+                                                                Percentile: {overallPercentile != null ? `${overallPercentile}th` : '—'}
+                                                            </p>
+                                                            {hasInterviewOverall && (
+                                                                <div className="mt-2 h-2 w-full bg-surfaceHover rounded-full overflow-hidden">
+                                                                    <motion.div
+                                                                        className="h-full rounded-full"
+                                                                        style={{ backgroundColor: COLOR_OVERALL }}
+                                                                        initial={{ width: 0 }}
+                                                                        animate={{ width: `${((interviewOverallAvg ?? 0) / 10) * 100}%` }}
+                                                                        transition={{ type: 'spring', stiffness: 160, damping: 22 }}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </motion.div>
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: 8 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.1 }}
+                                                            className="p-4 rounded-md border border-border bg-surface/50 dark:bg-surfaceHover/30"
+                                                        >
+                                                            <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Empirical (overall)</p>
+                                                            <div className="flex items-baseline gap-2">
+                                                                <span className="text-2xl font-bold text-primary">{currentEmpirical != null ? currentEmpirical.toFixed(1) : '—'}</span>
+                                                                <span className="text-sm text-secondary">/ 10</span>
+                                                            </div>
+                                                            <p className="mt-1 text-xs text-secondary">
+                                                                Percentile: {empiricalPercentile != null ? `${empiricalPercentile}th` : '—'}
+                                                            </p>
+                                                            {currentEmpirical != null && (
+                                                                <div className="mt-2 h-2 w-full bg-surfaceHover rounded-full overflow-hidden">
+                                                                    <motion.div
+                                                                        className="h-full rounded-full"
+                                                                        style={{ backgroundColor: COLOR_EMPIRICAL }}
+                                                                        initial={{ width: 0 }}
+                                                                        animate={{ width: `${(currentEmpirical / 10) * 100}%` }}
+                                                                        transition={{ type: 'spring', stiffness: 160, damping: 22 }}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </motion.div>
                                                     </div>
-                                                    <p className="mt-1 text-xs text-secondary">
-                                                        Percentile: {writtenAvgPercentile != null ? `${writtenAvgPercentile}th` : '—'}
-                                                    </p>
+
+                                                    {/* Cohort distribution: Written vs Interview vs Empirical toggle, PMF + CDF */}
+                                                    {(cohortOverallScores.length > 0 || cohortWrittenAverages.length > 0 || cohortEmpiricalScores.length > 0) && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: 8 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.06 }}
+                                                        >
+                                                            <div className="flex flex-wrap items-center gap-3 mb-2">
+                                                                <h3 className="text-sm font-semibold text-primary">Score distribution (cohort)</h3>
+                                                                <div className="flex rounded-lg border border-border bg-surface/50 p-0.5">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setDistributionMode('written')}
+                                                                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'written' ? 'text-white' : 'text-secondary hover:text-primary'}`}
+                                                                        style={distributionMode === 'written' ? { backgroundColor: COLOR_WRITTEN } : undefined}
+                                                                    >
+                                                                        Written (avg)
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setDistributionMode('interview')}
+                                                                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'interview' ? 'text-white' : 'text-secondary hover:text-primary'}`}
+                                                                        style={distributionMode === 'interview' ? { backgroundColor: COLOR_OVERALL } : undefined}
+                                                                    >
+                                                                        Interview (avg overall)
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setDistributionMode('empirical')}
+                                                                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'empirical' ? 'text-white' : 'text-secondary hover:text-primary'}`}
+                                                                        style={distributionMode === 'empirical' ? { backgroundColor: COLOR_EMPIRICAL } : undefined}
+                                                                    >
+                                                                        Empirical overall
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <p className="text-xs text-secondary mb-3">
+                                                                {distributionMode === 'interview' && (
+                                                                    <>
+                                                                        Smoothed distribution of interview overall score (average across interviewers) for all{' '}
+                                                                        {candidates.length} candidates.
+                                                                        {currentOverall != null && overallPercentile != null && (
+                                                                            <span className="ml-1 font-medium text-primary">
+                                                                                {candidate.name} is at{' '}
+                                                                                <span style={{ color: COLOR_OVERALL }}>{overallPercentile}th percentile</span> (score{' '}
+                                                                                {currentOverall.toFixed(1)}).
+                                                                            </span>
+                                                                        )}
+                                                                    </>
+                                                                )}
+                                                                {distributionMode === 'written' && (
+                                                                    <>
+                                                                        Smoothed distribution of written overall average (0–5) across all candidates.
+                                                                        {currentWrittenAvg != null && writtenAvgPercentile != null && (
+                                                                            <span className="ml-1 font-medium text-primary">
+                                                                                {candidate.name} is at{' '}
+                                                                                <span style={{ color: COLOR_WRITTEN }}>{writtenAvgPercentile}th percentile</span> (avg{' '}
+                                                                                {currentWrittenAvg.toFixed(2)}/5).
+                                                                            </span>
+                                                                        )}
+                                                                    </>
+                                                                )}
+                                                                {distributionMode === 'empirical' && (
+                                                                    <>
+                                                                        Smoothed distribution of empirical standardized score for all {candidates.length} candidates.
+                                                                        {currentEmpirical != null && empiricalPercentile != null && (
+                                                                            <span className="ml-1 font-medium text-primary">
+                                                                                {candidate.name} is at{' '}
+                                                                                <span style={{ color: COLOR_EMPIRICAL }}>{empiricalPercentile}th percentile</span> (score{' '}
+                                                                                {currentEmpirical.toFixed(1)}).
+                                                                            </span>
+                                                                        )}
+                                                                    </>
+                                                                )}
+                                                            </p>
+
+                                                            {distributionMode === 'interview' && cohortOverallScores.length > 0 && (
+                                                                <>
+                                                                    <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">Density (KDE)</p>
+                                                                    <div className="h-52 mb-2" style={{ marginTop: 4 }}>
+                                                                        <ResponsiveContainer width="100%" height="100%">
+                                                                            <AreaChart data={overallKdeData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
+                                                                                <defs>
+                                                                                    <linearGradient id="overallKdeFill" x1="0" y1="0" x2="0" y2="1">
+                                                                                        <stop offset="0%" stopColor={COLOR_OVERALL} stopOpacity={0.4} />
+                                                                                        <stop offset="100%" stopColor={COLOR_OVERALL} stopOpacity={0} />
+                                                                                    </linearGradient>
+                                                                                </defs>
+                                                                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                                <XAxis dataKey="x" type="number" domain={[0, 10]} tick={{ fontSize: 10, fill: '#6B7280' }} />
+                                                                                <YAxis hide domain={[0, 1.15]} />
+                                                                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => ['density', v != null ? v.toFixed(3) : '—']} labelFormatter={(l: unknown) => `Score ${l}`} />
+                                                                                <Area type="monotone" dataKey="density" stroke={COLOR_OVERALL} strokeWidth={2} fill="url(#overallKdeFill)" />
+                                                                                {typeof currentOverall === 'number' && (
+                                                                                    <ReferenceLine x={currentOverall} stroke={COLOR_CANDIDATE} strokeWidth={2} strokeDasharray="4 2" label={{ value: 'Candidate', position: 'top', fill: COLOR_CANDIDATE, fontSize: 11 }} />
+                                                                                )}
+                                                                            </AreaChart>
+                                                                        </ResponsiveContainer>
+                                                                    </div>
+                                                                    <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">CDF</p>
+                                                                    <div className="h-52" style={{ marginTop: 4 }}>
+                                                                        <ResponsiveContainer width="100%" height="100%">
+                                                                            <LineChart data={overallCdfData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
+                                                                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                                <XAxis dataKey="x" type="number" domain={[0, 10]} tick={{ fontSize: 10, fill: '#6B7280' }} />
+                                                                                <YAxis domain={[0, 1]} tick={{ fontSize: 10, fill: '#6B7280' }} tickFormatter={(v) => `${Math.round(v * 100)}%`} />
+                                                                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? `${(v * 100).toFixed(0)}%` : '—', 'CDF']} labelFormatter={(l: unknown) => `Score ${l}`} />
+                                                                                <Line type="monotone" dataKey="cdf" stroke={COLOR_OVERALL} strokeWidth={2} dot={false} />
+                                                                                {typeof currentOverall === 'number' && (
+                                                                                    <ReferenceLine x={currentOverall} stroke={COLOR_CANDIDATE} strokeWidth={2} strokeDasharray="4 2" label={{ value: 'Candidate', position: 'top', fill: COLOR_CANDIDATE, fontSize: 11 }} />
+                                                                                )}
+                                                                            </LineChart>
+                                                                        </ResponsiveContainer>
+                                                                    </div>
+                                                                </>
+                                                            )}
+
+                                                            {distributionMode === 'written' && cohortWrittenAverages.length > 0 && (
+                                                                <>
+                                                                    <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">Density (KDE)</p>
+                                                                    <div className="h-52 mb-2" style={{ marginTop: 4 }}>
+                                                                        <ResponsiveContainer width="100%" height="100%">
+                                                                            <AreaChart data={writtenAvgKdeData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
+                                                                                <defs>
+                                                                                    <linearGradient id="writtenAvgKdeFill" x1="0" y1="0" x2="0" y2="1">
+                                                                                        <stop offset="0%" stopColor={COLOR_WRITTEN} stopOpacity={0.4} />
+                                                                                        <stop offset="100%" stopColor={COLOR_WRITTEN} stopOpacity={0} />
+                                                                                    </linearGradient>
+                                                                                </defs>
+                                                                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                                <XAxis dataKey="x" type="number" domain={[0, 5]} tick={{ fontSize: 10, fill: '#6B7280' }} />
+                                                                                <YAxis hide domain={[0, 1.15]} />
+                                                                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => ['density', v != null ? v.toFixed(3) : '—']} labelFormatter={(l: unknown) => `Avg ${l}`} />
+                                                                                <Area type="monotone" dataKey="density" stroke={COLOR_WRITTEN} strokeWidth={2} fill="url(#writtenAvgKdeFill)" />
+                                                                                {currentWrittenAvg != null && (
+                                                                                    <ReferenceLine x={currentWrittenAvg} stroke={COLOR_CANDIDATE} strokeWidth={2} strokeDasharray="4 2" label={{ value: 'Candidate', position: 'top', fill: COLOR_CANDIDATE, fontSize: 11 }} />
+                                                                                )}
+                                                                            </AreaChart>
+                                                                        </ResponsiveContainer>
+                                                                    </div>
+                                                                    <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">CDF</p>
+                                                                    <div className="h-52" style={{ marginTop: 4 }}>
+                                                                        <ResponsiveContainer width="100%" height="100%">
+                                                                            <LineChart data={writtenAvgCdfData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
+                                                                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                                <XAxis dataKey="x" type="number" domain={[0, 5]} tick={{ fontSize: 10, fill: '#6B7280' }} />
+                                                                                <YAxis domain={[0, 1]} tick={{ fontSize: 10, fill: '#6B7280' }} tickFormatter={(v) => `${Math.round(v * 100)}%`} />
+                                                                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? `${(v * 100).toFixed(0)}%` : '—', 'CDF']} labelFormatter={(l: unknown) => `Sum ${l}`} />
+                                                                                <Line type="monotone" dataKey="cdf" stroke={COLOR_WRITTEN} strokeWidth={2} dot={false} />
+                                                                                {currentWrittenAvg != null && (
+                                                                                    <ReferenceLine x={currentWrittenAvg} stroke={COLOR_CANDIDATE} strokeWidth={2} strokeDasharray="4 2" label={{ value: 'Candidate', position: 'top', fill: COLOR_CANDIDATE, fontSize: 11 }} />
+                                                                                )}
+                                                                            </LineChart>
+                                                                        </ResponsiveContainer>
+                                                                    </div>
+                                                                </>
+                                                            )}
+
+                                                            {distributionMode === 'empirical' && cohortEmpiricalScores.length > 0 && (
+                                                                <>
+                                                                    <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">Density (KDE)</p>
+                                                                    <div className="h-52 mb-2" style={{ marginTop: 4 }}>
+                                                                        <ResponsiveContainer width="100%" height="100%">
+                                                                            <AreaChart data={empiricalKdeData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
+                                                                                <defs>
+                                                                                    <linearGradient id="empiricalKdeFill" x1="0" y1="0" x2="0" y2="1">
+                                                                                        <stop offset="0%" stopColor={COLOR_EMPIRICAL} stopOpacity={0.4} />
+                                                                                        <stop offset="100%" stopColor={COLOR_EMPIRICAL} stopOpacity={0} />
+                                                                                    </linearGradient>
+                                                                                </defs>
+                                                                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                                <XAxis dataKey="x" type="number" domain={[0, 10]} tick={{ fontSize: 10, fill: '#6B7280' }} />
+                                                                                <YAxis hide domain={[0, 1.15]} />
+                                                                                <Tooltip
+                                                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                                                    formatter={(v: number | undefined) => ['density', v != null ? v.toFixed(3) : '—']}
+                                                                                    labelFormatter={(l: unknown) => `Score ${l}`}
+                                                                                />
+                                                                                <Area type="monotone" dataKey="density" stroke={COLOR_EMPIRICAL} strokeWidth={2} fill="url(#empiricalKdeFill)" />
+                                                                                {currentEmpirical != null && (
+                                                                                    <ReferenceLine
+                                                                                        x={currentEmpirical}
+                                                                                        stroke={COLOR_CANDIDATE}
+                                                                                        strokeWidth={2}
+                                                                                        strokeDasharray="4 2"
+                                                                                        label={{ value: 'Candidate', position: 'top', fill: COLOR_CANDIDATE, fontSize: 11 }}
+                                                                                    />
+                                                                                )}
+                                                                            </AreaChart>
+                                                                        </ResponsiveContainer>
+                                                                    </div>
+                                                                    <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">CDF</p>
+                                                                    <div className="h-52" style={{ marginTop: 4 }}>
+                                                                        <ResponsiveContainer width="100%" height="100%">
+                                                                            <LineChart data={empiricalCdfData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
+                                                                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                                <XAxis dataKey="x" type="number" domain={[0, 10]} tick={{ fontSize: 10, fill: '#6B7280' }} />
+                                                                                <YAxis
+                                                                                    domain={[0, 1]}
+                                                                                    tick={{ fontSize: 10, fill: '#6B7280' }}
+                                                                                    tickFormatter={(v) => `${Math.round(v * 100)}%`}
+                                                                                />
+                                                                                <Tooltip
+                                                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                                                    formatter={(v: number | undefined) => [v != null ? `${(v * 100).toFixed(0)}%` : '—', 'CDF']}
+                                                                                    labelFormatter={(l: unknown) => `Score ${l}`}
+                                                                                />
+                                                                                <Line type="monotone" dataKey="cdf" stroke={COLOR_EMPIRICAL} strokeWidth={2} dot={false} />
+                                                                                {currentEmpirical != null && (
+                                                                                    <ReferenceLine
+                                                                                        x={currentEmpirical}
+                                                                                        stroke={COLOR_CANDIDATE}
+                                                                                        strokeWidth={2}
+                                                                                        strokeDasharray="4 2"
+                                                                                        label={{ value: 'Candidate', position: 'top', fill: COLOR_CANDIDATE, fontSize: 11 }}
+                                                                                    />
+                                                                                )}
+                                                                            </LineChart>
+                                                                        </ResponsiveContainer>
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </motion.div>
+                                                    )}
+
+                                                    {/* Written dimensions bar chart */}
                                                     {hasWrittenScores && (
-                                                        <div className="mt-2 h-2 w-full bg-surfaceHover rounded-full overflow-hidden">
-                                                            <motion.div
-                                                                className="h-full rounded-full"
-                                                                style={{ backgroundColor: COLOR_WRITTEN }}
-                                                                initial={{ width: 0 }}
-                                                                animate={{ width: `${((writtenOverall ?? 0) / 5) * 100}%` }}
-                                                                transition={{ type: 'spring', stiffness: 160, damping: 22 }}
-                                                            />
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: 8 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.08 }}
+                                                        >
+                                                            <h3 className="text-sm font-semibold text-primary mb-3">Written application dimensions (out of 5)</h3>
+                                                            <div className="h-64">
+                                                                <ResponsiveContainer width="100%" height="100%">
+                                                                    <BarChart data={writtenBarData} layout="vertical" margin={{ top: 14, right: 16, left: 60, bottom: 4 }}>
+                                                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                        <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 11, fill: '#6B7280' }} />
+                                                                        <YAxis type="category" dataKey="name" width={56} tick={{ fontSize: 11, fill: '#374151' }} />
+                                                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? `${v.toFixed(1)} / 5` : '—', 'Score']} />
+                                                                        <Bar dataKey="score" radius={[0, 4, 4, 0]} fill={COLOR_WRITTEN} />
+                                                                    </BarChart>
+                                                                </ResponsiveContainer>
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+
+                                                    {/* Interview dimensions bar chart (average) */}
+                                                    {(hasInterviewOverall || interviewBarData.some(d => d.score > 0)) && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: 8 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.1 }}
+                                                        >
+                                                            <h3 className="text-sm font-semibold text-primary mb-3">Interview dimensions — average (out of 5)</h3>
+                                                            <div className="h-64">
+                                                                <ResponsiveContainer width="100%" height="100%">
+                                                                    <BarChart data={interviewBarData} layout="vertical" margin={{ top: 14, right: 16, left: 80, bottom: 4 }}>
+                                                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                        <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 11, fill: '#6B7280' }} />
+                                                                        <YAxis type="category" dataKey="name" width={76} tick={{ fontSize: 11, fill: '#374151' }} />
+                                                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? `${v.toFixed(1)} / 5` : '—', 'Score']} />
+                                                                        <Bar dataKey="score" radius={[0, 4, 4, 0]} fill={COLOR_OVERALL} />
+                                                                    </BarChart>
+                                                                </ResponsiveContainer>
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+
+                                                    {/* Multi-interviewer comparison */}
+                                                    {multiInterviewerChartData.length > 0 && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: 8 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.12 }}
+                                                        >
+                                                            <h3 className="text-sm font-semibold text-primary mb-3">Interviewer comparison by dimension</h3>
+                                                            <div className="h-72">
+                                                                <ResponsiveContainer width="100%" height="100%">
+                                                                    <BarChart data={multiInterviewerChartData} margin={{ top: 16, right: 16, left: 8, bottom: 24 }}>
+                                                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                                                        <XAxis dataKey="dimension" tick={{ fontSize: 10, fill: '#374151' }} />
+                                                                        <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: '#6B7280' }} />
+                                                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                                                        <Legend />
+                                                                        {interviewNotes.slice(0, 4).map((note: any, i: number) => {
+                                                                            const label = note.interviewer || `Interviewer ${i + 1}`;
+                                                                            return (
+                                                                                <Bar key={label} dataKey={label} fill={INTERVIEWER_COLORS[i % INTERVIEWER_COLORS.length]} radius={[2, 2, 0, 0]} />
+                                                                            );
+                                                                        })}
+                                                                    </BarChart>
+                                                                </ResponsiveContainer>
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+
+                                                    {!hasWrittenScores && !hasInterviewOverall && (
+                                                        <div className="text-center text-secondary py-8">
+                                                            No written or interview scores yet. Charts will appear once scores are available.
                                                         </div>
                                                     )}
-                                                </motion.div>
-                                                <motion.div
-                                                    initial={{ opacity: 0, y: 8 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.05 }}
-                                                    className="p-4 rounded-md border border-border bg-surface/50 dark:bg-surfaceHover/30"
-                                                >
-                                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Interview (avg overall)</p>
-                                                    <div className="flex items-baseline gap-2">
-                                                        <span className="text-2xl font-bold text-primary">{interviewOverallAvg != null ? interviewOverallAvg.toFixed(2) : '—'}</span>
-                                                        <span className="text-sm text-secondary">/ 10</span>
-                                                    </div>
-                                                    <p className="mt-1 text-xs text-secondary">
-                                                        Percentile: {overallPercentile != null ? `${overallPercentile}th` : '—'}
-                                                    </p>
-                                                    {hasInterviewOverall && (
-                                                        <div className="mt-2 h-2 w-full bg-surfaceHover rounded-full overflow-hidden">
-                                                            <motion.div
-                                                                className="h-full rounded-full"
-                                                                style={{ backgroundColor: COLOR_OVERALL }}
-                                                                initial={{ width: 0 }}
-                                                                animate={{ width: `${((interviewOverallAvg ?? 0) / 10) * 100}%` }}
-                                                                transition={{ type: 'spring', stiffness: 160, damping: 22 }}
-                                                            />
-                                                        </div>
-                                                    )}
-                                                </motion.div>
-                                                <motion.div
-                                                    initial={{ opacity: 0, y: 8 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.1 }}
-                                                    className="p-4 rounded-md border border-border bg-surface/50 dark:bg-surfaceHover/30"
-                                                >
-                                                    <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Empirical (overall)</p>
-                                                    <div className="flex items-baseline gap-2">
-                                                        <span className="text-2xl font-bold text-primary">{currentEmpirical != null ? currentEmpirical.toFixed(1) : '—'}</span>
-                                                        <span className="text-sm text-secondary">/ 10</span>
-                                                    </div>
-                                                    <p className="mt-1 text-xs text-secondary">
-                                                        Percentile: {empiricalPercentile != null ? `${empiricalPercentile}th` : '—'}
-                                                    </p>
-                                                    {currentEmpirical != null && (
-                                                        <div className="mt-2 h-2 w-full bg-surfaceHover rounded-full overflow-hidden">
-                                                            <motion.div
-                                                                className="h-full rounded-full"
-                                                                style={{ backgroundColor: COLOR_EMPIRICAL }}
-                                                                initial={{ width: 0 }}
-                                                                animate={{ width: `${(currentEmpirical / 10) * 100}%` }}
-                                                                transition={{ type: 'spring', stiffness: 160, damping: 22 }}
-                                                            />
-                                                        </div>
-                                                    )}
-                                                </motion.div>
-                                            </div>
-
-                                            {/* Cohort distribution: Written vs Interview vs Empirical toggle, PMF + CDF */}
-                                            {(cohortOverallScores.length > 0 || cohortWrittenAverages.length > 0 || cohortEmpiricalScores.length > 0) && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, y: 8 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.06 }}
-                                                >
-                                                    <div className="flex flex-wrap items-center gap-3 mb-2">
-                                                        <h3 className="text-sm font-semibold text-primary">Score distribution (cohort)</h3>
-                                                        <div className="flex rounded-lg border border-border bg-surface/50 p-0.5">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setDistributionMode('written')}
-                                                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'written' ? 'text-white' : 'text-secondary hover:text-primary'}`}
-                                                                style={distributionMode === 'written' ? { backgroundColor: COLOR_WRITTEN } : undefined}
-                                                            >
-                                                                Written (avg)
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setDistributionMode('interview')}
-                                                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'interview' ? 'text-white' : 'text-secondary hover:text-primary'}`}
-                                                                style={distributionMode === 'interview' ? { backgroundColor: COLOR_OVERALL } : undefined}
-                                                            >
-                                                                Interview (avg overall)
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setDistributionMode('empirical')}
-                                                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'empirical' ? 'text-white' : 'text-secondary hover:text-primary'}`}
-                                                                style={distributionMode === 'empirical' ? { backgroundColor: COLOR_EMPIRICAL } : undefined}
-                                                            >
-                                                                Empirical overall
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    <p className="text-xs text-secondary mb-3">
-                                                        {distributionMode === 'interview' && (
-                                                            <>
-                                                                Smoothed distribution of interview overall score (average across interviewers) for all{' '}
-                                                                {candidates.length} candidates.
-                                                                {currentOverall != null && overallPercentile != null && (
-                                                                    <span className="ml-1 font-medium text-primary">
-                                                                        {candidate.name} is at{' '}
-                                                                        <span style={{ color: COLOR_OVERALL }}>{overallPercentile}th percentile</span> (score{' '}
-                                                                        {currentOverall.toFixed(1)}).
-                                                                    </span>
-                                                                )}
-                                                            </>
-                                                        )}
-                                                        {distributionMode === 'written' && (
-                                                            <>
-                                                                Smoothed distribution of written overall average (0–5) across all candidates.
-                                                                {currentWrittenAvg != null && writtenAvgPercentile != null && (
-                                                                    <span className="ml-1 font-medium text-primary">
-                                                                        {candidate.name} is at{' '}
-                                                                        <span style={{ color: COLOR_WRITTEN }}>{writtenAvgPercentile}th percentile</span> (avg{' '}
-                                                                        {currentWrittenAvg.toFixed(2)}/5).
-                                                                    </span>
-                                                                )}
-                                                            </>
-                                                        )}
-                                                        {distributionMode === 'empirical' && (
-                                                            <>
-                                                                Smoothed distribution of empirical standardized score for all {candidates.length} candidates.
-                                                                {currentEmpirical != null && empiricalPercentile != null && (
-                                                                    <span className="ml-1 font-medium text-primary">
-                                                                        {candidate.name} is at{' '}
-                                                                        <span style={{ color: COLOR_EMPIRICAL }}>{empiricalPercentile}th percentile</span> (score{' '}
-                                                                        {currentEmpirical.toFixed(1)}).
-                                                                    </span>
-                                                                )}
-                                                            </>
-                                                        )}
-                                                    </p>
-
-                                                    {distributionMode === 'interview' && cohortOverallScores.length > 0 && (
-                                                        <>
-                                                            <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">Density (KDE)</p>
-                                                            <div className="h-52 mb-2" style={{ marginTop: 4 }}>
-                                                                <ResponsiveContainer width="100%" height="100%">
-                                                                    <AreaChart data={overallKdeData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
-                                                                        <defs>
-                                                                            <linearGradient id="overallKdeFill" x1="0" y1="0" x2="0" y2="1">
-                                                                                <stop offset="0%" stopColor={COLOR_OVERALL} stopOpacity={0.4} />
-                                                                                <stop offset="100%" stopColor={COLOR_OVERALL} stopOpacity={0} />
-                                                                            </linearGradient>
-                                                                        </defs>
-                                                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                                                        <XAxis dataKey="x" type="number" domain={[0, 10]} tick={{ fontSize: 10, fill: '#6B7280' }} />
-                                                                        <YAxis hide domain={[0, 1.15]} />
-                                                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => ['density', v != null ? v.toFixed(3) : '—']} labelFormatter={(l: unknown) => `Score ${l}`} />
-                                                                        <Area type="monotone" dataKey="density" stroke={COLOR_OVERALL} strokeWidth={2} fill="url(#overallKdeFill)" />
-                                                                        {typeof currentOverall === 'number' && (
-                                                                            <ReferenceLine x={currentOverall} stroke={COLOR_CANDIDATE} strokeWidth={2} strokeDasharray="4 2" label={{ value: 'Candidate', position: 'top', fill: COLOR_CANDIDATE, fontSize: 11 }} />
-                                                                        )}
-                                                                    </AreaChart>
-                                                                </ResponsiveContainer>
-                                                            </div>
-                                                            <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">CDF</p>
-                                                            <div className="h-52" style={{ marginTop: 4 }}>
-                                                                <ResponsiveContainer width="100%" height="100%">
-                                                                    <LineChart data={overallCdfData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
-                                                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                                                        <XAxis dataKey="x" type="number" domain={[0, 10]} tick={{ fontSize: 10, fill: '#6B7280' }} />
-                                                                        <YAxis domain={[0, 1]} tick={{ fontSize: 10, fill: '#6B7280' }} tickFormatter={(v) => `${Math.round(v * 100)}%`} />
-                                                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? `${(v * 100).toFixed(0)}%` : '—', 'CDF']} labelFormatter={(l: unknown) => `Score ${l}`} />
-                                                                        <Line type="monotone" dataKey="cdf" stroke={COLOR_OVERALL} strokeWidth={2} dot={false} />
-                                                                        {typeof currentOverall === 'number' && (
-                                                                            <ReferenceLine x={currentOverall} stroke={COLOR_CANDIDATE} strokeWidth={2} strokeDasharray="4 2" label={{ value: 'Candidate', position: 'top', fill: COLOR_CANDIDATE, fontSize: 11 }} />
-                                                                        )}
-                                                                    </LineChart>
-                                                                </ResponsiveContainer>
-                                                            </div>
-                                                        </>
-                                                    )}
-
-                                                    {distributionMode === 'written' && cohortWrittenAverages.length > 0 && (
-                                                        <>
-                                                            <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">Density (KDE)</p>
-                                                            <div className="h-52 mb-2" style={{ marginTop: 4 }}>
-                                                                <ResponsiveContainer width="100%" height="100%">
-                                                                    <AreaChart data={writtenAvgKdeData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
-                                                                        <defs>
-                                                                            <linearGradient id="writtenAvgKdeFill" x1="0" y1="0" x2="0" y2="1">
-                                                                                <stop offset="0%" stopColor={COLOR_WRITTEN} stopOpacity={0.4} />
-                                                                                <stop offset="100%" stopColor={COLOR_WRITTEN} stopOpacity={0} />
-                                                                            </linearGradient>
-                                                                        </defs>
-                                                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                                                        <XAxis dataKey="x" type="number" domain={[0, 5]} tick={{ fontSize: 10, fill: '#6B7280' }} />
-                                                                        <YAxis hide domain={[0, 1.15]} />
-                                                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => ['density', v != null ? v.toFixed(3) : '—']} labelFormatter={(l: unknown) => `Avg ${l}`} />
-                                                                        <Area type="monotone" dataKey="density" stroke={COLOR_WRITTEN} strokeWidth={2} fill="url(#writtenAvgKdeFill)" />
-                                                                        {currentWrittenAvg != null && (
-                                                                            <ReferenceLine x={currentWrittenAvg} stroke={COLOR_CANDIDATE} strokeWidth={2} strokeDasharray="4 2" label={{ value: 'Candidate', position: 'top', fill: COLOR_CANDIDATE, fontSize: 11 }} />
-                                                                        )}
-                                                                    </AreaChart>
-                                                                </ResponsiveContainer>
-                                                            </div>
-                                                            <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">CDF</p>
-                                                            <div className="h-52" style={{ marginTop: 4 }}>
-                                                                <ResponsiveContainer width="100%" height="100%">
-                                                                    <LineChart data={writtenAvgCdfData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
-                                                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                                                        <XAxis dataKey="x" type="number" domain={[0, 5]} tick={{ fontSize: 10, fill: '#6B7280' }} />
-                                                                        <YAxis domain={[0, 1]} tick={{ fontSize: 10, fill: '#6B7280' }} tickFormatter={(v) => `${Math.round(v * 100)}%`} />
-                                                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? `${(v * 100).toFixed(0)}%` : '—', 'CDF']} labelFormatter={(l: unknown) => `Sum ${l}`} />
-                                                                        <Line type="monotone" dataKey="cdf" stroke={COLOR_WRITTEN} strokeWidth={2} dot={false} />
-                                                                        {currentWrittenAvg != null && (
-                                                                            <ReferenceLine x={currentWrittenAvg} stroke={COLOR_CANDIDATE} strokeWidth={2} strokeDasharray="4 2" label={{ value: 'Candidate', position: 'top', fill: COLOR_CANDIDATE, fontSize: 11 }} />
-                                                                        )}
-                                                                    </LineChart>
-                                                                </ResponsiveContainer>
-                                                            </div>
-                                                        </>
-                                                    )}
-
-                                                    {distributionMode === 'empirical' && cohortEmpiricalScores.length > 0 && (
-                                                        <>
-                                                            <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">Density (KDE)</p>
-                                                            <div className="h-52 mb-2" style={{ marginTop: 4 }}>
-                                                                <ResponsiveContainer width="100%" height="100%">
-                                                                    <AreaChart data={empiricalKdeData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
-                                                                        <defs>
-                                                                            <linearGradient id="empiricalKdeFill" x1="0" y1="0" x2="0" y2="1">
-                                                                                <stop offset="0%" stopColor={COLOR_EMPIRICAL} stopOpacity={0.4} />
-                                                                                <stop offset="100%" stopColor={COLOR_EMPIRICAL} stopOpacity={0} />
-                                                                            </linearGradient>
-                                                                        </defs>
-                                                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                                                        <XAxis dataKey="x" type="number" domain={[0, 10]} tick={{ fontSize: 10, fill: '#6B7280' }} />
-                                                                        <YAxis hide domain={[0, 1.15]} />
-                                                                        <Tooltip
-                                                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                                            formatter={(v: number | undefined) => ['density', v != null ? v.toFixed(3) : '—']}
-                                                                            labelFormatter={(l: unknown) => `Score ${l}`}
-                                                                        />
-                                                                        <Area type="monotone" dataKey="density" stroke={COLOR_EMPIRICAL} strokeWidth={2} fill="url(#empiricalKdeFill)" />
-                                                                        {currentEmpirical != null && (
-                                                                            <ReferenceLine
-                                                                                x={currentEmpirical}
-                                                                                stroke={COLOR_CANDIDATE}
-                                                                                strokeWidth={2}
-                                                                                strokeDasharray="4 2"
-                                                                                label={{ value: 'Candidate', position: 'top', fill: COLOR_CANDIDATE, fontSize: 11 }}
-                                                                            />
-                                                                        )}
-                                                                    </AreaChart>
-                                                                </ResponsiveContainer>
-                                                            </div>
-                                                            <p className="text-[11px] font-medium text-muted uppercase tracking-wider mb-1">CDF</p>
-                                                            <div className="h-52" style={{ marginTop: 4 }}>
-                                                                <ResponsiveContainer width="100%" height="100%">
-                                                                    <LineChart data={empiricalCdfData} margin={{ top: chartTopMargin, right: 16, left: 8, bottom: 24 }}>
-                                                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                                                        <XAxis dataKey="x" type="number" domain={[0, 10]} tick={{ fontSize: 10, fill: '#6B7280' }} />
-                                                                        <YAxis
-                                                                            domain={[0, 1]}
-                                                                            tick={{ fontSize: 10, fill: '#6B7280' }}
-                                                                            tickFormatter={(v) => `${Math.round(v * 100)}%`}
-                                                                        />
-                                                                        <Tooltip
-                                                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                                            formatter={(v: number | undefined) => [v != null ? `${(v * 100).toFixed(0)}%` : '—', 'CDF']}
-                                                                            labelFormatter={(l: unknown) => `Score ${l}`}
-                                                                        />
-                                                                        <Line type="monotone" dataKey="cdf" stroke={COLOR_EMPIRICAL} strokeWidth={2} dot={false} />
-                                                                        {currentEmpirical != null && (
-                                                                            <ReferenceLine
-                                                                                x={currentEmpirical}
-                                                                                stroke={COLOR_CANDIDATE}
-                                                                                strokeWidth={2}
-                                                                                strokeDasharray="4 2"
-                                                                                label={{ value: 'Candidate', position: 'top', fill: COLOR_CANDIDATE, fontSize: 11 }}
-                                                                            />
-                                                                        )}
-                                                                    </LineChart>
-                                                                </ResponsiveContainer>
-                                                            </div>
-                                                        </>
-                                                    )}
-                                                </motion.div>
-                                            )}
-
-                                            {/* Written dimensions bar chart */}
-                                            {hasWrittenScores && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, y: 8 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.08 }}
-                                                >
-                                                    <h3 className="text-sm font-semibold text-primary mb-3">Written application dimensions (out of 5)</h3>
-                                                    <div className="h-64">
-                                                        <ResponsiveContainer width="100%" height="100%">
-                                                            <BarChart data={writtenBarData} layout="vertical" margin={{ top: 14, right: 16, left: 60, bottom: 4 }}>
-                                                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                                                <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 11, fill: '#6B7280' }} />
-                                                                <YAxis type="category" dataKey="name" width={56} tick={{ fontSize: 11, fill: '#374151' }} />
-                                                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? `${v.toFixed(1)} / 5` : '—', 'Score']} />
-                                                                <Bar dataKey="score" radius={[0, 4, 4, 0]} fill={COLOR_WRITTEN} />
-                                                            </BarChart>
-                                                        </ResponsiveContainer>
-                                                    </div>
-                                                </motion.div>
-                                            )}
-
-                                            {/* Interview dimensions bar chart (average) */}
-                                            {(hasInterviewOverall || interviewBarData.some(d => d.score > 0)) && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, y: 8 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.1 }}
-                                                >
-                                                    <h3 className="text-sm font-semibold text-primary mb-3">Interview dimensions — average (out of 5)</h3>
-                                                    <div className="h-64">
-                                                        <ResponsiveContainer width="100%" height="100%">
-                                                            <BarChart data={interviewBarData} layout="vertical" margin={{ top: 14, right: 16, left: 80, bottom: 4 }}>
-                                                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                                                <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 11, fill: '#6B7280' }} />
-                                                                <YAxis type="category" dataKey="name" width={76} tick={{ fontSize: 11, fill: '#374151' }} />
-                                                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(v: number | undefined) => [v != null ? `${v.toFixed(1)} / 5` : '—', 'Score']} />
-                                                                <Bar dataKey="score" radius={[0, 4, 4, 0]} fill={COLOR_OVERALL} />
-                                                            </BarChart>
-                                                        </ResponsiveContainer>
-                                                    </div>
-                                                </motion.div>
-                                            )}
-
-                                            {/* Multi-interviewer comparison */}
-                                            {multiInterviewerChartData.length > 0 && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, y: 8 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.12 }}
-                                                >
-                                                    <h3 className="text-sm font-semibold text-primary mb-3">Interviewer comparison by dimension</h3>
-                                                    <div className="h-72">
-                                                        <ResponsiveContainer width="100%" height="100%">
-                                                            <BarChart data={multiInterviewerChartData} margin={{ top: 16, right: 16, left: 8, bottom: 24 }}>
-                                                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                                                <XAxis dataKey="dimension" tick={{ fontSize: 10, fill: '#374151' }} />
-                                                                <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: '#6B7280' }} />
-                                                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                                                <Legend />
-                                                                {interviewNotes.slice(0, 4).map((note: any, i: number) => {
-                                                                    const label = note.interviewer || `Interviewer ${i + 1}`;
-                                                                    return (
-                                                                        <Bar key={label} dataKey={label} fill={INTERVIEWER_COLORS[i % INTERVIEWER_COLORS.length]} radius={[2, 2, 0, 0]} />
-                                                                    );
-                                                                })}
-                                                            </BarChart>
-                                                        </ResponsiveContainer>
-                                                    </div>
-                                                </motion.div>
-                                            )}
-
-                                            {!hasWrittenScores && !hasInterviewOverall && (
-                                                <div className="text-center text-secondary py-8">
-                                                    No written or interview scores yet. Charts will appear once scores are available.
                                                 </div>
-                                            )}
-                                        </div>
                                             )}
                                         </motion.div>
                                     </AnimatePresence>
