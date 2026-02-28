@@ -257,7 +257,7 @@ export function DatabasePage() {
                             placeholder="Search by name or school..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 text-sm bg-surface border border-border rounded-lg placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-shadow"
+                            className="w-full pl-9 pr-4 py-2 text-sm bg-surface border border-border rounded-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-shadow"
                         />
                     </div>
                 </div>
@@ -284,7 +284,7 @@ export function DatabasePage() {
 
                         <div className="flex items-center gap-2">
                             <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Type</label>
-                            <div className="w-40 shrink-0 z-10">
+                            <div className="w-40 shrink-0 z-20">
                                 <Select
                                     value={candidateTypeFilter}
                                     onChange={(val) => setCandidateTypeFilter(val as any)}
@@ -486,7 +486,7 @@ export function DatabasePage() {
                                 )}
                                 <button
                                     onClick={closeDetails}
-                                    className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-secondary hover:text-primary transition-colors"
+                                    className="inline-flex items-center justify-center w-8 h-8 rounded-sm hover:bg-black/5 dark:hover:bg-white/10 text-secondary hover:text-primary transition-colors"
                                     aria-label="Close details"
                                 >
                                     <X className="w-4 h-4" />

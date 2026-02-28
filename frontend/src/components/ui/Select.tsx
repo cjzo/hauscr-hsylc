@@ -37,7 +37,7 @@ export function Select({ options, value, onChange, placeholder = 'Select...', cl
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full h-10 px-3 bg-white dark:bg-surface border border-border rounded-md shadow-sm text-left flex items-center justify-between hover:bg-surface focus:outline-none focus:shadow-stripe-focus transition-all"
+                className="w-full h-10 px-3 bg-white dark:bg-surface border border-border rounded-sm shadow-sm text-left flex items-center justify-between hover:bg-surface transition-all"
             >
                 <span className={cn("block truncate text-sm", !selectedOption && "text-muted")}>
                     {selectedOption ? selectedOption.label : placeholder}
@@ -52,7 +52,7 @@ export function Select({ options, value, onChange, placeholder = 'Select...', cl
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -5, scale: 0.98 }}
                         transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                        className="absolute z-50 w-full mt-1 bg-white dark:bg-surface border border-border rounded-md shadow-stripe-hover py-1 max-h-60 overflow-auto"
+                        className="absolute z-50 w-full mt-1 bg-white dark:bg-surface border border-border rounded-sm shadow-stripe-hover p-1 max-h-60 overflow-auto"
                     >
                         {options.map((option) => (
                             <button
@@ -62,7 +62,7 @@ export function Select({ options, value, onChange, placeholder = 'Select...', cl
                                     setIsOpen(false);
                                 }}
                                 className={cn(
-                                    "w-full text-left px-3 py-2 text-sm flex items-center justify-between hover:bg-surfaceHover transition-colors",
+                                    "w-full text-left px-2 py-1.5 text-sm flex items-center justify-between hover:bg-surfaceHover transition-colors focus:outline-none focus-visible:ring-0 focus-visible:shadow-none rounded-sm",
                                     option.value === value ? "text-accent font-medium dark:text-accent" : "text-primary"
                                 )}
                             >
@@ -73,6 +73,6 @@ export function Select({ options, value, onChange, placeholder = 'Select...', cl
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 }

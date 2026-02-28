@@ -30,6 +30,11 @@
   body {
     @apply bg-background text-primary antialiased font-sans;
   }
+
+  *:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-bg-primary), 0 0 0 4px var(--color-accent);
+  }
 }
 
 @layer components {
@@ -46,6 +51,10 @@
   }
 
   .stripe-card {
-    @apply bg-white rounded-md border border-border shadow-sm p-6 dark:bg-surface dark:border-border;
+    @apply bg-white rounded-sm border border-border shadow-sm p-6 dark:bg-surface dark:border-border;
+  }
+
+  .ring-stripe {
+    box-shadow: 0 0 0 2px var(--color-bg-primary), 0 0 0 4px var(--color-accent);
   }
 }

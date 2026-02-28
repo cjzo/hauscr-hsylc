@@ -22,7 +22,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { standardizeCategory } from '../utils/categories';
 
-const COLORS = ['#2563eb', '#16a34a', '#d97706', '#9333ea', '#db2777', '#0891b2', '#ca8a04', '#475569'];
+const COLORS = ['#2663EB', '#293352', '#A61D30', '#52854C', '#EE823E', '#0891b2', '#ca8a04', '#475569'];
 
 export function DashboardPage() {
     const [isLoading, setIsLoading] = useState(true);
@@ -349,7 +349,7 @@ export function DashboardPage() {
                         <div className="flex items-start justify-between">
                             <div className="space-y-1">
                                 <p className="text-sm font-medium text-secondary">{stat.label}</p>
-                                <p className="text-3xl font-bold text-primary">{stat.value}</p>
+                                <p className="text-3xl font-thin text-primary">{stat.value}</p>
                             </div>
                             <div className={`w-10 h-10 rounded-sm flex items-center justify-center ${stat.bgColor} ${stat.color} transition-transform group-hover:scale-110`}>
                                 <stat.icon className="w-5 h-5" />
@@ -532,7 +532,7 @@ export function DashboardPage() {
                                 <button
                                     type="button"
                                     onClick={goPrevScoreView}
-                                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface hover:bg-surfaceHover text-secondary hover:text-primary transition-colors"
+                                    className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-border bg-surface hover:bg-surfaceHover text-secondary hover:text-primary transition-colors"
                                     aria-label="Previous score distribution"
                                 >
                                     <ChevronLeft className="w-4 h-4" />
@@ -545,7 +545,7 @@ export function DashboardPage() {
                                 <button
                                     type="button"
                                     onClick={goNextScoreView}
-                                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface hover:bg-surfaceHover text-secondary hover:text-primary transition-colors"
+                                    className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-border bg-surface hover:bg-surfaceHover text-secondary hover:text-primary transition-colors"
                                     aria-label="Next score distribution"
                                 >
                                     <ChevronRight className="w-4 h-4" />
@@ -745,7 +745,7 @@ export function DashboardPage() {
                                     <button
                                         type="button"
                                         onClick={goPrevRubricView}
-                                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface hover:bg-surfaceHover text-secondary hover:text-primary transition-colors"
+                                        className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-border bg-surface hover:bg-surfaceHover text-secondary hover:text-primary transition-colors"
                                         aria-label="Previous rubric distribution view"
                                     >
                                         <ChevronLeft className="w-4 h-4" />
@@ -756,7 +756,7 @@ export function DashboardPage() {
                                     <button
                                         type="button"
                                         onClick={goNextRubricView}
-                                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface hover:bg-surfaceHover text-secondary hover:text-primary transition-colors"
+                                        className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-border bg-surface hover:bg-surfaceHover text-secondary hover:text-primary transition-colors"
                                         aria-label="Next rubric distribution view"
                                     >
                                         <ChevronRight className="w-4 h-4" />
@@ -834,7 +834,7 @@ export function DashboardPage() {
                                                     />
                                                     <Bar
                                                         dataKey="count"
-                                                        fill="#8b5cf6"
+                                                        fill="#2663EB"
                                                         radius={[4, 4, 0, 0]}
                                                         barSize={24}
                                                         animationDuration={1500}
@@ -989,7 +989,7 @@ export function DashboardPage() {
                                                     />
                                                     <Bar
                                                         dataKey="count"
-                                                        fill="#8b5cf6"
+                                                        fill="#2663EB"
                                                         radius={[4, 4, 0, 0]}
                                                         barSize={24}
                                                         animationDuration={1500}

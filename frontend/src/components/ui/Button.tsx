@@ -12,8 +12,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
         // Stripe styling variants
         const variants = {
-            primary: 'stripe-btn-primary',
-            secondary: 'stripe-btn-secondary',
+            primary: 'bg-accent text-white shadow-sm hover:shadow hover:-translate-y-[1px] hover:bg-accent-hover focus-visible:ring-stripe focus:outline-none dark:text-black',
+            secondary: 'bg-white text-primary border border-border shadow-sm hover:bg-surface focus-visible:ring-stripe focus:outline-none dark:bg-surface dark:border-border dark:hover:bg-surfaceHover',
             ghost: 'bg-transparent text-secondary hover:bg-surfaceHover hover:text-primary dark:text-muted dark:hover:text-primary',
             danger: 'bg-white text-red-600 border border-red-200 shadow-sm hover:bg-red-50 focus-visible:shadow-[0_0_0_2px_#fff,0_0_0_4px_#ef4444] dark:bg-surface dark:border-red-900/50 dark:hover:bg-red-900/20',
         };

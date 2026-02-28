@@ -65,7 +65,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                             <div className="p-6">
                                 <div className="flex items-start gap-4">
                                     {options.destructive && (
-                                        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                                        <div className="flex-shrink-0 w-10 h-10 rounded-sm bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
                                             <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-500" />
                                         </div>
                                     )}

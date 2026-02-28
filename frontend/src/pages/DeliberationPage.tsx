@@ -1107,7 +1107,7 @@ export function DeliberationPage() {
                                             {activeTab === 'seminar' && (
                                                 <div className="space-y-8">
                                                     <div>
-                                                        <div className="inline-block px-2.5 py-1 bg-accent/10 text-accent rounded-full text-xs font-semibold tracking-wide mb-3">
+                                                        <div className="inline-block px-2.5 py-1 bg-accent/10 text-accent rounded-sm text-xs font-semibold tracking-wide mb-3">
                                                             {candidate.seminarCategory}
                                                         </div>
                                                         {/* <h2 className="text-2xl font-bold text-primary">{candidate.seminarTitle}</h2> */}
@@ -1195,11 +1195,11 @@ export function DeliberationPage() {
                                                                             <span>Qual <span className="font-semibold text-primary">{formatScore(note.score_quality)}</span></span>
                                                                             <span>Teach <span className="font-semibold text-primary">{formatScore(note.score_teaching)}</span></span>
                                                                             <span>Int <span className="font-semibold text-primary">{formatScore(note.score_interest)}</span></span>
-                                                                            <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent font-semibold">
+                                                                            <span className="px-2 py-0.5 rounded-sm bg-accent/10 text-accent font-semibold">
                                                                                 Overall {formatScore(note.score_overall)}
                                                                             </span>
                                                                             {note.sensitiveFlag && (
-                                                                                <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-100 font-semibold">
+                                                                                <span className="px-2 py-0.5 rounded-sm bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-100 font-semibold">
                                                                                     Sensitive
                                                                                 </span>
                                                                             )}

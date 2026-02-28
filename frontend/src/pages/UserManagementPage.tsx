@@ -348,7 +348,7 @@ export function UserManagementPage() {
               value={userIdInput}
               onChange={(e) => setUserIdInput(e.target.value)}
               placeholder="User ID (UUID)"
-              className="flex-1 h-10 px-3 py-2 rounded-md border border-border bg-surface text-sm text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/40"
+              className="flex-1 h-10 px-3 py-2 rounded-sm border border-border bg-surface text-sm text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/40"
             />
             <div className="w-full sm:w-40 shrink-0">
               <Select
@@ -399,7 +399,7 @@ export function UserManagementPage() {
               onChange={(e) => setMemberEmailInput(e.target.value)}
               placeholder="member@example.com&#10;other@example.com"
               rows={3}
-              className="w-full px-3 py-2 rounded-md border border-border bg-surface text-sm text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/40 resize-y"
+              className="w-full px-3 py-2 rounded-sm border border-border bg-surface text-sm text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/40 resize-y"
             />
             <Button onClick={handleAddMemberEmails} disabled={memberEmailSaving}>
               {memberEmailSaving ? 'Adding…' : 'Add member emails'}
@@ -453,7 +453,7 @@ export function UserManagementPage() {
               onChange={(e) => setEmailInput(e.target.value)}
               placeholder="admin@example.com&#10;other@example.com"
               rows={3}
-              className="w-full px-3 py-2 rounded-md border border-border bg-surface text-sm text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/40 resize-y"
+              className="w-full px-3 py-2 rounded-sm border border-border bg-surface text-sm text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/40 resize-y"
             />
             <Button onClick={handleAddAdminEmails} disabled={emailSaving}>
               {emailSaving ? 'Adding…' : 'Add admin emails'}
