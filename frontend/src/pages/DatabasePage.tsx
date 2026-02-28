@@ -229,22 +229,32 @@ export function DatabasePage() {
 
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                     {/* Tabs */}
-                    <div className="flex bg-surface p-1 rounded-lg border border-border w-full sm:w-auto overflow-x-auto shrink-0">
+                    <div className="flex bg-surface p-1 rounded-lg border border-border w-full sm:w-auto overflow-x-auto shrink-0 relative">
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as any)}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === tab.id
-                                    ? 'bg-background shadow-sm text-primary'
+                                className={`relative flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.id
+                                    ? 'text-primary'
                                     : 'text-secondary hover:text-primary hover:bg-black/5 dark:hover:bg-white/5'
                                     }`}
                             >
-                                <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? tab.color : 'opacity-70'}`} />
-                                <span className="whitespace-nowrap">{tab.label}</span>
-                                <span className={`ml-1.5 px-2 py-0.5 rounded-full text-xs ${activeTab === tab.id ? 'bg-black/5 dark:bg-white/10' : 'bg-transparent'
-                                    }`}>
-                                    {candidates.filter(c => c.deliberation_status === tab.id).length}
-                                </span>
+                                {activeTab === tab.id && (
+                                    <motion.div
+                                        layoutId="db-tab-highlight"
+                                        className="absolute inset-0 bg-background shadow-sm rounded-md"
+                                        initial={false}
+                                        transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                                    />
+                                )}
+                                <div className="relative z-10 flex items-center gap-2">
+                                    <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? tab.color : 'opacity-70'}`} />
+                                    <span className="whitespace-nowrap">{tab.label}</span>
+                                    <span className={`ml-1.5 px-2 py-0.5 rounded-full text-xs transition-colors ${activeTab === tab.id ? 'bg-black/5 dark:bg-white/10' : 'bg-transparent'
+                                        }`}>
+                                        {candidates.filter(c => c.deliberation_status === tab.id).length}
+                                    </span>
+                                </div>
                             </button>
                         ))}
                     </div>

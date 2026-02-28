@@ -119,7 +119,7 @@ function ScoreTooltip({
                 <span
                     id={id}
                     role="tooltip"
-                    className="pointer-events-none fixed z-[9999] rounded-md border border-border bg-white/90 p-3 text-xs text-secondary shadow-xl backdrop-blur-md dark:bg-surface/90"
+                    className="pointer-events-none fixed z-[9999] rounded-sm border border-border bg-white/90 p-3 text-xs text-secondary shadow-xl backdrop-blur-md dark:bg-surface/90"
                     style={{ left: pos.left, top: pos.top, width: pos.width }}
                 >
                     <span className="block text-[11px] font-semibold text-primary mb-1">{label}</span>
@@ -158,13 +158,13 @@ function PercentileMini({
                 <span className="text-[11px] font-semibold opacity-90" style={{ color }}>
                     P{clamped}
                 </span>
-                <span className="relative h-2 w-24 rounded-full bg-surfaceHover overflow-hidden">
+                <span className="relative h-2 w-24 rounded-sm bg-surfaceHover overflow-hidden">
                     <span
                         className="absolute inset-y-0 left-0 opacity-25"
                         style={{ width: `${clamped}%`, backgroundColor: color }}
                     />
                     <span
-                        className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-1 ring-black/10 dark:ring-white/10"
+                        className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-sm ring-1 ring-black/10 dark:ring-white/10"
                         style={{ left: `${dotLeft}%`, backgroundColor: color }}
                     />
                 </span>
@@ -623,7 +623,7 @@ export function DeliberationPage() {
                 <span className="text-secondary font-medium">{label}</span>
                 <span className="font-semibold">{value.toFixed(1)}/{max}</span>
             </div>
-            <div className="w-full bg-surfaceHover h-1.5 rounded-full overflow-hidden">
+            <div className="w-full bg-surfaceHover h-1.5 rounded-sm overflow-hidden">
                 <motion.div
                     className="h-full"
                     style={{ backgroundColor: color }}
@@ -842,7 +842,7 @@ export function DeliberationPage() {
                                             onClick={() => {
                                                 setIsSidebarOpen(false);
                                             }}
-                                            className="absolute top-6 right-0 z-10 w-6 h-10 flex items-center justify-center rounded-l-md border border-r-0 border-border bg-surface hover:bg-surfaceHover text-muted hover:text-primary shadow-sm transition-colors"
+                                            className="absolute top-6 right-0 z-10 w-6 h-10 flex items-center justify-center rounded-l-sm border border-r-0 border-border bg-surface hover:bg-surfaceHover text-muted hover:text-primary shadow-sm transition-colors"
                                             title="Collapse panel"
                                             aria-label="Collapse panel"
                                         >
@@ -1045,7 +1045,7 @@ export function DeliberationPage() {
                             <motion.div
                                 layout
                                 transition={{ layout: { duration: 0.28, ease: 'easeOut' }, delay: 0.08 }}
-                                className={`${hasSidebarSpace ? 'lg:col-span-9' : 'lg:col-span-12'} flex flex-col h-full bg-white dark:bg-surface border border-border rounded-md shadow-sm overflow-hidden transition-all duration-300 relative`}
+                                className={`${hasSidebarSpace ? 'lg:col-span-9' : 'lg:col-span-12'} flex flex-col h-full bg-white dark:bg-surface border border-border rounded-sm shadow-sm overflow-hidden transition-all duration-300 relative`}
                                 initial={false}
                             >
                                 {/* Expand handle when sidebar is fully collapsed */}
@@ -1056,7 +1056,7 @@ export function DeliberationPage() {
                                             setSidebarHasSpace(true);
                                             setIsSidebarOpen(true);
                                         }}
-                                        className="absolute top-6 left-0 z-10 w-6 h-10 flex items-center justify-center rounded-r-md border border-l-0 border-border bg-surface hover:bg-surfaceHover text-muted hover:text-primary shadow-sm transition-colors"
+                                        className="absolute top-6 left-0 z-10 w-6 h-10 flex items-center justify-center rounded-r-sm border border-l-0 border-border bg-surface hover:bg-surfaceHover text-muted hover:text-primary shadow-sm transition-colors"
                                         title="Expand panel"
                                         aria-label="Expand panel"
                                     >
@@ -1065,30 +1065,29 @@ export function DeliberationPage() {
                                 )}
                                 {/* Tab Navigation */}
                                 <div className="flex border-b border-border px-2 pt-2 bg-surface/50 dark:bg-surfaceHover/30">
-                                    <button
-                                        onClick={() => handleTabChange('seminar')}
-                                        className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'seminar' ? 'border-accent text-accent' : 'border-transparent text-secondary hover:text-primary hover:border-border'}`}
-                                    >
-                                        <FileText className="w-4 h-4" /> Seminar Proposal
-                                    </button>
-                                    <button
-                                        onClick={() => handleTabChange('written')}
-                                        className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'written' ? 'border-accent text-accent' : 'border-transparent text-secondary hover:text-primary hover:border-border'}`}
-                                    >
-                                        <MessageSquare className="w-4 h-4" /> Written App
-                                    </button>
-                                    <button
-                                        onClick={() => handleTabChange('interview')}
-                                        className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'interview' ? 'border-accent text-accent' : 'border-transparent text-secondary hover:text-primary hover:border-border'}`}
-                                    >
-                                        <User className="w-4 h-4" /> Interview Notes
-                                    </button>
-                                    <button
-                                        onClick={() => handleTabChange('visualizations')}
-                                        className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'visualizations' ? 'border-accent text-accent' : 'border-transparent text-secondary hover:text-primary hover:border-border'}`}
-                                    >
-                                        <BarChart2 className="w-4 h-4" /> Visualizations
-                                    </button>
+                                    {[
+                                        { id: 'seminar', label: 'Seminar Proposal', icon: FileText },
+                                        { id: 'written', label: 'Written App', icon: MessageSquare },
+                                        { id: 'interview', label: 'Interview Notes', icon: User },
+                                        { id: 'visualizations', label: 'Visualizations', icon: BarChart2 }
+                                    ].map((tab) => (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => handleTabChange(tab.id as any)}
+                                            className={`relative px-4 py-3 text-sm font-medium transition-colors flex items-center gap-2 ${activeTab === tab.id ? 'text-accent' : 'text-secondary hover:text-primary'}`}
+                                        >
+                                            {activeTab === tab.id && (
+                                                <motion.div
+                                                    layoutId="delib-tab-highlight"
+                                                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent"
+                                                    initial={false}
+                                                    transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                                                />
+                                            )}
+                                            <tab.icon className="w-4 h-4 relative z-10" />
+                                            <span className="relative z-10">{tab.label}</span>
+                                        </button>
+                                    ))}
                                 </div>
 
                                 {/* Tab Content Area (Scrollable) */}
@@ -1118,14 +1117,14 @@ export function DeliberationPage() {
 
                                                     <div>
                                                         <h3 className="text-sm font-semibold uppercase tracking-wider text-muted mb-2">Course Description</h3>
-                                                        <p className="text-md text-primary leading-relaxed bg-surface/50 dark:bg-surfaceHover p-4 rounded-lg border border-border">
+                                                        <p className="text-md text-primary leading-relaxed bg-surface/50 dark:bg-surfaceHover p-4 rounded-sm border border-border">
                                                             {candidate.seminarDescription}
                                                         </p>
                                                     </div>
 
                                                     <div>
                                                         <h3 className="text-sm font-semibold uppercase tracking-wider text-muted mb-2">Tangible Final Product</h3>
-                                                        <p className="text-sm text-primary leading-relaxed bg-surface/50 dark:bg-surfaceHover p-4 rounded-lg border border-border">
+                                                        <p className="text-sm text-primary leading-relaxed bg-surface/50 dark:bg-surfaceHover p-4 rounded-sm border border-border">
                                                             {candidate.finalProduct}
                                                         </p>
                                                     </div>
@@ -1143,25 +1142,25 @@ export function DeliberationPage() {
                                                 <div className="space-y-8">
                                                     <div>
                                                         <h3 className="text-sm font-semibold text-primary mb-2">Self Introduction & Achievements</h3>
-                                                        <p className="text-sm text-primary leading-relaxed p-3 bg-surface rounded-md border border-border">
+                                                        <p className="text-sm text-primary leading-relaxed p-3 bg-surface rounded-sm border border-border">
                                                             {candidate.selfIntro}
                                                         </p>
                                                     </div>
                                                     <div>
                                                         <h3 className="text-sm font-semibold text-primary mb-2">Interest in HSYLC Mission</h3>
-                                                        <p className="text-sm text-primary leading-relaxed p-3 bg-surface rounded-md border border-border">
+                                                        <p className="text-sm text-primary leading-relaxed p-3 bg-surface rounded-sm border border-border">
                                                             {candidate.interestReason}
                                                         </p>
                                                     </div>
                                                     <div>
                                                         <h3 className="text-sm font-semibold text-primary mb-2">Teaching & Mentoring Experience</h3>
-                                                        <p className="text-sm text-primary leading-relaxed p-3 bg-surface rounded-md border border-border">
+                                                        <p className="text-sm text-primary leading-relaxed p-3 bg-surface rounded-sm border border-border">
                                                             {candidate.teachingExp}
                                                         </p>
                                                     </div>
                                                     <div>
                                                         <h3 className="text-sm font-semibold text-primary mb-2">Advice for a High Schooler</h3>
-                                                        <p className="text-sm text-primary leading-relaxed p-3 bg-surface rounded-md border border-border text-center italic">
+                                                        <p className="text-sm text-primary leading-relaxed p-3 bg-surface rounded-sm border border-border text-center italic">
                                                             "{candidate.advice}"
                                                         </p>
                                                     </div>
@@ -1171,7 +1170,7 @@ export function DeliberationPage() {
                                             {activeTab === 'interview' && (
                                                 <div className="space-y-8">
                                                     {candidate.sensitiveIssues && candidate.sensitiveIssues.toLowerCase() !== 'no' && (
-                                                        <div className="p-4 bg-orange-50 dark:bg-orange-900/20 text-orange-800 dark:text-orange-200 border border-orange-200 dark:border-orange-800 rounded-lg">
+                                                        <div className="p-4 bg-orange-50 dark:bg-orange-900/20 text-orange-800 dark:text-orange-200 border border-orange-200 dark:border-orange-800 rounded-sm">
                                                             <h4 className="text-sm font-bold mb-1 flex items-center gap-2">⚠️ Sensitive Topics Alert</h4>
                                                             <p className="text-sm">{candidate.sensitiveIssues}</p>
                                                         </div>
@@ -1288,7 +1287,7 @@ export function DeliberationPage() {
                                                             initial={{ opacity: 0, y: 8 }}
                                                             animate={{ opacity: 1, y: 0 }}
                                                             transition={{ type: 'spring', stiffness: 220, damping: 26 }}
-                                                            className="p-4 rounded-md border border-border bg-surface/50 dark:bg-surfaceHover/30"
+                                                            className="p-4 rounded-sm border border-border bg-surface/50 dark:bg-surfaceHover/30"
                                                         >
                                                             <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Written application (avg)</p>
                                                             <div className="flex items-baseline gap-2">
@@ -1299,9 +1298,9 @@ export function DeliberationPage() {
                                                                 Percentile: {writtenAvgPercentile != null ? `${writtenAvgPercentile}th` : '—'}
                                                             </p>
                                                             {hasWrittenScores && (
-                                                                <div className="mt-2 h-2 w-full bg-surfaceHover rounded-full overflow-hidden">
+                                                                <div className="mt-2 h-2 w-full bg-surfaceHover rounded-sm overflow-hidden">
                                                                     <motion.div
-                                                                        className="h-full rounded-full"
+                                                                        className="h-full rounded-sm"
                                                                         style={{ backgroundColor: COLOR_WRITTEN }}
                                                                         initial={{ width: 0 }}
                                                                         animate={{ width: `${((writtenOverall ?? 0) / 5) * 100}%` }}
@@ -1314,7 +1313,7 @@ export function DeliberationPage() {
                                                             initial={{ opacity: 0, y: 8 }}
                                                             animate={{ opacity: 1, y: 0 }}
                                                             transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.05 }}
-                                                            className="p-4 rounded-md border border-border bg-surface/50 dark:bg-surfaceHover/30"
+                                                            className="p-4 rounded-sm border border-border bg-surface/50 dark:bg-surfaceHover/30"
                                                         >
                                                             <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Interview (avg overall)</p>
                                                             <div className="flex items-baseline gap-2">
@@ -1325,9 +1324,9 @@ export function DeliberationPage() {
                                                                 Percentile: {overallPercentile != null ? `${overallPercentile}th` : '—'}
                                                             </p>
                                                             {hasInterviewOverall && (
-                                                                <div className="mt-2 h-2 w-full bg-surfaceHover rounded-full overflow-hidden">
+                                                                <div className="mt-2 h-2 w-full bg-surfaceHover rounded-sm overflow-hidden">
                                                                     <motion.div
-                                                                        className="h-full rounded-full"
+                                                                        className="h-full rounded-sm"
                                                                         style={{ backgroundColor: COLOR_OVERALL }}
                                                                         initial={{ width: 0 }}
                                                                         animate={{ width: `${((interviewOverallAvg ?? 0) / 10) * 100}%` }}
@@ -1340,7 +1339,7 @@ export function DeliberationPage() {
                                                             initial={{ opacity: 0, y: 8 }}
                                                             animate={{ opacity: 1, y: 0 }}
                                                             transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.1 }}
-                                                            className="p-4 rounded-md border border-border bg-surface/50 dark:bg-surfaceHover/30"
+                                                            className="p-4 rounded-sm border border-border bg-surface/50 dark:bg-surfaceHover/30"
                                                         >
                                                             <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Empirical (overall)</p>
                                                             <div className="flex items-baseline gap-2">
@@ -1351,9 +1350,9 @@ export function DeliberationPage() {
                                                                 Percentile: {empiricalPercentile != null ? `${empiricalPercentile}th` : '—'}
                                                             </p>
                                                             {currentEmpirical != null && (
-                                                                <div className="mt-2 h-2 w-full bg-surfaceHover rounded-full overflow-hidden">
+                                                                <div className="mt-2 h-2 w-full bg-surfaceHover rounded-sm overflow-hidden">
                                                                     <motion.div
-                                                                        className="h-full rounded-full"
+                                                                        className="h-full rounded-sm"
                                                                         style={{ backgroundColor: COLOR_EMPIRICAL }}
                                                                         initial={{ width: 0 }}
                                                                         animate={{ width: `${(currentEmpirical / 10) * 100}%` }}
@@ -1373,11 +1372,11 @@ export function DeliberationPage() {
                                                         >
                                                             <div className="flex flex-wrap items-center gap-3 mb-2">
                                                                 <h3 className="text-sm font-semibold text-primary">Score distribution (cohort)</h3>
-                                                                <div className="flex rounded-lg border border-border bg-surface/50 p-0.5">
+                                                                <div className="flex rounded-sm border border-border bg-surface/50 p-0.5">
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => setDistributionMode('written')}
-                                                                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'written' ? 'text-white' : 'text-secondary hover:text-primary'}`}
+                                                                        className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-colors ${distributionMode === 'written' ? 'text-white' : 'text-secondary hover:text-primary'}`}
                                                                         style={distributionMode === 'written' ? { backgroundColor: COLOR_WRITTEN } : undefined}
                                                                     >
                                                                         Written (avg)
@@ -1385,7 +1384,7 @@ export function DeliberationPage() {
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => setDistributionMode('interview')}
-                                                                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'interview' ? 'text-white' : 'text-secondary hover:text-primary'}`}
+                                                                        className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-colors ${distributionMode === 'interview' ? 'text-white' : 'text-secondary hover:text-primary'}`}
                                                                         style={distributionMode === 'interview' ? { backgroundColor: COLOR_OVERALL } : undefined}
                                                                     >
                                                                         Interview (avg overall)
@@ -1393,7 +1392,7 @@ export function DeliberationPage() {
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => setDistributionMode('empirical')}
-                                                                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${distributionMode === 'empirical' ? 'text-white' : 'text-secondary hover:text-primary'}`}
+                                                                        className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-colors ${distributionMode === 'empirical' ? 'text-white' : 'text-secondary hover:text-primary'}`}
                                                                         style={distributionMode === 'empirical' ? { backgroundColor: COLOR_EMPIRICAL } : undefined}
                                                                     >
                                                                         Empirical overall
@@ -1703,7 +1702,7 @@ export function DeliberationPage() {
                             </motion.div>
                         </>
                     ) : (
-                        <div className="px-4 py-2 bg-surfaceHover text-secondary text-sm italic rounded-lg border border-border">
+                        <div className="px-4 py-2 bg-surfaceHover text-secondary text-sm italic rounded-sm border border-border">
                             Awaiting conductor decision...
                         </div>
                     )}
