@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Database, CheckSquare, ChevronLeft, LogOut, Shield } from 'lucide-react';
+import { Home, Database, CheckSquare, PanelLeft, LogOut, Shield } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useAuth } from '../../context/AuthContext';
 import logoUrl from '../../assets/logo.svg';
@@ -53,12 +53,12 @@ export function Sidebar() {
                 ) : (
                     <>
                         <img src={logoUrl} alt="HSYLC" className="w-9 h-9 shrink-0 object-contain" />
-                        <span className="font-semibold text-sm tracking-tight text-primary truncate">HAUSCR Tech</span>
+                        {/* <span className="font-semibold text-sm tracking-tight text-primary truncate font-display">HAUSCR Tech</span> */}
                         <button
                             onClick={() => setIsCollapsed(true)}
                             className="p-1 rounded-md text-secondary hover:text-primary hover:bg-surfaceHover transition-colors"
                         >
-                            <ChevronLeft className="w-5 h-5" />
+                            <PanelLeft className="w-5 h-5" />
                         </button>
                     </>
                 )}

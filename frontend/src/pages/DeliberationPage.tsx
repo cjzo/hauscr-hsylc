@@ -119,7 +119,7 @@ function ScoreTooltip({
                 <span
                     id={id}
                     role="tooltip"
-                    className="pointer-events-none fixed z-[9999] rounded-xl border border-border bg-white/90 p-3 text-xs text-secondary shadow-xl backdrop-blur-md dark:bg-surface/90"
+                    className="pointer-events-none fixed z-[9999] rounded-md border border-border bg-white/90 p-3 text-xs text-secondary shadow-xl backdrop-blur-md dark:bg-surface/90"
                     style={{ left: pos.left, top: pos.top, width: pos.width }}
                 >
                     <span className="block text-[11px] font-semibold text-primary mb-1">{label}</span>
@@ -1045,7 +1045,7 @@ export function DeliberationPage() {
                                 <motion.div
                                     layout
                                     transition={{ layout: { duration: 0.28, ease: 'easeOut' }, delay: 0.08 }}
-                                    className={`${hasSidebarSpace ? 'lg:col-span-9' : 'lg:col-span-12'} flex flex-col h-full bg-white dark:bg-surface border border-border rounded-xl shadow-sm overflow-hidden transition-all duration-300 relative`}
+                                    className={`${hasSidebarSpace ? 'lg:col-span-9' : 'lg:col-span-12'} flex flex-col h-full bg-white dark:bg-surface border border-border rounded-md shadow-sm overflow-hidden transition-all duration-300 relative`}
                                     initial={false}
                                 >
                                 {/* Expand handle when sidebar is fully collapsed */}
@@ -1288,7 +1288,7 @@ export function DeliberationPage() {
                                                     initial={{ opacity: 0, y: 8 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ type: 'spring', stiffness: 220, damping: 26 }}
-                                                    className="p-4 rounded-xl border border-border bg-surface/50 dark:bg-surfaceHover/30"
+                                                    className="p-4 rounded-md border border-border bg-surface/50 dark:bg-surfaceHover/30"
                                                 >
                                                     <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Written application (avg)</p>
                                                     <div className="flex items-baseline gap-2">
@@ -1314,7 +1314,7 @@ export function DeliberationPage() {
                                                     initial={{ opacity: 0, y: 8 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.05 }}
-                                                    className="p-4 rounded-xl border border-border bg-surface/50 dark:bg-surfaceHover/30"
+                                                    className="p-4 rounded-md border border-border bg-surface/50 dark:bg-surfaceHover/30"
                                                 >
                                                     <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Interview (avg overall)</p>
                                                     <div className="flex items-baseline gap-2">
@@ -1340,7 +1340,7 @@ export function DeliberationPage() {
                                                     initial={{ opacity: 0, y: 8 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.1 }}
-                                                    className="p-4 rounded-xl border border-border bg-surface/50 dark:bg-surfaceHover/30"
+                                                    className="p-4 rounded-md border border-border bg-surface/50 dark:bg-surfaceHover/30"
                                                 >
                                                     <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Empirical (overall)</p>
                                                     <div className="flex items-baseline gap-2">

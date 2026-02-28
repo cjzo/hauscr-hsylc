@@ -60,7 +60,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
                             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                            className="relative w-full max-w-md bg-white dark:bg-surface rounded-xl shadow-stripe-hover overflow-hidden"
+                            className="relative w-full max-w-md bg-white dark:bg-surface rounded-md shadow-stripe-hover overflow-hidden"
                         >
                             <div className="p-6">
                                 <div className="flex items-start gap-4">

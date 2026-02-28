@@ -6,9 +6,9 @@ export function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
-        <div className="bg-surface border border-border rounded-xl p-8 shadow-sm">
+        <div className="bg-surface border border-border rounded-md p-8 shadow-sm">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-primary tracking-tight">
+            <h1 className="text-2xl font-bold text-primary tracking-tight font-display">
               HAUSCR Tech
             </h1>
             <p className="text-sm text-secondary mt-2">

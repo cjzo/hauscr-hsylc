@@ -25,6 +25,7 @@ export default {
             },
             fontFamily: {
                 sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+                display: ['Lausanne', 'Instrument Sans', 'Inter', 'system-ui', 'sans-serif'],
             },
             transitionTimingFunction: {
                 'smooth': 'cubic-bezier(0.16, 1, 0.3, 1)',

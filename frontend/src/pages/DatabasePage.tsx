@@ -447,7 +447,7 @@ export function DatabasePage() {
 
             {selectedCandidate && (
                 <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
-                    <div className="bg-background dark:bg-surface w-full max-w-4xl max-h-[90vh] rounded-xl shadow-xl border border-border flex flex-col overflow-hidden">
+                    <div className="bg-background dark:bg-surface w-full max-w-4xl max-h-[90vh] rounded-md shadow-xl border border-border flex flex-col overflow-hidden">
                         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-surface/70 dark:bg-surfaceHover/40 backdrop-blur-sm">
                             <div>
                                 <h2 className="text-lg font-semibold text-primary flex items-center gap-2">

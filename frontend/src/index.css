@@ -5,26 +5,26 @@
 @layer base {
   :root {
     --color-bg-primary: #ffffff;
-    --color-bg-secondary: #f6f9fc;
-    --color-bg-tertiary: #e3e8ee;
-    --color-border: #e6ebf1;
-    --color-text-primary: #0a2540;
-    --color-text-secondary: #425466;
-    --color-text-muted: #8792a2;
-    --color-accent: #635bff;
-    --color-accent-hover: #544ada;
+    --color-bg-secondary: #f4f3ef;
+    --color-bg-tertiary: #eae6e3;
+    --color-border: #e6e4de;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #7b7b6b;
+    --color-text-muted: #a1a1aa;
+    --color-accent: #1a1a1a;
+    --color-accent-hover: #333333;
   }
-  
+
   :root.dark {
-    --color-bg-primary: #0a2540;
-    --color-bg-secondary: #102e4e;
-    --color-bg-tertiary: #1b3857;
-    --color-border: #233f5d;
-    --color-text-primary: #ffffff;
-    --color-text-secondary: #a9b7cc;
-    --color-text-muted: #728096;
-    --color-accent: #635bff;
-    --color-accent-hover: #7b74fe;
+    --color-bg-primary: #111111;
+    --color-bg-secondary: #1a1a1a;
+    --color-bg-tertiary: #2a2a2a;
+    --color-border: #333333;
+    --color-text-primary: #eae6e3;
+    --color-text-secondary: #a1a1aa;
+    --color-text-muted: #71717a;
+    --color-accent: #eae6e3;
+    --color-accent-hover: #ffffff;
   }
 
   body {
@@ -34,15 +34,18 @@
 
 @layer components {
   .stripe-btn {
-    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-all duration-200 ease-smooth disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center rounded-sm text-sm font-medium transition-all duration-200 ease-smooth disabled:opacity-50 disabled:pointer-events-none;
   }
+
   .stripe-btn-primary {
-    @apply bg-accent text-white shadow-stripe hover:shadow-stripe-hover hover:-translate-y-[1px] hover:bg-accent-hover focus-visible:shadow-stripe-focus focus:outline-none;
+    @apply bg-accent text-white shadow-sm hover:shadow hover:-translate-y-[1px] hover:bg-accent-hover focus-visible:ring-2 focus-visible:ring-accent focus:outline-none dark:text-black;
   }
+
   .stripe-btn-secondary {
-    @apply bg-white text-primary border border-border shadow-sm hover:bg-surface focus-visible:shadow-stripe-focus focus:outline-none dark:bg-surface dark:border-border dark:hover:bg-surfaceHover;
+    @apply bg-white text-primary border border-border shadow-sm hover:bg-surface focus-visible:ring-2 focus-visible:ring-border focus:outline-none dark:bg-surface dark:border-border dark:hover:bg-surfaceHover;
   }
+
   .stripe-card {
-    @apply bg-white rounded-xl border border-border shadow-stripe p-6 dark:bg-surface;
+    @apply bg-white rounded-md border border-border shadow-sm p-6 dark:bg-surface dark:border-border;
   }
 }
