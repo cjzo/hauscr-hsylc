@@ -932,7 +932,7 @@ export function DeliberationPage() {
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         className="h-full absolute inset-0 w-full min-h-0"
                     >
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 h-full min-h-0 pb-2">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full min-h-0 pb-2">
 
                             {/* Left Column: Candidate Profile & Standardized Scores */}
                             <AnimatePresence
@@ -960,7 +960,7 @@ export function DeliberationPage() {
                                         >
                                             <ChevronLeft className="w-3.5 h-3.5" />
                                         </button>
-                                        <div className="flex flex-col gap-6 h-full min-h-0 overflow-y-auto overflow-x-visible pr-1">
+                                        <div className="flex flex-col gap-3 h-full min-h-0 overflow-y-auto overflow-x-visible pr-1">
                                             <Card className="flex flex-col shrink-0">
                                                 <div className="flex items-center justify-between mb-2">
                                                     <div className="flex items-center gap-3">
