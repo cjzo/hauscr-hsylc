@@ -1036,6 +1036,44 @@ export function DeliberationPage() {
                                                 {/* Removed Decision Buttons from here */}
                                             </Card>
 
+                                            {interviewNotes.length >= 2 && (
+                                                <div className="flex items-center justify-center gap-2 py-1">
+                                                    <span className="text-[10px] text-secondary uppercase tracking-wide whitespace-nowrap">
+                                                        Percentiles based on
+                                                    </span>
+                                                    <div className="flex flex-wrap gap-1 relative">
+                                                        {[
+                                                            { key: 'all', label: 'All interviews' },
+                                                            ...interviewNotes.map((note: any, idx: number) => ({
+                                                                key: note.interviewer || `Interviewer ${idx + 1}`,
+                                                                label: note.interviewer || `Interviewer ${idx + 1}`,
+                                                            })),
+                                                        ].map((opt) => {
+                                                            const isSelected = percentileInterviewer === opt.key;
+                                                            return (
+                                                                <button
+                                                                    key={opt.key}
+                                                                    type="button"
+                                                                    onClick={() => setPercentileInterviewer(opt.key)}
+                                                                    className="relative px-2 py-0.5 rounded-sm text-[10px] font-medium"
+                                                                >
+                                                                    {isSelected && (
+                                                                        <motion.span
+                                                                            layoutId="percentilePill"
+                                                                            className="absolute inset-0 rounded-sm bg-surfaceHover border border-border"
+                                                                            transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+                                                                        />
+                                                                    )}
+                                                                    <span className={`relative z-10 ${isSelected ? 'text-primary' : 'text-secondary hover:text-primary'}`}>
+                                                                        {opt.label}
+                                                                    </span>
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             <Card className="flex-1 flex flex-col mb-4">
                                                 <div className="mb-4 shrink-0">
                                                     <div className="flex items-center gap-3">
@@ -1517,27 +1555,29 @@ export function DeliberationPage() {
                                                             transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.05 }}
                                                             className="p-4 rounded-sm border border-border bg-surface/50 dark:bg-surfaceHover/30"
                                                         >
-                                                            <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Interview (avg overall)</p>
+                                                            <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
+                                                                Interview ({percentileInterviewer !== 'all' ? percentileInterviewer : 'avg overall'})
+                                                            </p>
                                                             <div className="flex items-baseline gap-2">
-                                                                <span className="text-2xl font-bold text-primary">{interviewOverallAvg != null ? interviewOverallAvg.toFixed(2) : '—'}</span>
+                                                                <span className="text-2xl font-bold text-primary">{currentOverall != null ? currentOverall.toFixed(2) : '—'}</span>
                                                                 <span className="text-sm text-secondary">/ 10</span>
                                                             </div>
                                                             <p className="mt-1 text-xs text-secondary">
                                                                 Percentile: {overallPercentile != null ? `${overallPercentile}th` : '—'}
                                                             </p>
-                                                            {hasInterviewOverall && (
+                                                            {currentOverall != null && (
                                                                 <div className="mt-3 space-y-2">
                                                                     <div className="flex items-center justify-between text-[11px] text-secondary">
                                                                         <span>Absolute score</span>
                                                                         <span className="tabular-nums">
-                                                                            {interviewOverallAvg != null ? interviewOverallAvg.toFixed(2) : '—'}/10
+                                                                            {currentOverall != null ? currentOverall.toFixed(2) : '—'}/10
                                                                         </span>
                                                                     </div>
                                                                     <div className="h-2 w-full bg-surfaceHover rounded-sm overflow-hidden">
                                                                         <motion.div
                                                                             className="h-full rounded-sm bg-gray-400/80 dark:bg-gray-300/70"
                                                                             initial={{ width: 0 }}
-                                                                            animate={{ width: String(((interviewOverallAvg ?? 0) / 10) * 100) + '%' }}
+                                                                            animate={{ width: String(((currentOverall ?? 0) / 10) * 100) + '%' }}
                                                                             transition={{ type: 'spring', stiffness: 160, damping: 22 }}
                                                                         />
                                                                     </div>
@@ -1565,7 +1605,9 @@ export function DeliberationPage() {
                                                             transition={{ type: 'spring', stiffness: 220, damping: 26, delay: 0.1 }}
                                                             className="p-4 rounded-sm border border-border bg-surface/50 dark:bg-surfaceHover/30"
                                                         >
-                                                            <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Empirical (overall)</p>
+                                                            <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
+                                                                Empirical ({percentileInterviewer !== 'all' ? percentileInterviewer : 'overall'})
+                                                            </p>
                                                             <div className="flex items-baseline gap-2">
                                                                 <span className="text-2xl font-bold text-primary">{currentEmpirical != null ? currentEmpirical.toFixed(1) : '—'}</span>
                                                                 <span className="text-sm text-secondary">/ 10</span>
