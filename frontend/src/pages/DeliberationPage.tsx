@@ -1478,14 +1478,36 @@ export function DeliberationPage() {
                                                                 Percentile: {writtenAvgPercentile != null ? `${writtenAvgPercentile}th` : '—'}
                                                             </p>
                                                             {hasWrittenScores && (
-                                                                <div className="mt-2 h-2 w-full bg-surfaceHover rounded-sm overflow-hidden">
-                                                                    <motion.div
-                                                                        className="h-full rounded-sm"
-                                                                        style={{ backgroundColor: COLOR_WRITTEN }}
-                                                                        initial={{ width: 0 }}
-                                                                        animate={{ width: `${((writtenOverall ?? 0) / 5) * 100}%` }}
-                                                                        transition={{ type: 'spring', stiffness: 160, damping: 22 }}
-                                                                    />
+                                                                <div className="mt-3 space-y-2">
+                                                                    <div className="flex items-center justify-between text-[11px] text-secondary">
+                                                                        <span>Absolute score</span>
+                                                                        <span className="tabular-nums">
+                                                                            {writtenOverall != null ? writtenOverall.toFixed(2) : '—'}/5
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="h-2 w-full bg-surfaceHover rounded-sm overflow-hidden">
+                                                                        <motion.div
+                                                                            className="h-full rounded-sm bg-gray-400/80 dark:bg-gray-300/70"
+                                                                            initial={{ width: 0 }}
+                                                                            animate={{ width: String(((writtenOverall ?? 0) / 5) * 100) + '%' }}
+                                                                            transition={{ type: 'spring', stiffness: 160, damping: 22 }}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="flex items-center justify-between text-[11px] text-secondary">
+                                                                        <span>Percentile</span>
+                                                                        <span className="tabular-nums">
+                                                                            {writtenAvgPercentile != null ? `${writtenAvgPercentile}th` : '—'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="h-2 w-full bg-surfaceHover rounded-sm overflow-hidden">
+                                                                        <motion.div
+                                                                            className="h-full rounded-sm"
+                                                                            style={{ backgroundColor: COLOR_WRITTEN }}
+                                                                            initial={{ width: 0 }}
+                                                                            animate={{ width: String(writtenAvgPercentile ?? 0) + '%' }}
+                                                                            transition={{ type: 'spring', stiffness: 160, damping: 22 }}
+                                                                        />
+                                                                    </div>
                                                                 </div>
                                                             )}
                                                         </motion.div>
@@ -1504,14 +1526,36 @@ export function DeliberationPage() {
                                                                 Percentile: {overallPercentile != null ? `${overallPercentile}th` : '—'}
                                                             </p>
                                                             {hasInterviewOverall && (
-                                                                <div className="mt-2 h-2 w-full bg-surfaceHover rounded-sm overflow-hidden">
-                                                                    <motion.div
-                                                                        className="h-full rounded-sm"
-                                                                        style={{ backgroundColor: COLOR_OVERALL }}
-                                                                        initial={{ width: 0 }}
-                                                                        animate={{ width: `${((interviewOverallAvg ?? 0) / 10) * 100}%` }}
-                                                                        transition={{ type: 'spring', stiffness: 160, damping: 22 }}
-                                                                    />
+                                                                <div className="mt-3 space-y-2">
+                                                                    <div className="flex items-center justify-between text-[11px] text-secondary">
+                                                                        <span>Absolute score</span>
+                                                                        <span className="tabular-nums">
+                                                                            {interviewOverallAvg != null ? interviewOverallAvg.toFixed(2) : '—'}/10
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="h-2 w-full bg-surfaceHover rounded-sm overflow-hidden">
+                                                                        <motion.div
+                                                                            className="h-full rounded-sm bg-gray-400/80 dark:bg-gray-300/70"
+                                                                            initial={{ width: 0 }}
+                                                                            animate={{ width: String(((interviewOverallAvg ?? 0) / 10) * 100) + '%' }}
+                                                                            transition={{ type: 'spring', stiffness: 160, damping: 22 }}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="flex items-center justify-between text-[11px] text-secondary">
+                                                                        <span>Percentile</span>
+                                                                        <span className="tabular-nums">
+                                                                            {overallPercentile != null ? `${overallPercentile}th` : '—'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="h-2 w-full bg-surfaceHover rounded-sm overflow-hidden">
+                                                                        <motion.div
+                                                                            className="h-full rounded-sm"
+                                                                            style={{ backgroundColor: COLOR_OVERALL }}
+                                                                            initial={{ width: 0 }}
+                                                                            animate={{ width: String(overallPercentile ?? 0) + '%' }}
+                                                                            transition={{ type: 'spring', stiffness: 160, damping: 22 }}
+                                                                        />
+                                                                    </div>
                                                                 </div>
                                                             )}
                                                         </motion.div>
@@ -1530,17 +1574,40 @@ export function DeliberationPage() {
                                                                 Percentile: {empiricalPercentile != null ? `${empiricalPercentile}th` : '—'}
                                                             </p>
                                                             {currentEmpirical != null && (
-                                                                <div className="mt-2 h-2 w-full bg-surfaceHover rounded-sm overflow-hidden">
-                                                                    <motion.div
-                                                                        className="h-full rounded-sm"
-                                                                        style={{ backgroundColor: COLOR_EMPIRICAL }}
-                                                                        initial={{ width: 0 }}
-                                                                        animate={{ width: `${(currentEmpirical / 10) * 100}%` }}
-                                                                        transition={{ type: 'spring', stiffness: 160, damping: 22 }}
-                                                                    />
+                                                                <div className="mt-3 space-y-2">
+                                                                    <div className="flex items-center justify-between text-[11px] text-secondary">
+                                                                        <span>Absolute score</span>
+                                                                        <span className="tabular-nums">
+                                                                            {currentEmpirical != null ? currentEmpirical.toFixed(1) : '—'}/10
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="h-2 w-full bg-surfaceHover rounded-sm overflow-hidden">
+                                                                        <motion.div
+                                                                            className="h-full rounded-sm bg-gray-400/80 dark:bg-gray-300/70"
+                                                                            initial={{ width: 0 }}
+                                                                            animate={{ width: String((currentEmpirical / 10) * 100) + '%' }}
+                                                                            transition={{ type: 'spring', stiffness: 160, damping: 22 }}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="flex items-center justify-between text-[11px] text-secondary">
+                                                                        <span>Percentile</span>
+                                                                        <span className="tabular-nums">
+                                                                            {empiricalPercentile != null ? `${empiricalPercentile}th` : '—'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="h-2 w-full bg-surfaceHover rounded-sm overflow-hidden">
+                                                                        <motion.div
+                                                                            className="h-full rounded-sm"
+                                                                            style={{ backgroundColor: COLOR_EMPIRICAL }}
+                                                                            initial={{ width: 0 }}
+                                                                            animate={{ width: String(empiricalPercentile ?? 0) + '%' }}
+                                                                            transition={{ type: 'spring', stiffness: 160, damping: 22 }}
+                                                                        />
+                                                                    </div>
                                                                 </div>
                                                             )}
                                                         </motion.div>
+                                                    </div>
                                                     </div>
 
                                                     {/* Cohort distribution: Written vs Interview vs Empirical toggle, PMF + CDF */}
@@ -1840,11 +1907,12 @@ export function DeliberationPage() {
                                                         </motion.div>
                                                     )}
 
-                                                    {!hasWrittenScores && !hasInterviewOverall && (
+                                                    {!hasWrittenScores && !hasInterviewOverall ? (
                                                         <div className="text-center text-secondary py-8">
                                                             No written or interview scores yet. Charts will appear once scores are available.
                                                         </div>
-                                                    )}
+                                                    ) : null}
+
                                                 </div>
                                             )}
                                         </motion.div>
