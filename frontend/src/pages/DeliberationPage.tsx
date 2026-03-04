@@ -43,6 +43,18 @@ function percentile(samples: number[], value: number): number {
     return Math.round((100 * countBelow) / samples.length);
 }
 
+function mean(values: number[]): number {
+    if (!values.length) return 0;
+    return values.reduce((sum, v) => sum + v, 0) / values.length;
+}
+
+function stdDev(values: number[]): number {
+    if (values.length < 2) return 0;
+    const m = mean(values);
+    const variance = values.reduce((sum, v) => sum + (v - m) * (v - m), 0) / values.length;
+    return Math.sqrt(variance);
+}
+
 /** CDF at grid points: proportion of samples <= x. */
 function computeCdf(samples: number[], domainMin: number, domainMax: number, step: number): { x: number; cdf: number }[] {
     if (samples.length === 0) return [];
@@ -681,7 +693,77 @@ export function DeliberationPage() {
         { name: 'Teaching', score: candidate.scores.teaching ?? 0, fullMark: 5 },
         { name: 'Interest', score: candidate.scores.interestEngaging ?? 0, fullMark: 5 },
     ];
-    const interviewNotes = candidate.interviewNotes || [];
+    const interviewNotesRaw = candidate.interviewNotes || [];
+
+    const interviewerOverallStats: Record<string, { mean: number; std: number; count: number }> = {};
+    const scoresByInterviewer: Record<string, number[]> = {};
+
+    candidates.forEach(c => {
+        const notes = c.interviewNotes || [];
+        notes.forEach((note: any) => {
+            const name = note.interviewer || 'Unknown Interviewer';
+            const v = typeof note.score_overall === 'number' ? note.score_overall : null;
+            if (v == null || Number.isNaN(v)) return;
+            if (!scoresByInterviewer[name]) scoresByInterviewer[name] = [];
+            scoresByInterviewer[name].push(v);
+        });
+    });
+
+    Object.entries(scoresByInterviewer).forEach(([name, values]) => {
+        if (values.length < 3) return;
+        const m = mean(values);
+        const sd = stdDev(values);
+        interviewerOverallStats[name] = { mean: m, std: sd, count: values.length };
+    });
+
+    const interviewNotes = interviewNotesRaw.map((note: any) => {
+        const name = note.interviewer || 'Unknown Interviewer';
+        const stats = interviewerOverallStats[name];
+        let outlier: null | {
+            direction: 'high' | 'low';
+            zScore: number;
+            baselineMean: number;
+            baselineCount: number;
+        } = null;
+
+        if (stats && typeof note.score_overall === 'number' && stats.std > 0) {
+            const z = (note.score_overall - stats.mean) / stats.std;
+            if (z >= 2) {
+                outlier = {
+                    direction: 'high',
+                    zScore: z,
+                    baselineMean: stats.mean,
+                    baselineCount: stats.count,
+                };
+            } else if (z <= -2) {
+                outlier = {
+                    direction: 'low',
+                    zScore: z,
+                    baselineMean: stats.mean,
+                    baselineCount: stats.count,
+                };
+            }
+        }
+
+        return {
+            ...note,
+            outlier,
+        };
+    });
+
+    const overallScoresForCandidate = interviewNotes
+        .map((note: any) => (typeof note.score_overall === 'number' ? note.score_overall : null))
+        .filter((v: number | null): v is number => v !== null);
+
+    const hasInterviewerDisagreement =
+        overallScoresForCandidate.length >= 2 &&
+        Math.max(...overallScoresForCandidate) - Math.min(...overallScoresForCandidate) >= 2;
+
+    const disagreementRange =
+        overallScoresForCandidate.length >= 2
+            ? Math.max(...overallScoresForCandidate) - Math.min(...overallScoresForCandidate)
+            : null;
+
     const multiInterviewerChartData = interviewNotes.length >= 2
         ? (['Enthusiasm', 'Quality', 'Teaching', 'Interest', 'Overall'] as const).map(dim => {
             const key = dim === 'Overall' ? 'score_overall' : dim === 'Enthusiasm' ? 'score_enthusiasm' : dim === 'Quality' ? 'score_quality' : dim === 'Teaching' ? 'score_teaching' : 'score_interest';
@@ -856,6 +938,19 @@ export function DeliberationPage() {
                                                         {/* <span className={`px-2 py-1 text-xs font-bold rounded-full ${candidate.candidateType === 'Returning' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'}`}>
                                                             {candidate.candidateType}
                                                         </span> */}
+                                                        {hasInterviewerDisagreement && disagreementRange != null && (
+                                                            <ScoreTooltip
+                                                                label="Interviewer disagreement"
+                                                                lines={[
+                                                                    'Interviewers significantly disagree on this candidate.',
+                                                                    `Range of standardized overall scores across interviews: ${disagreementRange.toFixed(1)} (scale 0–10).`,
+                                                                ]}
+                                                            >
+                                                                <span className="px-2 py-0.5 rounded-sm bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-100 text-[10px] font-semibold tracking-wide uppercase">
+                                                                    Interviewer disagreement
+                                                                </span>
+                                                            </ScoreTooltip>
+                                                        )}
                                                     </div>
                                                 </div>
 
@@ -1181,8 +1276,8 @@ export function DeliberationPage() {
                                                             No interviews have been recorded for this candidate yet.
                                                         </div>
                                                     ) : (
-                                                        <div className={`grid ${candidate.interviewNotes.length === 1 ? 'grid-cols-1' : candidate.interviewNotes.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3'} gap-0 md:gap-8 divide-y md:divide-y-0 md:divide-x divide-border`}>
-                                                            {candidate.interviewNotes.map((note: any, index: number) => (
+                                                        <div className={`grid ${interviewNotes.length === 1 ? 'grid-cols-1' : interviewNotes.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3'} gap-0 md:gap-8 divide-y md:divide-y-0 md:divide-x divide-border`}>
+                                                            {interviewNotes.map((note: any, index: number) => (
                                                                 <div key={index} className="first:pl-0 last:pr-0 md:px-6 md:first:px-3 md:last:px-3 pt-6 first:pt-0 md:pt-0 pb-6 md:pb-0">
                                                                     <div className="flex items-center justify-between gap-3 mb-4">
                                                                         <div className="flex items-center gap-2">
@@ -1197,6 +1292,20 @@ export function DeliberationPage() {
                                                                             <span className="px-2 py-0.5 rounded-sm bg-accent/10 text-accent font-semibold">
                                                                                 Overall {formatScore(note.score_overall)}
                                                                             </span>
+                                                                            {note.outlier && note.outlier.direction === 'high' && (
+                                                                                <ScoreTooltip
+                                                                                    label="Anomalously high score for this interviewer"
+                                                                                    lines={[
+                                                                                        'This interviewer usually scores candidates lower than this.',
+                                                                                        `Their typical standardized overall score is around ${note.outlier.baselineMean.toFixed(1)} across ${note.outlier.baselineCount} candidates.`,
+                                                                                        `This candidate is ${note.outlier.zScore.toFixed(1)} standard deviations above that.`,
+                                                                                    ]}
+                                                                                >
+                                                                                    <span className="px-2 py-0.5 rounded-sm bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-100 font-semibold">
+                                                                                        Unusually high for this interviewer
+                                                                                    </span>
+                                                                                </ScoreTooltip>
+                                                                            )}
                                                                             {note.sensitiveFlag && (
                                                                                 <span className="px-2 py-0.5 rounded-sm bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-100 font-semibold">
                                                                                     Sensitive
