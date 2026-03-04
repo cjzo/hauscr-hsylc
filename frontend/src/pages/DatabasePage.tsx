@@ -53,6 +53,15 @@ export function DatabasePage() {
         return total / scores.length;
     };
 
+    const getInterviewOverall = (cand: any) => {
+        const notes = cand.interviews || [];
+        const overalls = notes
+            .map((n: any) => (typeof n.score_overall === 'number' ? n.score_overall : null))
+            .filter((v: number | null): v is number => v !== null);
+        if (overalls.length === 0) return cand.score_overall ?? null;
+        return overalls.reduce((a: number, b: number) => a + b, 0) / overalls.length;
+    };
+
     const getDisplayName = (cand: any) =>
         cand.full_name || `${cand.first_name ?? ''} ${cand.last_name ?? ''}`.trim();
 
@@ -67,7 +76,7 @@ export function DatabasePage() {
                 // Fetch only NEW SL candidates from supabase
                 const { data, error } = await supabase
                     .from('candidates')
-                    .select('*')
+                    .select('*, interviews(*)')
                     .eq('candidate_type', 'New')
                     .order('score_overall', { ascending: false, nullsFirst: false });
 
@@ -114,8 +123,8 @@ export function DatabasePage() {
             let av: any;
             let bv: any;
             if (sortKey === 'score_overall') {
-                av = a.score_overall ?? null;
-                bv = b.score_overall ?? null;
+                av = getInterviewOverall(a);
+                bv = getInterviewOverall(b);
             } else if (sortKey === 'written_avg') {
                 av = getWrittenAvg(a);
                 bv = getWrittenAvg(b);
@@ -421,7 +430,7 @@ export function DatabasePage() {
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-1.5 font-medium text-primary">
                                                     <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500 inline mr-1" />
-                                                    {cand.score_overall ? cand.score_overall.toFixed(1) : 'N/A'}
+                                                    {getInterviewOverall(cand) != null ? getInterviewOverall(cand)!.toFixed(1) : 'N/A'}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-right">
@@ -564,10 +573,10 @@ export function DatabasePage() {
                                     </p>
                                 </div>
                                 <div className="space-y-2">
-                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Overall Score</p>
+                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Interview Overall (avg)</p>
                                     <p className="text-sm text-primary font-semibold">
-                                        {typeof selectedCandidate.score_overall === 'number'
-                                            ? selectedCandidate.score_overall.toFixed(1)
+                                        {getInterviewOverall(selectedCandidate) != null
+                                            ? `${getInterviewOverall(selectedCandidate)!.toFixed(1)} / 10`
                                             : 'N/A'}
                                     </p>
                                 </div>
@@ -630,35 +639,119 @@ export function DatabasePage() {
                                 </div>
                             </div>
 
-                            <div className="space-y-3">
-                                <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Written Scores (out of 5)</p>
-                                <div className="flex flex-wrap gap-3 text-xs">
-                                    <span className="px-2 py-1 rounded-full bg-surfaceHover text-secondary">
-                                        Interest:{' '}
-                                        <span className="font-semibold text-primary">
-                                            {selectedCandidate.written_score_interest ?? 'N/A'}
-                                        </span>
-                                    </span>
-                                    <span className="px-2 py-1 rounded-full bg-surfaceHover text-secondary">
-                                        Teaching:{' '}
-                                        <span className="font-semibold text-primary">
-                                            {selectedCandidate.written_score_teaching ?? 'N/A'}
-                                        </span>
-                                    </span>
-                                    <span className="px-2 py-1 rounded-full bg-surfaceHover text-secondary">
-                                        Seminar:{' '}
-                                        <span className="font-semibold text-primary">
-                                            {selectedCandidate.written_score_seminar ?? 'N/A'}
-                                        </span>
-                                    </span>
-                                    <span className="px-2 py-1 rounded-full bg-surfaceHover text-secondary">
-                                        Personal:{' '}
-                                        <span className="font-semibold text-primary">
-                                            {selectedCandidate.written_score_personal ?? 'N/A'}
-                                        </span>
-                                    </span>
+                            {/* Scores overview */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="p-3 rounded-lg border border-border bg-surface/50">
+                                    <p className="text-[10px] font-semibold text-secondary uppercase tracking-wider mb-1">Written Avg</p>
+                                    <p className="text-xl font-bold text-primary">
+                                        {getWrittenAvg(selectedCandidate) != null ? `${getWrittenAvg(selectedCandidate)!.toFixed(2)}` : '—'}
+                                        <span className="text-xs font-normal text-secondary ml-1">/ 5</span>
+                                    </p>
+                                </div>
+                                <div className="p-3 rounded-lg border border-border bg-surface/50">
+                                    <p className="text-[10px] font-semibold text-secondary uppercase tracking-wider mb-1">Interview Overall (avg)</p>
+                                    <p className="text-xl font-bold text-primary">
+                                        {getInterviewOverall(selectedCandidate) != null ? `${getInterviewOverall(selectedCandidate)!.toFixed(1)}` : '—'}
+                                        <span className="text-xs font-normal text-secondary ml-1">/ 10</span>
+                                    </p>
+                                </div>
+                                <div className="p-3 rounded-lg border border-border bg-surface/50">
+                                    <p className="text-[10px] font-semibold text-secondary uppercase tracking-wider mb-1">Empirical</p>
+                                    <p className="text-xl font-bold text-primary">
+                                        {typeof selectedCandidate.score_empirical === 'number' ? `${selectedCandidate.score_empirical.toFixed(1)}` : '—'}
+                                        <span className="text-xs font-normal text-secondary ml-1">/ 10</span>
+                                    </p>
                                 </div>
                             </div>
+
+                            {/* Written scores */}
+                            <div className="space-y-3">
+                                <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Written Scores (out of 5)</p>
+                                <div className="space-y-2">
+                                    {[
+                                        { label: 'Interest', value: selectedCandidate.written_score_interest },
+                                        { label: 'Teaching', value: selectedCandidate.written_score_teaching },
+                                        { label: 'Seminar', value: selectedCandidate.written_score_seminar },
+                                        { label: 'Personal', value: selectedCandidate.written_score_personal },
+                                    ].map(({ label, value }) => (
+                                        <div key={label} className="flex items-center gap-3">
+                                            <span className="text-xs text-secondary w-16 shrink-0">{label}</span>
+                                            <div className="flex-1 h-2 bg-surfaceHover rounded-full overflow-hidden">
+                                                <motion.div
+                                                    className="h-full rounded-full bg-gray-400 dark:bg-gray-500"
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: typeof value === 'number' ? `${(value / 5) * 100}%` : '0%' }}
+                                                    transition={{ type: 'spring', stiffness: 160, damping: 22 }}
+                                                />
+                                            </div>
+                                            <span className="text-xs font-semibold text-primary w-8 text-right tabular-nums">
+                                                {typeof value === 'number' ? value.toFixed(1) : '—'}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Interview notes per interviewer */}
+                            {selectedCandidate.interviews && selectedCandidate.interviews.length > 0 && (
+                                <div className="space-y-3">
+                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider">
+                                        Interview Notes ({selectedCandidate.interviews.length} interviewer{selectedCandidate.interviews.length > 1 ? 's' : ''})
+                                    </p>
+                                    <div className={`grid ${selectedCandidate.interviews.length === 1 ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'} gap-4`}>
+                                        {selectedCandidate.interviews.map((note: any, idx: number) => {
+                                            const dims = [
+                                                { label: 'Understanding', value: note.score_understanding },
+                                                { label: 'Enthusiasm', value: note.score_enthusiasm },
+                                                { label: 'Quality', value: note.score_quality },
+                                                { label: 'Teaching', value: note.score_teaching },
+                                                { label: 'Interest', value: note.score_interest },
+                                            ];
+                                            return (
+                                                <div key={idx} className="p-4 rounded-lg border border-border bg-surface/30 space-y-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-semibold text-primary">
+                                                            {note.interviewer_name || `Interviewer ${idx + 1}`}
+                                                        </span>
+                                                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-accent/10 text-accent">
+                                                            Overall {typeof note.score_overall === 'number' ? note.score_overall.toFixed(1) : '—'}/10
+                                                        </span>
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        {dims.map(({ label, value }) => (
+                                                            <div key={label} className="flex items-center gap-2">
+                                                                <span className="text-[11px] text-secondary w-20 shrink-0">{label}</span>
+                                                                <div className="flex-1 h-1.5 bg-surfaceHover rounded-full overflow-hidden">
+                                                                    <motion.div
+                                                                        className="h-full rounded-full bg-accent/70"
+                                                                        initial={{ width: 0 }}
+                                                                        animate={{ width: typeof value === 'number' ? `${(value / 5) * 100}%` : '0%' }}
+                                                                        transition={{ type: 'spring', stiffness: 160, damping: 22 }}
+                                                                    />
+                                                                </div>
+                                                                <span className="text-[11px] font-semibold text-primary w-6 text-right tabular-nums">
+                                                                    {typeof value === 'number' ? value.toFixed(1) : '—'}
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    {note.notes_comments && (
+                                                        <div className="pt-2 border-t border-border">
+                                                            <p className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-1">Comments</p>
+                                                            <p className="text-xs text-primary leading-relaxed">{note.notes_comments}</p>
+                                                        </div>
+                                                    )}
+                                                    {note.sensitive_flag && (
+                                                        <div className="px-2 py-1 rounded bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-200 text-[11px] font-medium">
+                                                            Sensitive topics flagged
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

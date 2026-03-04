@@ -1096,7 +1096,7 @@ export function DeliberationPage() {
                                                                         ]}
                                                                     >
                                                                         <span className="text-3xl font-semibold text-primary">
-                                                                            {overallStandardized != null ? overallStandardized.toFixed(1) : '—'}
+                                                                            {currentOverall != null ? currentOverall.toFixed(1) : '—'}
                                                                         </span>
                                                                     </ScoreTooltip>
                                                                     <span className="text-xs text-secondary">/ 10</span>
@@ -1108,7 +1108,7 @@ export function DeliberationPage() {
                                                         </div>
 
                                                         {/* Empirical standardized score */}
-                                                        {typeof candidate.scores.empirical === 'number' && (
+                                                        {currentEmpirical != null && (
                                                             <div>
                                                                 <div className="mb-0.5">
                                                                     <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Empirical</span>
@@ -1124,7 +1124,7 @@ export function DeliberationPage() {
                                                                             ]}
                                                                         >
                                                                             <span className="text-3xl font-semibold text-primary">
-                                                                                {candidate.scores.empirical.toFixed(1)}
+                                                                                {currentEmpirical.toFixed(1)}
                                                                             </span>
                                                                         </ScoreTooltip>
                                                                         <span className="text-xs text-secondary">/ 10</span>
@@ -1188,12 +1188,28 @@ export function DeliberationPage() {
                                                 </div>
 
                                                 <div className="space-y-1 mb-2">
-                                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Interview Scores (out of 5)</p>
-                                                    {renderProgressBar('Understanding', candidate.scores.understanding ?? 0, 5, COLOR_OVERALL)}
-                                                    {renderProgressBar('Enthusiasm', candidate.scores.enthusiasm ?? 0, 5, COLOR_OVERALL)}
-                                                    {renderProgressBar('Seminar Quality', candidate.scores.quality ?? 0, 5, COLOR_OVERALL)}
-                                                    {renderProgressBar('Teaching', candidate.scores.teaching ?? 0, 5, COLOR_OVERALL)}
-                                                    {renderProgressBar('Extracurriculars / Interest', candidate.scores.interestEngaging ?? 0, 5, COLOR_OVERALL)}
+                                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
+                                                        Interview Scores{percentileInterviewer !== 'all' ? ` — ${percentileInterviewer}` : ''} (out of 5)
+                                                    </p>
+                                                    {(() => {
+                                                        const selectedNote = percentileInterviewer !== 'all'
+                                                            ? interviewNotes.find((n: any) => (n.interviewer || 'Unknown Interviewer') === percentileInterviewer)
+                                                            : null;
+                                                        const u = selectedNote ? (selectedNote.score_understanding ?? 0) : (candidate.scores.understanding ?? 0);
+                                                        const e = selectedNote ? (selectedNote.score_enthusiasm ?? 0) : (candidate.scores.enthusiasm ?? 0);
+                                                        const q = selectedNote ? (selectedNote.score_quality ?? 0) : (candidate.scores.quality ?? 0);
+                                                        const t = selectedNote ? (selectedNote.score_teaching ?? 0) : (candidate.scores.teaching ?? 0);
+                                                        const i = selectedNote ? (selectedNote.score_interest ?? 0) : (candidate.scores.interestEngaging ?? 0);
+                                                        return (
+                                                            <>
+                                                                {renderProgressBar('Understanding', u, 5, COLOR_OVERALL)}
+                                                                {renderProgressBar('Enthusiasm', e, 5, COLOR_OVERALL)}
+                                                                {renderProgressBar('Seminar Quality', q, 5, COLOR_OVERALL)}
+                                                                {renderProgressBar('Teaching', t, 5, COLOR_OVERALL)}
+                                                                {renderProgressBar('Extracurriculars / Interest', i, 5, COLOR_OVERALL)}
+                                                            </>
+                                                        );
+                                                    })()}
                                                 </div>
                                             </Card>
                                         </div>
