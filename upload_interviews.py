@@ -242,7 +242,10 @@ def main() -> None:
 
     if args.truncate:
         print("Truncating existing rows from `interviews` table...")
-        http_json("DELETE", f"{rest_url}/interviews", base_headers)
+        # Supabase/PostgREST now requires a WHERE clause on DELETE.
+        # Use a broad filter on a non-nullable column to delete all rows.
+        # `is.not_null` is the accepted PostgREST syntax for "IS NOT NULL".
+        http_json("DELETE", f"{rest_url}/interviews?candidate_id=is.not_null", base_headers)
         print("Existing rows deleted.")
 
     batch_size = 100

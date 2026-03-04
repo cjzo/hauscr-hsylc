@@ -751,18 +751,33 @@ export function DeliberationPage() {
         };
     });
 
-    const overallScoresForCandidate = interviewNotes
-        .map((note: any) => (typeof note.score_overall === 'number' ? note.score_overall : null))
-        .filter((v: number | null): v is number => v !== null);
+    // Disagreement across multiple interview dimensions (0–10 standardized scale)
+    const disagreementDimensions: { key: keyof any; label: string }[] = [
+        { key: 'score_overall', label: 'Overall' },
+        { key: 'score_enthusiasm', label: 'Enthusiasm' },
+        { key: 'score_quality', label: 'Seminar Quality' },
+        { key: 'score_teaching', label: 'Teaching' },
+        { key: 'score_interest', label: 'Interest / Engagement' },
+    ];
 
-    const hasInterviewerDisagreement =
-        overallScoresForCandidate.length >= 2 &&
-        Math.max(...overallScoresForCandidate) - Math.min(...overallScoresForCandidate) >= 2;
+    let maxDisagreementRange = 0;
+    let maxDisagreementLabel: string | null = null;
 
-    const disagreementRange =
-        overallScoresForCandidate.length >= 2
-            ? Math.max(...overallScoresForCandidate) - Math.min(...overallScoresForCandidate)
-            : null;
+    disagreementDimensions.forEach(dim => {
+        const vals = interviewNotes
+            .map((note: any) => (typeof note[dim.key] === 'number' ? note[dim.key] : null))
+            .filter((v: number | null): v is number => v !== null);
+        if (vals.length < 2) return;
+        const range = Math.max(...vals) - Math.min(...vals);
+        if (range > maxDisagreementRange) {
+            maxDisagreementRange = range;
+            maxDisagreementLabel = dim.label;
+        }
+    });
+
+    const hasInterviewerDisagreement = maxDisagreementRange >= 2;
+    const disagreementRange = hasInterviewerDisagreement ? maxDisagreementRange : null;
+    const disagreementDimension = hasInterviewerDisagreement ? maxDisagreementLabel : null;
 
     const multiInterviewerChartData = interviewNotes.length >= 2
         ? (['Enthusiasm', 'Quality', 'Teaching', 'Interest', 'Overall'] as const).map(dim => {
@@ -942,8 +957,10 @@ export function DeliberationPage() {
                                                             <ScoreTooltip
                                                                 label="Interviewer disagreement"
                                                                 lines={[
-                                                                    'Interviewers significantly disagree on this candidate.',
-                                                                    `Range of standardized overall scores across interviews: ${disagreementRange.toFixed(1)} (scale 0–10).`,
+                                                                    'Interviewers significantly disagree on this candidate on at least one interview dimension.',
+                                                                    disagreementDimension
+                                                                        ? `Largest disagreement is on ${disagreementDimension}: range ${disagreementRange.toFixed(1)} (scale 0–10).`
+                                                                        : `Range across interviews: ${disagreementRange.toFixed(1)} (scale 0–10).`,
                                                                 ]}
                                                             >
                                                                 <span className="px-2 py-0.5 rounded-sm bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-100 text-[10px] font-semibold tracking-wide uppercase">

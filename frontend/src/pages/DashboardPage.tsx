@@ -38,6 +38,8 @@ export function DashboardPage() {
     const [candidates, setCandidates] = useState<any[]>([]);
     const [selectedReviewer, setSelectedReviewer] = useState<string>('all');
     const [reviewers, setReviewers] = useState<string[]>([]);
+    const [selectedInterviewer, setSelectedInterviewer] = useState<string>('all');
+    const [interviewers, setInterviewers] = useState<string[]>([]);
     const [writtenInterestDist, setWrittenInterestDist] = useState<{ scoreRange: string, count: number }[]>([]);
     const [writtenTeachingDist, setWrittenTeachingDist] = useState<{ scoreRange: string, count: number }[]>([]);
     const [writtenSeminarDist, setWrittenSeminarDist] = useState<{ scoreRange: string, count: number }[]>([]);
@@ -58,7 +60,7 @@ export function DashboardPage() {
     useEffect(() => {
         async function fetchData() {
             try {
-                const { data, error } = await supabase.from('candidates').select('*, interviews(score_overall, score_empirical, score_enthusiasm, score_quality, score_teaching, score_interest)');
+                const { data, error } = await supabase.from('candidates').select('*, interviews(interviewer_name, score_overall, score_empirical, score_enthusiasm, score_quality, score_teaching, score_interest)');
                 if (error) throw error;
 
                 if (data) {
@@ -89,6 +91,19 @@ export function DashboardPage() {
                         )
                     ).sort();
                     setReviewers(graderNames);
+
+                    // Interviewer List (for interview PMFs / PMF+CDF)
+                    const interviewerNames = Array.from(
+                        new Set(
+                            data.flatMap((c: any) => {
+                                const interviews: any[] = Array.isArray(c.interviews) ? c.interviews : [];
+                                return interviews
+                                    .map((i: any) => (i.interviewer_name || '').trim())
+                                    .filter((name: string) => !!name);
+                            })
+                        )
+                    ).sort();
+                    setInterviewers(interviewerNames);
 
                     // Update Score Function (PMF)
                     const tempScoreDist: Record<string, number> = {
@@ -162,6 +177,19 @@ export function DashboardPage() {
             ? candidates
             : candidates.filter(c => c.grader_name === selectedReviewer);
 
+        const interviewerFilteredCandidates =
+            selectedInterviewer === 'all'
+                ? candidates
+                : candidates
+                    .map(c => {
+                        const interviews: any[] = Array.isArray(c.interviews) ? c.interviews : [];
+                        const filtered = interviews.filter(
+                            (i: any) => (i.interviewer_name || '').trim() === selectedInterviewer
+                        );
+                        return { ...c, interviews: filtered };
+                    })
+                    .filter(c => Array.isArray(c.interviews) && c.interviews.length > 0);
+
         const makeEmptyBins = () => ({
             '0-1': 0,
             '1-2': 0,
@@ -198,8 +226,9 @@ export function DashboardPage() {
             addToBins(personalBins, c.written_score_personal);
         });
 
-        // Interview rubric distributions (0–5), aggregated across all interview notes
-        candidates.forEach((c: any) => {
+        // Interview rubric distributions (0–5), aggregated across interview notes,
+        // optionally filtered by interviewer
+        interviewerFilteredCandidates.forEach((c: any) => {
             const interviews: any[] = Array.isArray(c.interviews) ? c.interviews : [];
             interviews.forEach((i: any) => {
                 addToBins(enthusiasmInterviewBins, i?.score_enthusiasm);
@@ -254,9 +283,9 @@ export function DashboardPage() {
         };
         const avg = (vals: number[]) => vals.reduce((a, b) => a + b, 0) / vals.length;
 
-        // Overall interview (0–10): PMF + CDF, all candidates, bin by 0.5
+        // Overall interview (0–10): PMF + CDF, bin by 0.5, optionally filtered by interviewer
         const interviewBinCounts: number[] = Array(21).fill(0); // 0, 0.5, ..., 10
-        candidates.forEach((c: any) => {
+        interviewerFilteredCandidates.forEach((c: any) => {
             const interviews: any[] = Array.isArray(c.interviews) ? c.interviews : [];
             const scores = interviews
                 .map((i: any) => toNum(i?.score_overall))
@@ -281,9 +310,9 @@ export function DashboardPage() {
             })
         );
 
-        // Empirical standardized score (0–10): PMF + CDF, all candidates, bin by 0.5
+        // Empirical standardized score (0–10): PMF + CDF, bin by 0.5, optionally filtered by interviewer
         const empiricalBinCounts: number[] = Array(21).fill(0); // 0, 0.5, ..., 10
-        candidates.forEach((c: any) => {
+        interviewerFilteredCandidates.forEach((c: any) => {
             const interviews: any[] = Array.isArray(c.interviews) ? c.interviews : [];
             const empiricalVals = interviews
                 .map((i: any) => toNum(i?.score_empirical))
@@ -307,7 +336,7 @@ export function DashboardPage() {
                 };
             })
         );
-    }, [candidates, selectedReviewer]);
+    }, [candidates, selectedReviewer, selectedInterviewer]);
 
     const scoreViews: Array<'interview' | 'empirical' | 'written'> = ['interview', 'empirical', 'written'];
     const currentScoreViewIndex = scoreViews.indexOf(scoreView);
@@ -722,7 +751,7 @@ export function DashboardPage() {
                                 <p className="text-sm text-secondary">
                                     {rubricView === 'written'
                                         ? 'Distributions of written rubric scores (0–5) by component. Use the filter to see a specific reviewer.'
-                                        : 'Distributions of interview rubric scores (0–5) by component, aggregated across all interview notes.'}
+                                        : 'Distributions of interview rubric scores (0–5) by component. Use the filter to see a specific interviewer.'}
                                 </p>
                             </div>
                             <div className="flex items-center gap-3">
@@ -736,6 +765,21 @@ export function DashboardPage() {
                                                 options={[
                                                     { value: 'all', label: 'All reviewers' },
                                                     ...reviewers.map((name) => ({ value: name, label: name }))
+                                                ]}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                                {rubricView === 'interview' && (
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <span className="text-secondary whitespace-nowrap">Filter by interviewer</span>
+                                        <div className="w-48 shrink-0">
+                                            <Select
+                                                value={selectedInterviewer}
+                                                onChange={(val) => setSelectedInterviewer(val)}
+                                                options={[
+                                                    { value: 'all', label: 'All interviewers' },
+                                                    ...interviewers.map((name) => ({ value: name, label: name }))
                                                 ]}
                                             />
                                         </div>
