@@ -1037,40 +1037,35 @@ export function DeliberationPage() {
                                             </Card>
 
                                             {interviewNotes.length >= 2 && (
-                                                <div className="flex items-center justify-center gap-2 py-1">
-                                                    <span className="text-[10px] text-secondary uppercase tracking-wide whitespace-nowrap">
-                                                        Percentiles based on
-                                                    </span>
-                                                    <div className="flex flex-wrap gap-1 relative">
-                                                        {[
-                                                            { key: 'all', label: 'All interviews' },
-                                                            ...interviewNotes.map((note: any, idx: number) => ({
-                                                                key: note.interviewer || `Interviewer ${idx + 1}`,
-                                                                label: note.interviewer || `Interviewer ${idx + 1}`,
-                                                            })),
-                                                        ].map((opt) => {
-                                                            const isSelected = percentileInterviewer === opt.key;
-                                                            return (
-                                                                <button
-                                                                    key={opt.key}
-                                                                    type="button"
-                                                                    onClick={() => setPercentileInterviewer(opt.key)}
-                                                                    className="relative px-2 py-0.5 rounded-sm text-[10px] font-medium"
-                                                                >
-                                                                    {isSelected && (
-                                                                        <motion.span
-                                                                            layoutId="percentilePill"
-                                                                            className="absolute inset-0 rounded-sm bg-surfaceHover border border-border"
-                                                                            transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-                                                                        />
-                                                                    )}
-                                                                    <span className={`relative z-10 ${isSelected ? 'text-primary' : 'text-secondary hover:text-primary'}`}>
-                                                                        {opt.label}
-                                                                    </span>
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
+                                                <div className="flex items-center justify-center gap-1 py-1 overflow-hidden relative">
+                                                    {[
+                                                        { key: 'all', label: 'All' },
+                                                        ...interviewNotes.map((note: any, idx: number) => ({
+                                                            key: note.interviewer || `Interviewer ${idx + 1}`,
+                                                            label: note.interviewer || `Interviewer ${idx + 1}`,
+                                                        })),
+                                                    ].map((opt) => {
+                                                        const isSelected = percentileInterviewer === opt.key;
+                                                        return (
+                                                            <button
+                                                                key={opt.key}
+                                                                type="button"
+                                                                onClick={() => setPercentileInterviewer(opt.key)}
+                                                                className="relative px-2 py-0.5 rounded-sm text-[10px] font-medium truncate min-w-0"
+                                                            >
+                                                                {isSelected && (
+                                                                    <motion.span
+                                                                        layoutId="percentilePill"
+                                                                        className="absolute inset-0 rounded-sm bg-surfaceHover border border-border"
+                                                                        transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+                                                                    />
+                                                                )}
+                                                                <span className={`relative z-10 ${isSelected ? 'text-primary' : 'text-secondary hover:text-primary'}`}>
+                                                                    {opt.label}
+                                                                </span>
+                                                            </button>
+                                                        );
+                                                    })}
                                                 </div>
                                             )}
 
