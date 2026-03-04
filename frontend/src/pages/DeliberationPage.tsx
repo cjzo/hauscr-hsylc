@@ -1037,7 +1037,7 @@ export function DeliberationPage() {
                                             </Card>
 
                                             {interviewNotes.length >= 2 && (
-                                                <div className="flex items-center justify-center gap-1 py-1 overflow-hidden relative">
+                                                <div className="flex items-center justify-center gap-1 py-0.5 overflow-visible relative">
                                                     {[
                                                         { key: 'all', label: 'All' },
                                                         ...interviewNotes.map((note: any, idx: number) => ({
