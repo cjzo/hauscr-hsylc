@@ -196,6 +196,7 @@ export function DeliberationPage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [sidebarHasSpace, setSidebarHasSpace] = useState(true);
     const [distributionMode, setDistributionMode] = useState<'written' | 'interview' | 'empirical'>('interview');
+    const [percentileInterviewer, setPercentileInterviewer] = useState<'all' | string>('all');
 
     const { role } = useAuth();
     const isAdmin = role === 'admin';
@@ -826,9 +827,23 @@ export function DeliberationPage() {
         .map(c => c.scores?.empirical)
         .filter((v: unknown): v is number => typeof v === 'number');
 
-    const currentOverall = overallStandardized;
+    let currentOverall = overallStandardized;
+    let currentEmpirical = typeof candidate.scores?.empirical === 'number' ? candidate.scores.empirical : null;
     const currentWrittenAvg = writtenOverall;
-    const currentEmpirical = typeof candidate.scores?.empirical === 'number' ? candidate.scores.empirical : null;
+
+    if (percentileInterviewer !== 'all') {
+        const note = interviewNotes.find(
+            (n: any) => (n.interviewer || 'Unknown Interviewer') === percentileInterviewer
+        );
+        if (note) {
+            if (typeof note.score_overall === 'number') {
+                currentOverall = note.score_overall;
+            }
+            if (typeof note.score_empirical === 'number') {
+                currentEmpirical = note.score_empirical;
+            }
+        }
+    }
 
     const overallKdeData = kernelDensity(cohortOverallScores, 0, 10, 0.2, 0.5);
     const writtenAvgKdeData = kernelDensity(cohortWrittenAverages, 0, 5, 0.1, 0.25);
@@ -1408,8 +1423,47 @@ export function DeliberationPage() {
                                             {activeTab === 'visualizations' && (
                                                 <div className="space-y-10">
                                                     {/* Written vs Interview vs Empirical summary */}
-                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                                        <motion.div
+                                                    <div className="flex flex-col gap-3">
+                                                        {interviewNotes.length >= 2 && (
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                <span className="text-[11px] text-secondary uppercase tracking-wide">
+                                                                    Percentiles based on
+                                                                </span>
+                                                                <div className="flex flex-wrap gap-1">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setPercentileInterviewer('all')}
+                                                                        className={`px-2 py-0.5 rounded-sm text-[10px] font-medium border ${
+                                                                            percentileInterviewer === 'all'
+                                                                                ? 'bg-surfaceHover text-primary border-border'
+                                                                                : 'bg-transparent text-secondary border-border/60 hover:bg-surfaceHover/60'
+                                                                        }`}
+                                                                    >
+                                                                        All interviews
+                                                                    </button>
+                                                                    {interviewNotes.map((note: any, idx: number) => {
+                                                                        const name = note.interviewer || `Interviewer ${idx + 1}`;
+                                                                        const selected = percentileInterviewer === name;
+                                                                        return (
+                                                                            <button
+                                                                                key={name || idx}
+                                                                                type="button"
+                                                                                onClick={() => setPercentileInterviewer(name)}
+                                                                                className={`px-2 py-0.5 rounded-sm text-[10px] font-medium border ${
+                                                                                    selected
+                                                                                        ? 'bg-surfaceHover text-primary border-border'
+                                                                                        : 'bg-transparent text-secondary border-border/60 hover:bg-surfaceHover/60'
+                                                                                }`}
+                                                                            >
+                                                                                {name}
+                                                                            </button>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                                            <motion.div
                                                             initial={{ opacity: 0, y: 8 }}
                                                             animate={{ opacity: 1, y: 0 }}
                                                             transition={{ type: 'spring', stiffness: 220, damping: 26 }}
