@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useId, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useCallback, useId, useLayoutEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { Select } from '../components/ui/Select';
 import { useConfirm } from '../components/ui/ConfirmModal';
 import {
     User, Mail, GraduationCap, ChevronRight, ChevronLeft, MapPin,
@@ -197,6 +198,7 @@ export function DeliberationPage() {
     const [sidebarHasSpace, setSidebarHasSpace] = useState(true);
     const [distributionMode, setDistributionMode] = useState<'written' | 'interview' | 'empirical'>('interview');
     const [percentileInterviewer, setPercentileInterviewer] = useState<'all' | string>('all');
+    const [tierFilter, setTierFilter] = useState<string>('all');
 
     const { role } = useAuth();
     const isAdmin = role === 'admin';
@@ -427,6 +429,7 @@ export function DeliberationPage() {
                         },
                         interviewNotes: interviews.map((note: any) => ({
                             interviewer: note.interviewer_name,
+                            interviewer_ranking: note.interviewer_ranking || null,
                             notes_why_sl: note.notes_why_sl,
                             notes_seminar: note.notes_seminar,
                             notes_extracurricular: note.notes_extracurricular,
@@ -527,29 +530,44 @@ export function DeliberationPage() {
         }
     };
 
-    const candidate = candidates[currentIndex];
+    const filteredCandidates = useMemo(() => {
+        if (tierFilter === 'all') return candidates;
+        return candidates.filter((cand) => {
+            const tiers = (cand.interviewNotes || [])
+                .map((n: any) => n.interviewer_ranking)
+                .filter((r: any): r is string => !!r);
+            if (tierFilter === 'unranked') return tiers.length === 0;
+            return tiers.includes(tierFilter);
+        });
+    }, [candidates, tierFilter]);
+
+    const filteredIndex = useMemo(() => {
+        return Math.min(currentIndex, Math.max(0, filteredCandidates.length - 1));
+    }, [currentIndex, filteredCandidates.length]);
+
+    const candidate = filteredCandidates[filteredIndex];
 
     const hasSidebarSpace = sidebarHasSpace;
 
     const nextCandidate = () => {
-        if (currentIndex < candidates.length - 1) {
-            const nextIdx = currentIndex + 1;
+        if (filteredIndex < filteredCandidates.length - 1) {
+            const nextIdx = filteredIndex + 1;
             setDirection(1);
             setCurrentIndex(nextIdx);
             setTabDirection(0);
             setActiveTab('seminar');
-            syncCurrentCandidateId(candidates[nextIdx].id);
+            syncCurrentCandidateId(filteredCandidates[nextIdx].id);
         }
     };
 
     const prevCandidate = () => {
-        if (currentIndex > 0) {
-            const prevIdx = currentIndex - 1;
+        if (filteredIndex > 0) {
+            const prevIdx = filteredIndex - 1;
             setDirection(-1);
             setCurrentIndex(prevIdx);
             setTabDirection(0);
             setActiveTab('seminar');
-            syncCurrentCandidateId(candidates[prevIdx].id);
+            syncCurrentCandidateId(filteredCandidates[prevIdx].id);
         }
     };
 
@@ -581,8 +599,9 @@ export function DeliberationPage() {
                     }
                 }
 
-                setCandidates(prev => prev.filter((_, i) => i !== currentIndex));
-                if (currentIndex >= candidates.length - 1 && currentIndex > 0) {
+                const removedId = candidate.id;
+                setCandidates(prev => prev.filter(c => c.id !== removedId));
+                if (filteredIndex >= filteredCandidates.length - 1 && filteredIndex > 0) {
                     setCurrentIndex(prev => prev - 1);
                 }
                 setDirection(1);
@@ -624,8 +643,13 @@ export function DeliberationPage() {
 
     if (!candidate) {
         return (
-            <div className="h-full flex items-center justify-center text-secondary">
-                No more candidates to review.
+            <div className="h-full flex flex-col items-center justify-center gap-3 text-secondary">
+                <p>{tierFilter !== 'all' ? 'No candidates match the selected tier filter.' : 'No more candidates to review.'}</p>
+                {tierFilter !== 'all' && (
+                    <Button variant="secondary" size="sm" onClick={() => { setTierFilter('all'); setCurrentIndex(0); }}>
+                        Clear filter
+                    </Button>
+                )}
             </div>
         );
     }
@@ -897,9 +921,24 @@ export function DeliberationPage() {
                     <h1 className="text-2xl font-bold text-primary tracking-tight">
                         Application Review {isAdmin && <span className="ml-2 px-2 py-0.5 bg-accent/20 text-accent text-[10px] uppercase rounded border border-accent/30">Conductor</span>}
                     </h1>
-                    <p className="text-sm text-secondary mt-1">Reviewing candidate {currentIndex + 1} of {candidates.length}</p>
+                    <p className="text-sm text-secondary mt-1">Reviewing candidate {filteredIndex + 1} of {filteredCandidates.length}{tierFilter !== 'all' ? ` (filtered)` : ''}</p>
                 </div>
                 <div className="flex items-center gap-2">
+                    <div className="w-40 shrink-0 z-30">
+                        <Select
+                            value={tierFilter}
+                            onChange={(val) => { setTierFilter(val); setCurrentIndex(0); }}
+                            options={[
+                                { value: 'all', label: 'All tiers' },
+                                { value: 'auto_accept', label: 'Auto Accept' },
+                                { value: 'tier_1', label: 'Tier 1' },
+                                { value: 'tier_2', label: 'Tier 2' },
+                                { value: 'tier_3', label: 'Tier 3' },
+                                { value: 'tier_4', label: 'Tier 4' },
+                                { value: 'unranked', label: 'Unranked' },
+                            ]}
+                        />
+                    </div>
                     <Button
                         variant="secondary"
                         size="sm"
@@ -909,10 +948,10 @@ export function DeliberationPage() {
                     </Button>
                     {isAdmin && (
                         <>
-                            <Button variant="secondary" size="sm" onClick={prevCandidate} disabled={currentIndex === 0}>
+                            <Button variant="secondary" size="sm" onClick={prevCandidate} disabled={filteredIndex === 0}>
                                 <ChevronLeft className="w-4 h-4 mr-1" /> Previous
                             </Button>
-                            <Button variant="secondary" size="sm" onClick={nextCandidate} disabled={currentIndex === candidates.length - 1}>
+                            <Button variant="secondary" size="sm" onClick={nextCandidate} disabled={filteredIndex === filteredCandidates.length - 1}>
                                 Next <ChevronRight className="w-4 h-4 ml-1" />
                             </Button>
                         </>
