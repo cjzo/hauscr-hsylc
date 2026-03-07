@@ -924,7 +924,7 @@ export function DeliberationPage() {
                     <p className="text-sm text-secondary mt-1">Reviewing candidate {filteredIndex + 1} of {filteredCandidates.length}{tierFilter !== 'all' ? ` (filtered)` : ''}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="w-40 shrink-0 z-30">
+                    <div className="w-40 shrink-0">
                         <Select
                             value={tierFilter}
                             onChange={(val) => { setTierFilter(val); setCurrentIndex(0); }}

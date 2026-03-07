@@ -415,7 +415,7 @@ export function DatabasePage() {
                     <div className="flex flex-wrap items-center gap-3">
                         <div className="flex items-center gap-2">
                             <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Category</label>
-                            <div className="w-48 shrink-0 z-20">
+                            <div className="w-48 shrink-0">
                                 <Select
                                     value={categoryFilter}
                                     onChange={(val) => setCategoryFilter(val)}
@@ -429,7 +429,7 @@ export function DatabasePage() {
 
                         <div className="flex items-center gap-2">
                             <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Type</label>
-                            <div className="w-40 shrink-0 z-20">
+                            <div className="w-40 shrink-0">
                                 <Select
                                     value={candidateTypeFilter}
                                     onChange={(val) => setCandidateTypeFilter(val as any)}
@@ -444,7 +444,7 @@ export function DatabasePage() {
 
                         <div className="flex items-center gap-2">
                             <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Interviewer</label>
-                            <div className="w-44 shrink-0 z-20">
+                            <div className="w-44 shrink-0">
                                 <Select
                                     value={interviewerFilter}
                                     onChange={(val) => setInterviewerFilter(val)}
@@ -458,7 +458,7 @@ export function DatabasePage() {
 
                         <div className="flex items-center gap-2">
                             <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Tier</label>
-                            <div className="w-40 shrink-0 z-20">
+                            <div className="w-40 shrink-0">
                                 <Select
                                     value={tierFilter}
                                     onChange={(val) => setTierFilter(val)}
@@ -477,7 +477,7 @@ export function DatabasePage() {
 
                         <div className="flex items-center gap-2">
                             <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Sort</label>
-                            <div className="w-48 shrink-0 z-30">
+                            <div className="w-48 shrink-0">
                                 <Select
                                     value={sortKey}
                                     onChange={(val) => setSortKey(val as any)}
@@ -523,7 +523,7 @@ export function DatabasePage() {
                     <div className="flex flex-wrap items-center gap-3">
                         <div className="flex items-center gap-2">
                             <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Written Score</label>
-                            <div className="w-36 shrink-0 z-10">
+                            <div className="w-36 shrink-0">
                                 <Select
                                     value={writtenScoreRange}
                                     onChange={(val) => setWrittenScoreRange(val)}
@@ -541,7 +541,7 @@ export function DatabasePage() {
 
                         <div className="flex items-center gap-2">
                             <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Interview Score</label>
-                            <div className="w-36 shrink-0 z-10">
+                            <div className="w-36 shrink-0">
                                 <Select
                                     value={interviewScoreRange}
                                     onChange={(val) => setInterviewScoreRange(val)}

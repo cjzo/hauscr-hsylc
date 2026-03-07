@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '../../utils/cn';
@@ -18,13 +19,36 @@ interface SelectProps {
 
 export function Select({ options, value, onChange, placeholder = 'Select...', className }: SelectProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
     const selectedOption = options.find((opt) => opt.value === value);
 
+    const recompute = useCallback(() => {
+        if (!triggerRef.current) return;
+        const rect = triggerRef.current.getBoundingClientRect();
+        setPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+    }, []);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        recompute();
+        window.addEventListener('scroll', recompute, true);
+        window.addEventListener('resize', recompute);
+        return () => {
+            window.removeEventListener('scroll', recompute, true);
+            window.removeEventListener('resize', recompute);
+        };
+    }, [isOpen, recompute]);
+
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+            const target = event.target as Node;
+            if (
+                triggerRef.current && !triggerRef.current.contains(target) &&
+                dropdownRef.current && !dropdownRef.current.contains(target)
+            ) {
                 setIsOpen(false);
             }
         }
@@ -33,8 +57,9 @@ export function Select({ options, value, onChange, placeholder = 'Select...', cl
     }, []);
 
     return (
-        <div className={cn("relative w-full", className)} ref={containerRef}>
+        <div className={cn("relative w-full", className)}>
             <button
+                ref={triggerRef}
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className="w-full h-10 px-3 bg-white dark:bg-surface border border-border rounded-sm shadow-sm text-left flex items-center justify-between hover:bg-surface transition-all"
@@ -46,13 +71,15 @@ export function Select({ options, value, onChange, placeholder = 'Select...', cl
             </button>
 
             <AnimatePresence>
-                {isOpen && (
+                {isOpen && pos && createPortal(
                     <motion.div
+                        ref={dropdownRef}
                         initial={{ opacity: 0, y: -5, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -5, scale: 0.98 }}
                         transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                        className="absolute z-50 w-full mt-1 bg-white dark:bg-surface border border-border rounded-sm shadow-stripe-hover p-1 max-h-60 overflow-auto"
+                        className="fixed bg-white dark:bg-surface border border-border rounded-sm shadow-xl p-1 max-h-60 overflow-auto"
+                        style={{ zIndex: 9999, top: pos.top, left: pos.left, width: pos.width }}
                     >
                         {options.map((option) => (
                             <button
@@ -70,9 +97,10 @@ export function Select({ options, value, onChange, placeholder = 'Select...', cl
                                 {option.value === value && <Check className="w-4 h-4" />}
                             </button>
                         ))}
-                    </motion.div>
+                    </motion.div>,
+                    document.body
                 )}
             </AnimatePresence>
-        </div >
+        </div>
     );
 }
