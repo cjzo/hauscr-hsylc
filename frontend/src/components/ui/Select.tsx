@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
@@ -21,7 +20,7 @@ export function Select({ options, value, onChange, placeholder = 'Select...', cl
     const [isOpen, setIsOpen] = useState(false);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
+    const [pos, setPos] = useState<{ top: number; left: number; width: number }>({ top: 0, left: 0, width: 0 });
 
     const selectedOption = options.find((opt) => opt.value === value);
 
@@ -43,6 +42,7 @@ export function Select({ options, value, onChange, placeholder = 'Select...', cl
     }, [isOpen, recompute]);
 
     useEffect(() => {
+        if (!isOpen) return;
         function handleClickOutside(event: MouseEvent) {
             const target = event.target as Node;
             if (
@@ -54,7 +54,7 @@ export function Select({ options, value, onChange, placeholder = 'Select...', cl
         }
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    }, [isOpen]);
 
     return (
         <div className={cn("relative w-full", className)}>
@@ -70,37 +70,31 @@ export function Select({ options, value, onChange, placeholder = 'Select...', cl
                 <ChevronDown className={cn("w-4 h-4 text-muted transition-transform duration-200", isOpen && "rotate-180")} />
             </button>
 
-            <AnimatePresence>
-                {isOpen && pos && createPortal(
-                    <motion.div
-                        ref={dropdownRef}
-                        initial={{ opacity: 0, y: -5, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -5, scale: 0.98 }}
-                        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                        className="fixed bg-white dark:bg-surface border border-border rounded-sm shadow-xl p-1 max-h-60 overflow-auto"
-                        style={{ zIndex: 9999, top: pos.top, left: pos.left, width: pos.width }}
-                    >
-                        {options.map((option) => (
-                            <button
-                                key={option.value}
-                                onClick={() => {
-                                    onChange(option.value);
-                                    setIsOpen(false);
-                                }}
-                                className={cn(
-                                    "w-full text-left px-2 py-1.5 text-sm flex items-center justify-between hover:bg-surfaceHover transition-colors focus:outline-none focus-visible:ring-0 focus-visible:shadow-none rounded-sm",
-                                    option.value === value ? "text-accent font-medium dark:text-accent" : "text-primary"
-                                )}
-                            >
-                                {option.label}
-                                {option.value === value && <Check className="w-4 h-4" />}
-                            </button>
-                        ))}
-                    </motion.div>,
-                    document.body
-                )}
-            </AnimatePresence>
+            {isOpen && createPortal(
+                <div
+                    ref={dropdownRef}
+                    className="fixed bg-white dark:bg-surface border border-border rounded-sm shadow-xl p-1 max-h-60 overflow-auto"
+                    style={{ zIndex: 9999, top: pos.top, left: pos.left, width: pos.width }}
+                >
+                    {options.map((option) => (
+                        <button
+                            key={option.value}
+                            onClick={() => {
+                                onChange(option.value);
+                                setIsOpen(false);
+                            }}
+                            className={cn(
+                                "w-full text-left px-2 py-1.5 text-sm flex items-center justify-between hover:bg-surfaceHover transition-colors focus:outline-none focus-visible:ring-0 focus-visible:shadow-none rounded-sm",
+                                option.value === value ? "text-accent font-medium dark:text-accent" : "text-primary"
+                            )}
+                        >
+                            {option.label}
+                            {option.value === value && <Check className="w-4 h-4" />}
+                        </button>
+                    ))}
+                </div>,
+                document.body
+            )}
         </div>
     );
 }
