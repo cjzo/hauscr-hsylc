@@ -480,21 +480,30 @@ export function DeliberationPage() {
         fetchCandidates({ showLoader: true });
     }, [fetchCandidates]);
 
+    const displayCandidates = useMemo(() => {
+        if (tierFilter === 'all') return candidates;
+        return candidates.filter((cand) => {
+            const tiers = (cand.interviewNotes || [])
+                .map((n: any) => n.interviewer_ranking)
+                .filter((r: any): r is string => !!r);
+            if (tierFilter === 'unranked') return tiers.length === 0;
+            return tiers.includes(tierFilter);
+        });
+    }, [candidates, tierFilter]);
+
     // Real-time synchronization
     useEffect(() => {
-        if (candidates.length === 0) return;
+        if (displayCandidates.length === 0) return;
 
-        // 1. Fetch initial state
         const fetchInitialState = async () => {
             const { data } = await supabase.from('system_state').select('current_candidate_id').eq('id', 1).single();
             if (data?.current_candidate_id) {
-                const idx = candidates.findIndex(c => c.id === data.current_candidate_id);
+                const idx = displayCandidates.findIndex(c => c.id === data.current_candidate_id);
                 if (idx !== -1) setCurrentIndex(idx);
             }
         };
         fetchInitialState();
 
-        // 2. Subscribe to changes
         const channel = supabase
             .channel('system_state_changes')
             .on('postgres_changes', {
@@ -504,7 +513,7 @@ export function DeliberationPage() {
             }, payload => {
                 const newId = payload.new.current_candidate_id;
                 if (newId) {
-                    const idx = candidates.findIndex(c => c.id === newId);
+                    const idx = displayCandidates.findIndex(c => c.id === newId);
                     if (idx !== -1 && idx !== currentIndex) {
                         setDirection(idx > currentIndex ? 1 : -1);
                         setCurrentIndex(idx);
@@ -518,7 +527,7 @@ export function DeliberationPage() {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [candidates]);
+    }, [displayCandidates]);
 
     // Update global state when candidate changes (if admin)
     const syncCurrentCandidateId = async (id: string) => {
@@ -529,17 +538,6 @@ export function DeliberationPage() {
             console.error("Failed to sync system state:", err);
         }
     };
-
-    const displayCandidates = useMemo(() => {
-        if (tierFilter === 'all') return candidates;
-        return candidates.filter((cand) => {
-            const tiers = (cand.interviewNotes || [])
-                .map((n: any) => n.interviewer_ranking)
-                .filter((r: any): r is string => !!r);
-            if (tierFilter === 'unranked') return tiers.length === 0;
-            return tiers.includes(tierFilter);
-        });
-    }, [candidates, tierFilter]);
 
     const safeIndex = displayCandidates.length === 0 ? 0 : Math.min(currentIndex, displayCandidates.length - 1);
     const candidate = displayCandidates[safeIndex];
@@ -881,7 +879,7 @@ export function DeliberationPage() {
     const chartTopMargin = 32;
 
     const resyncFromConductor = async () => {
-        if (!candidates.length) return;
+        if (!displayCandidates.length) return;
         try {
             const { data, error } = await supabase
                 .from('system_state')
@@ -897,7 +895,7 @@ export function DeliberationPage() {
             const newId = data?.current_candidate_id;
             if (!newId) return;
 
-            const idx = candidates.findIndex(c => c.id === newId);
+            const idx = displayCandidates.findIndex(c => c.id === newId);
             if (idx === -1 || idx === currentIndex) return;
 
             setDirection(idx > currentIndex ? 1 : -1);
