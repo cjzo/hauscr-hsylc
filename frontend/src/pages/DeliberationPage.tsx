@@ -497,8 +497,17 @@ export function DeliberationPage() {
             });
 
         return [...filtered].sort((a, b) => {
-            const avgA = getTierAverage(getTiers(a));
-            const avgB = getTierAverage(getTiers(b));
+            const tiersA = getTiers(a);
+            const tiersB = getTiers(b);
+
+            if (tierFilter !== 'all' && tierFilter !== 'unranked') {
+                const countA = tiersA.filter(t => t === tierFilter).length;
+                const countB = tiersB.filter(t => t === tierFilter).length;
+                if (countA !== countB) return countB - countA;
+            }
+
+            const avgA = getTierAverage(tiersA);
+            const avgB = getTierAverage(tiersB);
             if (avgA === null && avgB === null) return 0;
             if (avgA === null) return 1;
             if (avgB === null) return -1;
