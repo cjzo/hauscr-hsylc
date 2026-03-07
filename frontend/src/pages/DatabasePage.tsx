@@ -245,7 +245,7 @@ export function DatabasePage() {
             if (tierFilter === 'unranked') {
                 matchesTier = tiers.length === 0;
             } else {
-                matchesTier = tiers.includes(tierFilter);
+                matchesTier = getConsensusTier(tiers) === tierFilter;
             }
         }
 
@@ -494,7 +494,7 @@ export function DatabasePage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Tier</label>
+                            <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Consensus</label>
                             <div className="w-40 shrink-0">
                                 <Select
                                     value={tierFilter}
