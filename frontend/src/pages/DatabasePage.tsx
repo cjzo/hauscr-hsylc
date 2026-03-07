@@ -25,6 +25,31 @@ import {
     SlidersHorizontal
 } from 'lucide-react';
 
+const TIER_OPTIONS = [
+    { value: '', label: '—' },
+    { value: 'auto_accept', label: 'Auto Accept' },
+    { value: 'tier_1', label: 'Tier 1' },
+    { value: 'tier_2', label: 'Tier 2' },
+    { value: 'tier_3', label: 'Tier 3' },
+    { value: 'tier_4', label: 'Tier 4' },
+] as const;
+
+const TIER_LABEL: Record<string, string> = {
+    auto_accept: 'Auto Accept',
+    tier_1: 'Tier 1',
+    tier_2: 'Tier 2',
+    tier_3: 'Tier 3',
+    tier_4: 'Tier 4',
+};
+
+const TIER_COLOR: Record<string, string> = {
+    auto_accept: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+    tier_1: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+    tier_2: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
+    tier_3: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+    tier_4: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+};
+
 export function DatabasePage() {
     const [candidates, setCandidates] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -34,8 +59,14 @@ export function DatabasePage() {
     const [settingCurrentId, setSettingCurrentId] = useState<string | null>(null);
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [candidateTypeFilter, setCandidateTypeFilter] = useState<'all' | 'New' | 'Returning'>('all');
+    const [tierFilter, setTierFilter] = useState<string>('all');
+    const [minWrittenScore, setMinWrittenScore] = useState<string>('');
+    const [maxWrittenScore, setMaxWrittenScore] = useState<string>('');
+    const [minInterviewScore, setMinInterviewScore] = useState<string>('');
+    const [maxInterviewScore, setMaxInterviewScore] = useState<string>('');
     const [sortKey, setSortKey] = useState<'score_overall' | 'written_avg' | 'name'>('score_overall');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+    const [savingRankingId, setSavingRankingId] = useState<string | null>(null);
     const confirmModal = useConfirm();
     const navigate = useNavigate();
     const { role } = useAuth();
@@ -68,6 +99,57 @@ export function DatabasePage() {
     const getCategory = (cand: any) => {
         const raw = cand.seminar_category || cand.seminar_title;
         return raw ? standardizeCategory(raw) : 'Uncategorized';
+    };
+
+    const getInterviewerRankings = (cand: any): { interviewerId: string; name: string; ranking: string | null }[] => {
+        const interviews = cand.interviews || [];
+        return interviews.map((n: any) => ({
+            interviewerId: n.id,
+            name: n.interviewer_name || 'Unknown',
+            ranking: n.interviewer_ranking || null,
+        }));
+    };
+
+    const getCandidateTiers = (cand: any): string[] => {
+        const interviews = cand.interviews || [];
+        return interviews
+            .map((n: any) => n.interviewer_ranking)
+            .filter((r: any): r is string => !!r);
+    };
+
+    const updateInterviewerRanking = async (interviewId: string, candidateId: string, ranking: string | null) => {
+        setSavingRankingId(interviewId);
+        try {
+            const { error } = await supabase
+                .from('interviews')
+                .update({ interviewer_ranking: ranking || null })
+                .eq('id', interviewId);
+            if (error) throw error;
+
+            setCandidates(prev =>
+                prev.map(c => {
+                    if (c.id !== candidateId) return c;
+                    return {
+                        ...c,
+                        interviews: (c.interviews || []).map((iv: any) =>
+                            iv.id === interviewId ? { ...iv, interviewer_ranking: ranking || null } : iv
+                        ),
+                    };
+                })
+            );
+            if (selectedCandidate?.id === candidateId) {
+                setSelectedCandidate((prev: any) => prev ? {
+                    ...prev,
+                    interviews: (prev.interviews || []).map((iv: any) =>
+                        iv.id === interviewId ? { ...iv, interviewer_ranking: ranking || null } : iv
+                    ),
+                } : prev);
+            }
+        } catch (err) {
+            console.error('Failed to update interviewer ranking:', err);
+        } finally {
+            setSavingRankingId(null);
+        }
     };
 
     useEffect(() => {
@@ -114,7 +196,35 @@ export function DatabasePage() {
         const matchesCandidateType =
             candidateTypeFilter === 'all' || cand.candidate_type === candidateTypeFilter;
 
-        return matchesTab && matchesSearch && matchesCategory && matchesCandidateType;
+        let matchesTier = true;
+        if (tierFilter !== 'all') {
+            const tiers = getCandidateTiers(cand);
+            if (tierFilter === 'unranked') {
+                matchesTier = tiers.length === 0;
+            } else {
+                matchesTier = tiers.includes(tierFilter);
+            }
+        }
+
+        let matchesWrittenRange = true;
+        const writtenAvg = getWrittenAvg(cand);
+        if (minWrittenScore !== '') {
+            matchesWrittenRange = writtenAvg != null && writtenAvg >= parseFloat(minWrittenScore);
+        }
+        if (matchesWrittenRange && maxWrittenScore !== '') {
+            matchesWrittenRange = writtenAvg != null && writtenAvg <= parseFloat(maxWrittenScore);
+        }
+
+        let matchesInterviewRange = true;
+        const interviewOverall = getInterviewOverall(cand);
+        if (minInterviewScore !== '') {
+            matchesInterviewRange = interviewOverall != null && interviewOverall >= parseFloat(minInterviewScore);
+        }
+        if (matchesInterviewRange && maxInterviewScore !== '') {
+            matchesInterviewRange = interviewOverall != null && interviewOverall <= parseFloat(maxInterviewScore);
+        }
+
+        return matchesTab && matchesSearch && matchesCategory && matchesCandidateType && matchesTier && matchesWrittenRange && matchesInterviewRange;
     });
 
     const sortedCandidates = useMemo(() => {
@@ -151,6 +261,11 @@ export function DatabasePage() {
         searchQuery.trim().length > 0 ||
         categoryFilter !== 'all' ||
         candidateTypeFilter !== 'all' ||
+        tierFilter !== 'all' ||
+        minWrittenScore !== '' ||
+        maxWrittenScore !== '' ||
+        minInterviewScore !== '' ||
+        maxInterviewScore !== '' ||
         sortKey !== 'score_overall' ||
         sortDir !== 'desc';
 
@@ -281,12 +396,13 @@ export function DatabasePage() {
                     </div>
                 </div>
 
-                <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3">
+                <div className="space-y-3">
                     <div className="flex items-center gap-2 text-xs font-semibold text-secondary uppercase tracking-wider">
                         <SlidersHorizontal className="w-4 h-4" />
                         Filters & Sorting
                     </div>
-                    <div className="flex flex-wrap items-center gap-3 w-full">
+
+                    <div className="flex flex-wrap items-center gap-3">
                         <div className="flex items-center gap-2">
                             <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Category</label>
                             <div className="w-48 shrink-0 z-20">
@@ -311,6 +427,25 @@ export function DatabasePage() {
                                         { value: 'all', label: 'All types' },
                                         { value: 'New', label: 'New' },
                                         { value: 'Returning', label: 'Returning' }
+                                    ]}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Tier</label>
+                            <div className="w-40 shrink-0 z-20">
+                                <Select
+                                    value={tierFilter}
+                                    onChange={(val) => setTierFilter(val)}
+                                    options={[
+                                        { value: 'all', label: 'All tiers' },
+                                        { value: 'auto_accept', label: 'Auto Accept' },
+                                        { value: 'tier_1', label: 'Tier 1' },
+                                        { value: 'tier_2', label: 'Tier 2' },
+                                        { value: 'tier_3', label: 'Tier 3' },
+                                        { value: 'tier_4', label: 'Tier 4' },
+                                        { value: 'unranked', label: 'Unranked' },
                                     ]}
                                 />
                             </div>
@@ -347,6 +482,11 @@ export function DatabasePage() {
                                     setSearchQuery('');
                                     setCategoryFilter('all');
                                     setCandidateTypeFilter('all');
+                                    setTierFilter('all');
+                                    setMinWrittenScore('');
+                                    setMaxWrittenScore('');
+                                    setMinInterviewScore('');
+                                    setMaxInterviewScore('');
                                     setSortKey('score_overall');
                                     setSortDir('desc');
                                 }}
@@ -355,6 +495,58 @@ export function DatabasePage() {
                                 Clear all
                             </button>
                         )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Written Score</label>
+                            <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="5"
+                                placeholder="Min"
+                                value={minWrittenScore}
+                                onChange={(e) => setMinWrittenScore(e.target.value)}
+                                className="w-16 px-2 py-2 text-sm bg-surface border border-border rounded-lg placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
+                            />
+                            <span className="text-xs text-muted">–</span>
+                            <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="5"
+                                placeholder="Max"
+                                value={maxWrittenScore}
+                                onChange={(e) => setMaxWrittenScore(e.target.value)}
+                                className="w-16 px-2 py-2 text-sm bg-surface border border-border rounded-lg placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Interview Score</label>
+                            <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="10"
+                                placeholder="Min"
+                                value={minInterviewScore}
+                                onChange={(e) => setMinInterviewScore(e.target.value)}
+                                className="w-16 px-2 py-2 text-sm bg-surface border border-border rounded-lg placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
+                            />
+                            <span className="text-xs text-muted">–</span>
+                            <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="10"
+                                placeholder="Max"
+                                value={maxInterviewScore}
+                                onChange={(e) => setMaxInterviewScore(e.target.value)}
+                                className="w-16 px-2 py-2 text-sm bg-surface border border-border rounded-lg placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -368,6 +560,7 @@ export function DatabasePage() {
                                 <th className="px-6 py-4 font-semibold text-secondary">Seminar Category</th>
                                 <th className="px-6 py-4 font-semibold text-secondary">Score (Written)</th>
                                 <th className="px-6 py-4 font-semibold text-secondary">Score (Interview)</th>
+                                <th className="px-6 py-4 font-semibold text-secondary">Interviewer Rankings</th>
                                 <th className="px-6 py-4 font-semibold text-secondary text-right">Actions</th>
                             </tr>
                         </thead>
@@ -379,7 +572,7 @@ export function DatabasePage() {
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
                                     >
-                                        <td colSpan={5} className="px-6 py-12 text-center text-secondary">
+                                        <td colSpan={6} className="px-6 py-12 text-center text-secondary">
                                             No candidates found within this category.
                                         </td>
                                     </motion.tr>
@@ -431,6 +624,36 @@ export function DatabasePage() {
                                                 <div className="flex items-center gap-1.5 font-medium text-primary">
                                                     <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500 inline mr-1" />
                                                     {getInterviewOverall(cand) != null ? getInterviewOverall(cand)!.toFixed(1) : 'N/A'}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex flex-col gap-1.5">
+                                                    {getInterviewerRankings(cand).length === 0 ? (
+                                                        <span className="text-xs text-muted">No interviews</span>
+                                                    ) : (
+                                                        getInterviewerRankings(cand).map((iv) => (
+                                                            <div key={iv.interviewerId} className="flex items-center gap-2">
+                                                                <span className="text-[11px] text-secondary w-20 truncate shrink-0" title={iv.name}>
+                                                                    {iv.name}
+                                                                </span>
+                                                                <select
+                                                                    value={iv.ranking || ''}
+                                                                    onChange={(e) => updateInterviewerRanking(iv.interviewerId, cand.id, e.target.value)}
+                                                                    disabled={savingRankingId === iv.interviewerId}
+                                                                    className="text-xs px-1.5 py-1 bg-surface border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 cursor-pointer"
+                                                                >
+                                                                    {TIER_OPTIONS.map(opt => (
+                                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                                    ))}
+                                                                </select>
+                                                                {iv.ranking && (
+                                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${TIER_COLOR[iv.ranking] || 'bg-gray-100 text-gray-600'}`}>
+                                                                        {TIER_LABEL[iv.ranking] || iv.ranking}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        ))
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-right">
@@ -552,6 +775,36 @@ export function DatabasePage() {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Interviewer Rankings */}
+                            {selectedCandidate.interviews && selectedCandidate.interviews.length > 0 && (
+                                <div className="space-y-3">
+                                    <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Interviewer Rankings</p>
+                                    <div className="flex flex-wrap gap-3">
+                                        {getInterviewerRankings(selectedCandidate).map((iv) => (
+                                            <div key={iv.interviewerId} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-surface/30">
+                                                <span className="text-sm font-medium text-primary">{iv.name}</span>
+                                                <select
+                                                    value={iv.ranking || ''}
+                                                    onChange={(e) => updateInterviewerRanking(iv.interviewerId, selectedCandidate.id, e.target.value)}
+                                                    disabled={savingRankingId === iv.interviewerId}
+                                                    className="text-sm px-2 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 cursor-pointer"
+                                                >
+                                                    {TIER_OPTIONS.map(opt => (
+                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                    ))}
+                                                </select>
+                                                {iv.ranking && (
+                                                    <span className={`text-xs px-2 py-1 rounded-full font-semibold ${TIER_COLOR[iv.ranking] || 'bg-gray-100 text-gray-600'}`}>
+                                                        {TIER_LABEL[iv.ranking] || iv.ranking}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Email</p>
