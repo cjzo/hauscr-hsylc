@@ -69,6 +69,22 @@ function computeCdf(samples: number[], domainMin: number, domainMax: number, ste
 }
 import { useAuth } from '../context/AuthContext';
 
+const TIER_COLOR: Record<string, string> = {
+    auto_accept: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+    tier_1: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+    tier_2: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
+    tier_3: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+    tier_4: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+};
+
+const TIER_LABEL: Record<string, string> = {
+    auto_accept: 'Auto Accept',
+    tier_1: 'Tier 1',
+    tier_2: 'Tier 2',
+    tier_3: 'Tier 3',
+    tier_4: 'Tier 4',
+};
+
 type DeliberationTab = 'seminar' | 'written' | 'interview' | 'visualizations';
 
 function ScoreTooltip({
@@ -1069,6 +1085,24 @@ export function DeliberationPage() {
                                                     <p className="text-sm font-medium text-primary">{candidate.major}</p>
                                                 </div>
 
+                                                {candidate.interviewNotes && candidate.interviewNotes.some((n: any) => n.interviewer_ranking) && (
+                                                    <div className="mt-4 pt-4 border-t border-border">
+                                                        <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">Interviewer Rankings</p>
+                                                        <div className="flex flex-col gap-1.5">
+                                                            {candidate.interviewNotes
+                                                                .filter((n: any) => n.interviewer_ranking)
+                                                                .map((n: any, i: number) => (
+                                                                    <div key={i} className="flex items-center justify-between gap-2">
+                                                                        <span className="text-xs text-secondary truncate">{n.interviewer || 'Unknown'}</span>
+                                                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${TIER_COLOR[n.interviewer_ranking] || 'bg-surface text-secondary'}`}>
+                                                                            {TIER_LABEL[n.interviewer_ranking] || n.interviewer_ranking}
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
                                                 {/* Travel Preferences */}
                                                 {(candidate.flyFrom || candidate.flyTo || candidate.availability) && (
                                                     <div className="mt-4 pt-4 border-t border-border">
@@ -1426,6 +1460,11 @@ export function DeliberationPage() {
                                                                         <div className="flex items-center gap-2">
                                                                             <User className="w-4 h-4 text-accent" />
                                                                             <span className="font-semibold text-primary">{note.interviewer || 'Unknown Interviewer'}</span>
+                                                                            {note.interviewer_ranking && (
+                                                                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${TIER_COLOR[note.interviewer_ranking] || 'bg-surface text-secondary'}`}>
+                                                                                    {TIER_LABEL[note.interviewer_ranking] || note.interviewer_ranking}
+                                                                                </span>
+                                                                            )}
                                                                         </div>
                                                                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-secondary">
                                                                             <span>Enth <span className="font-semibold text-primary">{formatScore(note.score_enthusiasm)}</span></span>
