@@ -9,6 +9,7 @@ import { TierSelect } from '../components/ui/TierSelect';
 import { useConfirm } from '../components/ui/ConfirmModal';
 import { standardizeCategory } from '../utils/categories';
 import { TIER_COLOR, TIER_LABEL, getConsensusTier } from '../utils/tiers';
+import { exportDecisionsSpreadsheet } from '../utils/exportSpreadsheet';
 import { useAuth } from '../context/AuthContext';
 import {
     Search,
@@ -25,7 +26,8 @@ import {
     ExternalLink,
     ArrowUpDown,
     SlidersHorizontal,
-    RefreshCw
+    RefreshCw,
+    Download
 } from 'lucide-react';
 
 const TIER_OPTIONS = [
@@ -439,6 +441,15 @@ export function DatabasePage() {
                             title={lastRefreshed ? `Last refreshed: ${lastRefreshed.toLocaleTimeString()}` : 'Refresh data'}
                         >
                             <RefreshCw className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => exportDecisionsSpreadsheet(candidates)}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm bg-accent text-white rounded-sm hover:bg-accent/90 transition-colors shrink-0"
+                            title="Export decisions to spreadsheet"
+                        >
+                            <Download className="w-3.5 h-3.5" />
+                            Export
                         </button>
                     </div>
                 </div>
