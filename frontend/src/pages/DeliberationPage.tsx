@@ -530,7 +530,7 @@ export function DeliberationPage() {
         }
     };
 
-    const filteredCandidates = useMemo(() => {
+    const displayCandidates = useMemo(() => {
         if (tierFilter === 'all') return candidates;
         return candidates.filter((cand) => {
             const tiers = (cand.interviewNotes || [])
@@ -541,33 +541,28 @@ export function DeliberationPage() {
         });
     }, [candidates, tierFilter]);
 
-    const filteredIndex = useMemo(() => {
-        return Math.min(currentIndex, Math.max(0, filteredCandidates.length - 1));
-    }, [currentIndex, filteredCandidates.length]);
-
-    const candidate = filteredCandidates[filteredIndex];
+    const safeIndex = displayCandidates.length === 0 ? 0 : Math.min(currentIndex, displayCandidates.length - 1);
+    const candidate = displayCandidates[safeIndex];
 
     const hasSidebarSpace = sidebarHasSpace;
 
     const nextCandidate = () => {
-        if (filteredIndex < filteredCandidates.length - 1) {
-            const nextIdx = filteredIndex + 1;
+        if (safeIndex < displayCandidates.length - 1) {
             setDirection(1);
-            setCurrentIndex(nextIdx);
+            setCurrentIndex(safeIndex + 1);
             setTabDirection(0);
             setActiveTab('seminar');
-            syncCurrentCandidateId(filteredCandidates[nextIdx].id);
+            syncCurrentCandidateId(displayCandidates[safeIndex + 1].id);
         }
     };
 
     const prevCandidate = () => {
-        if (filteredIndex > 0) {
-            const prevIdx = filteredIndex - 1;
+        if (safeIndex > 0) {
             setDirection(-1);
-            setCurrentIndex(prevIdx);
+            setCurrentIndex(safeIndex - 1);
             setTabDirection(0);
             setActiveTab('seminar');
-            syncCurrentCandidateId(filteredCandidates[prevIdx].id);
+            syncCurrentCandidateId(displayCandidates[safeIndex - 1].id);
         }
     };
 
@@ -601,7 +596,7 @@ export function DeliberationPage() {
 
                 const removedId = candidate.id;
                 setCandidates(prev => prev.filter(c => c.id !== removedId));
-                if (filteredIndex >= filteredCandidates.length - 1 && filteredIndex > 0) {
+                if (safeIndex >= displayCandidates.length - 1 && safeIndex > 0) {
                     setCurrentIndex(prev => prev - 1);
                 }
                 setDirection(1);
@@ -921,7 +916,7 @@ export function DeliberationPage() {
                     <h1 className="text-2xl font-bold text-primary tracking-tight">
                         Application Review {isAdmin && <span className="ml-2 px-2 py-0.5 bg-accent/20 text-accent text-[10px] uppercase rounded border border-accent/30">Conductor</span>}
                     </h1>
-                    <p className="text-sm text-secondary mt-1">Reviewing candidate {filteredIndex + 1} of {filteredCandidates.length}{tierFilter !== 'all' ? ` (filtered)` : ''}</p>
+                    <p className="text-sm text-secondary mt-1">Reviewing candidate {safeIndex + 1} of {displayCandidates.length}{tierFilter !== 'all' ? ` (filtered)` : ''}</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <div className="w-40 shrink-0">
@@ -948,10 +943,10 @@ export function DeliberationPage() {
                     </Button>
                     {isAdmin && (
                         <>
-                            <Button variant="secondary" size="sm" onClick={prevCandidate} disabled={filteredIndex === 0}>
+                            <Button variant="secondary" size="sm" onClick={prevCandidate} disabled={safeIndex === 0}>
                                 <ChevronLeft className="w-4 h-4 mr-1" /> Previous
                             </Button>
-                            <Button variant="secondary" size="sm" onClick={nextCandidate} disabled={filteredIndex === filteredCandidates.length - 1}>
+                            <Button variant="secondary" size="sm" onClick={nextCandidate} disabled={safeIndex === displayCandidates.length - 1}>
                                 Next <ChevronRight className="w-4 h-4 ml-1" />
                             </Button>
                         </>
