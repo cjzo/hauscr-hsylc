@@ -61,10 +61,8 @@ export function DatabasePage() {
     const [candidateTypeFilter, setCandidateTypeFilter] = useState<'all' | 'New' | 'Returning'>('all');
     const [tierFilter, setTierFilter] = useState<string>('all');
     const [interviewerFilter, setInterviewerFilter] = useState<string>('all');
-    const [minWrittenScore, setMinWrittenScore] = useState<string>('');
-    const [maxWrittenScore, setMaxWrittenScore] = useState<string>('');
-    const [minInterviewScore, setMinInterviewScore] = useState<string>('');
-    const [maxInterviewScore, setMaxInterviewScore] = useState<string>('');
+    const [writtenScoreRange, setWrittenScoreRange] = useState<string>('all');
+    const [interviewScoreRange, setInterviewScoreRange] = useState<string>('all');
     const [sortKey, setSortKey] = useState<'score_overall' | 'written_avg' | 'name'>('score_overall');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
     const [savingRankingId, setSavingRankingId] = useState<string | null>(null);
@@ -224,21 +222,17 @@ export function DatabasePage() {
         }
 
         let matchesWrittenRange = true;
-        const writtenAvg = getWrittenAvg(cand);
-        if (minWrittenScore !== '') {
-            matchesWrittenRange = writtenAvg != null && writtenAvg >= parseFloat(minWrittenScore);
-        }
-        if (matchesWrittenRange && maxWrittenScore !== '') {
-            matchesWrittenRange = writtenAvg != null && writtenAvg <= parseFloat(maxWrittenScore);
+        if (writtenScoreRange !== 'all') {
+            const [lo, hi] = writtenScoreRange.split('-').map(Number);
+            const writtenAvg = getWrittenAvg(cand);
+            matchesWrittenRange = writtenAvg != null && writtenAvg >= lo && writtenAvg <= hi;
         }
 
         let matchesInterviewRange = true;
-        const interviewOverall = getInterviewOverall(cand);
-        if (minInterviewScore !== '') {
-            matchesInterviewRange = interviewOverall != null && interviewOverall >= parseFloat(minInterviewScore);
-        }
-        if (matchesInterviewRange && maxInterviewScore !== '') {
-            matchesInterviewRange = interviewOverall != null && interviewOverall <= parseFloat(maxInterviewScore);
+        if (interviewScoreRange !== 'all') {
+            const [lo, hi] = interviewScoreRange.split('-').map(Number);
+            const interviewOverall = getInterviewOverall(cand);
+            matchesInterviewRange = interviewOverall != null && interviewOverall >= lo && interviewOverall <= hi;
         }
 
         return matchesTab && matchesSearch && matchesCategory && matchesCandidateType && matchesInterviewer && matchesTier && matchesWrittenRange && matchesInterviewRange;
@@ -280,10 +274,8 @@ export function DatabasePage() {
         candidateTypeFilter !== 'all' ||
         interviewerFilter !== 'all' ||
         tierFilter !== 'all' ||
-        minWrittenScore !== '' ||
-        maxWrittenScore !== '' ||
-        minInterviewScore !== '' ||
-        maxInterviewScore !== '' ||
+        writtenScoreRange !== 'all' ||
+        interviewScoreRange !== 'all' ||
         sortKey !== 'score_overall' ||
         sortDir !== 'desc';
 
@@ -516,10 +508,8 @@ export function DatabasePage() {
                                     setCandidateTypeFilter('all');
                                     setInterviewerFilter('all');
                                     setTierFilter('all');
-                                    setMinWrittenScore('');
-                                    setMaxWrittenScore('');
-                                    setMinInterviewScore('');
-                                    setMaxInterviewScore('');
+                                    setWrittenScoreRange('all');
+                                    setInterviewScoreRange('all');
                                     setSortKey('score_overall');
                                     setSortDir('desc');
                                 }}
@@ -533,52 +523,43 @@ export function DatabasePage() {
                     <div className="flex flex-wrap items-center gap-3">
                         <div className="flex items-center gap-2">
                             <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Written Score</label>
-                            <input
-                                type="number"
-                                step="0.1"
-                                min="0"
-                                max="5"
-                                placeholder="Min"
-                                value={minWrittenScore}
-                                onChange={(e) => setMinWrittenScore(e.target.value)}
-                                className="w-16 px-2 py-2 text-sm bg-surface border border-border rounded-lg placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
-                            />
-                            <span className="text-xs text-muted">–</span>
-                            <input
-                                type="number"
-                                step="0.1"
-                                min="0"
-                                max="5"
-                                placeholder="Max"
-                                value={maxWrittenScore}
-                                onChange={(e) => setMaxWrittenScore(e.target.value)}
-                                className="w-16 px-2 py-2 text-sm bg-surface border border-border rounded-lg placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
-                            />
+                            <div className="w-36 shrink-0 z-10">
+                                <Select
+                                    value={writtenScoreRange}
+                                    onChange={(val) => setWrittenScoreRange(val)}
+                                    options={[
+                                        { value: 'all', label: 'All scores' },
+                                        { value: '0-1', label: '0.0 – 1.0' },
+                                        { value: '1.1-2', label: '1.1 – 2.0' },
+                                        { value: '2.1-3', label: '2.1 – 3.0' },
+                                        { value: '3.1-4', label: '3.1 – 4.0' },
+                                        { value: '4.1-5', label: '4.1 – 5.0' },
+                                    ]}
+                                />
+                            </div>
                         </div>
 
                         <div className="flex items-center gap-2">
                             <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Interview Score</label>
-                            <input
-                                type="number"
-                                step="0.1"
-                                min="0"
-                                max="10"
-                                placeholder="Min"
-                                value={minInterviewScore}
-                                onChange={(e) => setMinInterviewScore(e.target.value)}
-                                className="w-16 px-2 py-2 text-sm bg-surface border border-border rounded-lg placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
-                            />
-                            <span className="text-xs text-muted">–</span>
-                            <input
-                                type="number"
-                                step="0.1"
-                                min="0"
-                                max="10"
-                                placeholder="Max"
-                                value={maxInterviewScore}
-                                onChange={(e) => setMaxInterviewScore(e.target.value)}
-                                className="w-16 px-2 py-2 text-sm bg-surface border border-border rounded-lg placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
-                            />
+                            <div className="w-36 shrink-0 z-10">
+                                <Select
+                                    value={interviewScoreRange}
+                                    onChange={(val) => setInterviewScoreRange(val)}
+                                    options={[
+                                        { value: 'all', label: 'All scores' },
+                                        { value: '0-1', label: '0.0 – 1.0' },
+                                        { value: '1.1-2', label: '1.1 – 2.0' },
+                                        { value: '2.1-3', label: '2.1 – 3.0' },
+                                        { value: '3.1-4', label: '3.1 – 4.0' },
+                                        { value: '4.1-5', label: '4.1 – 5.0' },
+                                        { value: '5.1-6', label: '5.1 – 6.0' },
+                                        { value: '6.1-7', label: '6.1 – 7.0' },
+                                        { value: '7.1-8', label: '7.1 – 8.0' },
+                                        { value: '8.1-9', label: '8.1 – 9.0' },
+                                        { value: '9.1-10', label: '9.1 – 10.0' },
+                                    ]}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
