@@ -25,17 +25,26 @@ export const TIER_LABEL: Record<string, string> = {
 };
 
 /**
- * Compute a consensus tier from an array of ranking strings.
- * Averages the numeric values and rounds toward the better (lower) tier on .5.
+ * Raw numeric average of tier values. Returns null when no rankings exist.
+ * Lower = better (auto_accept=0, tier_1=1, ..., tier_4=4).
  */
-export function getConsensusTier(rankings: (string | null | undefined)[]): string | null {
+export function getTierAverage(rankings: (string | null | undefined)[]): number | null {
     const values = rankings
         .filter((r): r is string => !!r && r in TIER_VALUES)
         .map(r => TIER_VALUES[r]);
 
     if (values.length === 0) return null;
+    return values.reduce((a, b) => a + b, 0) / values.length;
+}
 
-    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+/**
+ * Compute a consensus tier from an array of ranking strings.
+ * Averages the numeric values and rounds toward the better (lower) tier on .5.
+ */
+export function getConsensusTier(rankings: (string | null | undefined)[]): string | null {
+    const avg = getTierAverage(rankings);
+    if (avg === null) return null;
+
     const rounded = Math.ceil(avg - 0.5);
     const clamped = Math.max(0, Math.min(4, rounded));
     return VALUE_TO_TIER[clamped];

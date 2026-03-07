@@ -68,7 +68,7 @@ function computeCdf(samples: number[], domainMin: number, domainMax: number, ste
     return points;
 }
 import { useAuth } from '../context/AuthContext';
-import { TIER_COLOR, TIER_LABEL, getConsensusTier } from '../utils/tiers';
+import { TIER_COLOR, TIER_LABEL, getConsensusTier, getTierAverage } from '../utils/tiers';
 
 type DeliberationTab = 'seminar' | 'written' | 'interview' | 'visualizations';
 
@@ -483,13 +483,26 @@ export function DeliberationPage() {
     }, [fetchCandidates]);
 
     const displayCandidates = useMemo(() => {
-        if (tierFilter === 'all') return candidates;
-        return candidates.filter((cand) => {
-            const tiers = (cand.interviewNotes || [])
+        const getTiers = (cand: any) =>
+            (cand.interviewNotes || [])
                 .map((n: any) => n.interviewer_ranking)
                 .filter((r: any): r is string => !!r);
-            if (tierFilter === 'unranked') return tiers.length === 0;
-            return getConsensusTier(tiers) === tierFilter;
+
+        const filtered = tierFilter === 'all'
+            ? candidates
+            : candidates.filter((cand) => {
+                const tiers = getTiers(cand);
+                if (tierFilter === 'unranked') return tiers.length === 0;
+                return getConsensusTier(tiers) === tierFilter;
+            });
+
+        return [...filtered].sort((a, b) => {
+            const avgA = getTierAverage(getTiers(a));
+            const avgB = getTierAverage(getTiers(b));
+            if (avgA === null && avgB === null) return 0;
+            if (avgA === null) return 1;
+            if (avgB === null) return -1;
+            return avgA - avgB;
         });
     }, [candidates, tierFilter]);
 
