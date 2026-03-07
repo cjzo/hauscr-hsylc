@@ -575,7 +575,7 @@ export function DatabasePage() {
                                 <th className="px-6 py-4 font-semibold text-secondary">Score (Written)</th>
                                 <th className="px-6 py-4 font-semibold text-secondary">Score (Interview)</th>
                                 <th className="px-6 py-4 font-semibold text-secondary">Interviewer Rankings</th>
-                                <th className="px-6 py-4 font-semibold text-secondary text-right">Actions</th>
+                                <th className="px-6 py-4 font-semibold text-secondary text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
@@ -641,37 +641,36 @@ export function DatabasePage() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="flex flex-col gap-1.5">
+                                                <div className="flex flex-col gap-2">
                                                     {getInterviewerRankings(cand).length === 0 ? (
                                                         <span className="text-xs text-muted">No interviews</span>
                                                     ) : (
                                                         getInterviewerRankings(cand).map((iv) => (
                                                             <div key={iv.interviewerId} className="flex items-center gap-2">
-                                                                <span className="text-[11px] text-secondary w-20 truncate shrink-0" title={iv.name}>
+                                                                <span className="text-[11px] text-secondary truncate shrink-0 max-w-[5rem]" title={iv.name}>
                                                                     {iv.name}
                                                                 </span>
                                                                 <select
                                                                     value={iv.ranking || ''}
                                                                     onChange={(e) => updateInterviewerRanking(iv.interviewerId, cand.id, e.target.value)}
                                                                     disabled={savingRankingId === iv.interviewerId}
-                                                                    className="text-xs px-1.5 py-1 bg-surface border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 cursor-pointer"
+                                                                    className={`text-xs px-2 py-1 rounded-full font-medium border focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 cursor-pointer transition-colors ${
+                                                                        iv.ranking
+                                                                            ? TIER_COLOR[iv.ranking] + ' border-transparent'
+                                                                            : 'bg-surface border-border text-secondary'
+                                                                    }`}
                                                                 >
                                                                     {TIER_OPTIONS.map(opt => (
                                                                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                                                                     ))}
                                                                 </select>
-                                                                {iv.ranking && (
-                                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${TIER_COLOR[iv.ranking] || 'bg-gray-100 text-gray-600'}`}>
-                                                                        {TIER_LABEL[iv.ranking] || iv.ranking}
-                                                                    </span>
-                                                                )}
                                                             </div>
                                                         ))
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     {isAdmin && (
                                                         <button
                                                             className="text-xs font-medium text-accent hover:text-accent/80 transition-colors flex items-center gap-1 disabled:opacity-50"
@@ -802,17 +801,16 @@ export function DatabasePage() {
                                                     value={iv.ranking || ''}
                                                     onChange={(e) => updateInterviewerRanking(iv.interviewerId, selectedCandidate.id, e.target.value)}
                                                     disabled={savingRankingId === iv.interviewerId}
-                                                    className="text-sm px-2 py-1.5 bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 cursor-pointer"
+                                                    className={`text-sm px-3 py-1.5 rounded-full font-medium border focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 cursor-pointer transition-colors ${
+                                                        iv.ranking
+                                                            ? TIER_COLOR[iv.ranking] + ' border-transparent'
+                                                            : 'bg-background border-border text-secondary'
+                                                    }`}
                                                 >
                                                     {TIER_OPTIONS.map(opt => (
                                                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                                                     ))}
                                                 </select>
-                                                {iv.ranking && (
-                                                    <span className={`text-xs px-2 py-1 rounded-full font-semibold ${TIER_COLOR[iv.ranking] || 'bg-gray-100 text-gray-600'}`}>
-                                                        {TIER_LABEL[iv.ranking] || iv.ranking}
-                                                    </span>
-                                                )}
                                             </div>
                                         ))}
                                     </div>
