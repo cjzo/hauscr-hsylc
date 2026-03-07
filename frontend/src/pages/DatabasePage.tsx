@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Select } from '../components/ui/Select';
+import { TierSelect } from '../components/ui/TierSelect';
 import { useConfirm } from '../components/ui/ConfirmModal';
 import { standardizeCategory } from '../utils/categories';
 import { useAuth } from '../context/AuthContext';
@@ -34,13 +35,6 @@ const TIER_OPTIONS = [
     { value: 'tier_4', label: 'Tier 4' },
 ] as const;
 
-const TIER_COLOR: Record<string, string> = {
-    auto_accept: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-    tier_1: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-    tier_2: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
-    tier_3: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-    tier_4: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
-};
 
 export function DatabasePage() {
     const [candidates, setCandidates] = useState<any[]>([]);
@@ -642,20 +636,13 @@ export function DatabasePage() {
                                                                 <span className="text-[11px] text-secondary truncate shrink-0 max-w-[5rem]" title={iv.name}>
                                                                     {iv.name}
                                                                 </span>
-                                                                <select
+                                                                <TierSelect
+                                                                    options={TIER_OPTIONS}
                                                                     value={iv.ranking || ''}
-                                                                    onChange={(e) => updateInterviewerRanking(iv.interviewerId, cand.id, e.target.value)}
+                                                                    onChange={(val) => updateInterviewerRanking(iv.interviewerId, cand.id, val)}
                                                                     disabled={savingRankingId === iv.interviewerId}
-                                                                    className={`text-xs px-2 py-1 rounded-full font-medium border focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 cursor-pointer transition-colors ${
-                                                                        iv.ranking
-                                                                            ? TIER_COLOR[iv.ranking] + ' border-transparent'
-                                                                            : 'bg-surface border-border text-secondary'
-                                                                    }`}
-                                                                >
-                                                                    {TIER_OPTIONS.map(opt => (
-                                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                                    ))}
-                                                                </select>
+                                                                    size="sm"
+                                                                />
                                                             </div>
                                                         ))
                                                     )}
@@ -789,20 +776,13 @@ export function DatabasePage() {
                                         {getInterviewerRankings(selectedCandidate).map((iv) => (
                                             <div key={iv.interviewerId} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-surface/30">
                                                 <span className="text-sm font-medium text-primary">{iv.name}</span>
-                                                <select
+                                                <TierSelect
+                                                    options={TIER_OPTIONS}
                                                     value={iv.ranking || ''}
-                                                    onChange={(e) => updateInterviewerRanking(iv.interviewerId, selectedCandidate.id, e.target.value)}
+                                                    onChange={(val) => updateInterviewerRanking(iv.interviewerId, selectedCandidate.id, val)}
                                                     disabled={savingRankingId === iv.interviewerId}
-                                                    className={`text-sm px-3 py-1.5 rounded-full font-medium border focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 cursor-pointer transition-colors ${
-                                                        iv.ranking
-                                                            ? TIER_COLOR[iv.ranking] + ' border-transparent'
-                                                            : 'bg-background border-border text-secondary'
-                                                    }`}
-                                                >
-                                                    {TIER_OPTIONS.map(opt => (
-                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                    ))}
-                                                </select>
+                                                    size="md"
+                                                />
                                             </div>
                                         ))}
                                     </div>
