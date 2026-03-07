@@ -60,6 +60,7 @@ export function DatabasePage() {
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [candidateTypeFilter, setCandidateTypeFilter] = useState<'all' | 'New' | 'Returning'>('all');
     const [tierFilter, setTierFilter] = useState<string>('all');
+    const [interviewerFilter, setInterviewerFilter] = useState<string>('all');
     const [minWrittenScore, setMinWrittenScore] = useState<string>('');
     const [maxWrittenScore, setMaxWrittenScore] = useState<string>('');
     const [minInterviewScore, setMinInterviewScore] = useState<string>('');
@@ -184,6 +185,16 @@ export function DatabasePage() {
         return Array.from(unique).sort((a, b) => a.localeCompare(b));
     }, [candidates]);
 
+    const interviewerOptions = useMemo(() => {
+        const unique = new Set<string>();
+        candidates.forEach((cand) => {
+            (cand.interviews || []).forEach((iv: any) => {
+                if (iv.interviewer_name) unique.add(iv.interviewer_name);
+            });
+        });
+        return Array.from(unique).sort((a, b) => a.localeCompare(b));
+    }, [candidates]);
+
     const filteredCandidates = candidates.filter((cand) => {
         const matchesTab = cand.deliberation_status === activeTab;
         const searchInput = searchQuery.toLowerCase();
@@ -195,6 +206,12 @@ export function DatabasePage() {
         const matchesCategory = categoryFilter === 'all' || getCategory(cand) === categoryFilter;
         const matchesCandidateType =
             candidateTypeFilter === 'all' || cand.candidate_type === candidateTypeFilter;
+
+        let matchesInterviewer = true;
+        if (interviewerFilter !== 'all') {
+            const interviewers = (cand.interviews || []).map((iv: any) => iv.interviewer_name);
+            matchesInterviewer = interviewers.includes(interviewerFilter);
+        }
 
         let matchesTier = true;
         if (tierFilter !== 'all') {
@@ -224,7 +241,7 @@ export function DatabasePage() {
             matchesInterviewRange = interviewOverall != null && interviewOverall <= parseFloat(maxInterviewScore);
         }
 
-        return matchesTab && matchesSearch && matchesCategory && matchesCandidateType && matchesTier && matchesWrittenRange && matchesInterviewRange;
+        return matchesTab && matchesSearch && matchesCategory && matchesCandidateType && matchesInterviewer && matchesTier && matchesWrittenRange && matchesInterviewRange;
     });
 
     const sortedCandidates = useMemo(() => {
@@ -261,6 +278,7 @@ export function DatabasePage() {
         searchQuery.trim().length > 0 ||
         categoryFilter !== 'all' ||
         candidateTypeFilter !== 'all' ||
+        interviewerFilter !== 'all' ||
         tierFilter !== 'all' ||
         minWrittenScore !== '' ||
         maxWrittenScore !== '' ||
@@ -433,6 +451,20 @@ export function DatabasePage() {
                         </div>
 
                         <div className="flex items-center gap-2">
+                            <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Interviewer</label>
+                            <div className="w-44 shrink-0 z-20">
+                                <Select
+                                    value={interviewerFilter}
+                                    onChange={(val) => setInterviewerFilter(val)}
+                                    options={[
+                                        { value: 'all', label: 'All interviewers' },
+                                        ...interviewerOptions.map((name) => ({ value: name, label: name }))
+                                    ]}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
                             <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Tier</label>
                             <div className="w-40 shrink-0 z-20">
                                 <Select
@@ -482,6 +514,7 @@ export function DatabasePage() {
                                     setSearchQuery('');
                                     setCategoryFilter('all');
                                     setCandidateTypeFilter('all');
+                                    setInterviewerFilter('all');
                                     setTierFilter('all');
                                     setMinWrittenScore('');
                                     setMaxWrittenScore('');
