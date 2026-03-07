@@ -34,14 +34,6 @@ const TIER_OPTIONS = [
     { value: 'tier_4', label: 'Tier 4' },
 ] as const;
 
-const TIER_LABEL: Record<string, string> = {
-    auto_accept: 'Auto Accept',
-    tier_1: 'Tier 1',
-    tier_2: 'Tier 2',
-    tier_3: 'Tier 3',
-    tier_4: 'Tier 4',
-};
-
 const TIER_COLOR: Record<string, string> = {
     auto_accept: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
     tier_1: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
