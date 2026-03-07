@@ -489,7 +489,7 @@ export function DeliberationPage() {
                 .map((n: any) => n.interviewer_ranking)
                 .filter((r: any): r is string => !!r);
             if (tierFilter === 'unranked') return tiers.length === 0;
-            return tiers.includes(tierFilter);
+            return getConsensusTier(tiers) === tierFilter;
         });
     }, [candidates, tierFilter]);
 
