@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
@@ -23,7 +23,8 @@ import {
     X,
     ExternalLink,
     ArrowUpDown,
-    SlidersHorizontal
+    SlidersHorizontal,
+    RefreshCw
 } from 'lucide-react';
 
 const TIER_OPTIONS = [
@@ -137,29 +138,69 @@ export function DatabasePage() {
         }
     };
 
-    useEffect(() => {
-        async function fetchCandidates() {
-            try {
-                // Fetch only NEW SL candidates from supabase
-                const { data, error } = await supabase
-                    .from('candidates')
-                    .select('*, interviews(*)')
-                    .eq('candidate_type', 'New')
-                    .order('score_overall', { ascending: false, nullsFirst: false });
+    const isFetchingRef = useRef(false);
+    const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
-                if (error) throw error;
-                if (data) {
-                    setCandidates(data);
+    const fetchCandidates = useCallback(async (showLoader = false) => {
+        if (isFetchingRef.current) return;
+        isFetchingRef.current = true;
+        if (showLoader) setIsLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('candidates')
+                .select('*, interviews(*)')
+                .eq('candidate_type', 'New')
+                .order('score_overall', { ascending: false, nullsFirst: false });
+
+            if (error) throw error;
+            if (data) {
+                setCandidates(data);
+                setLastRefreshed(new Date());
+                if (selectedCandidate) {
+                    const updated = data.find((c: any) => c.id === selectedCandidate.id);
+                    if (updated) setSelectedCandidate(updated);
                 }
-            } catch (err) {
-                console.error("Error fetching candidates for database view:", err);
-            } finally {
-                setIsLoading(false);
             }
+        } catch (err) {
+            console.error("Error fetching candidates for database view:", err);
+        } finally {
+            setIsLoading(false);
+            isFetchingRef.current = false;
         }
+    }, [selectedCandidate]);
 
-        fetchCandidates();
+    useEffect(() => {
+        fetchCandidates(true);
     }, []);
+
+    // Poll every 15 seconds + refetch when tab becomes visible
+    useEffect(() => {
+        const interval = setInterval(() => fetchCandidates(), 15000);
+
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                fetchCandidates();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+
+        const channel = supabase
+            .channel('interviews_ranking_sync')
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'interviews',
+            }, () => {
+                fetchCandidates();
+            })
+            .subscribe();
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibility);
+            supabase.removeChannel(channel);
+        };
+    }, [fetchCandidates]);
 
     const categoryOptions = useMemo(() => {
         const unique = new Set<string>();
@@ -379,16 +420,25 @@ export function DatabasePage() {
                         ))}
                     </div>
 
-                    {/* Search */}
-                    <div className="relative w-full sm:max-w-xs">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-                        <input
-                            type="text"
-                            placeholder="Search by name or school..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 text-sm bg-surface border border-border rounded-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-shadow"
-                        />
+                    <div className="flex items-center gap-2 w-full sm:max-w-sm">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                            <input
+                                type="text"
+                                placeholder="Search by name or school..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-9 pr-4 py-2 text-sm bg-surface border border-border rounded-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-shadow"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => fetchCandidates()}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm bg-surface border border-border rounded-sm text-secondary hover:text-primary hover:bg-surfaceHover transition-colors shrink-0"
+                            title={lastRefreshed ? `Last refreshed: ${lastRefreshed.toLocaleTimeString()}` : 'Refresh data'}
+                        >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                        </button>
                     </div>
                 </div>
 

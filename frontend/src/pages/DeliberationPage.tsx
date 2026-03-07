@@ -428,6 +428,7 @@ export function DeliberationPage() {
                             empirical: candEmpirical ?? empiricalFromInterviews,
                         },
                         interviewNotes: interviews.map((note: any) => ({
+                            id: note.id,
                             interviewer: note.interviewer_name,
                             interviewer_ranking: note.interviewer_ranking || null,
                             notes_why_sl: note.notes_why_sl,
@@ -528,6 +529,35 @@ export function DeliberationPage() {
             supabase.removeChannel(channel);
         };
     }, [displayCandidates]);
+
+    // Poll every 15 seconds + refetch on tab focus + realtime fallback
+    useEffect(() => {
+        const interval = setInterval(() => fetchCandidates(), 15000);
+
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                fetchCandidates();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+
+        const channel = supabase
+            .channel('delib_interviews_sync')
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'interviews',
+            }, () => {
+                fetchCandidates();
+            })
+            .subscribe();
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibility);
+            supabase.removeChannel(channel);
+        };
+    }, [fetchCandidates]);
 
     // Update global state when candidate changes (if admin)
     const syncCurrentCandidateId = async (id: string) => {
