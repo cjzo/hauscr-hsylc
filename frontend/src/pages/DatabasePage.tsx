@@ -8,6 +8,7 @@ import { Select } from '../components/ui/Select';
 import { TierSelect } from '../components/ui/TierSelect';
 import { useConfirm } from '../components/ui/ConfirmModal';
 import { standardizeCategory } from '../utils/categories';
+import { TIER_COLOR, TIER_LABEL, getConsensusTier } from '../utils/tiers';
 import { useAuth } from '../context/AuthContext';
 import {
     Search,
@@ -610,6 +611,7 @@ export function DatabasePage() {
                                 <th className="px-6 py-4 font-semibold text-secondary">Seminar Category</th>
                                 <th className="px-6 py-4 font-semibold text-secondary">Score (Written)</th>
                                 <th className="px-6 py-4 font-semibold text-secondary">Score (Interview)</th>
+                                <th className="px-6 py-4 font-semibold text-secondary">Consensus</th>
                                 <th className="px-6 py-4 font-semibold text-secondary">Interviewer Rankings</th>
                                 <th className="px-6 py-4 font-semibold text-secondary text-center">Actions</th>
                             </tr>
@@ -622,7 +624,7 @@ export function DatabasePage() {
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
                                     >
-                                        <td colSpan={6} className="px-6 py-12 text-center text-secondary">
+                                        <td colSpan={7} className="px-6 py-12 text-center text-secondary">
                                             No candidates found within this category.
                                         </td>
                                     </motion.tr>
@@ -675,6 +677,18 @@ export function DatabasePage() {
                                                     <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500 inline mr-1" />
                                                     {getInterviewOverall(cand) != null ? getInterviewOverall(cand)!.toFixed(1) : 'N/A'}
                                                 </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {(() => {
+                                                    const tiers = getCandidateTiers(cand);
+                                                    const consensus = getConsensusTier(tiers);
+                                                    if (!consensus) return <span className="text-xs text-muted">—</span>;
+                                                    return (
+                                                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${TIER_COLOR[consensus]}`}>
+                                                            {TIER_LABEL[consensus]}
+                                                        </span>
+                                                    );
+                                                })()}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-col gap-2">
