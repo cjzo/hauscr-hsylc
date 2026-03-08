@@ -386,9 +386,20 @@ export function DatabasePage() {
     return (
         <div className="h-full flex flex-col gap-6">
             <div className="shrink-0 space-y-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-primary tracking-tight">Candidate Database</h1>
-                    <p className="text-sm text-secondary mt-1">View and manage all candidates categorized by their deliberation decisions.</p>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-primary tracking-tight">Candidate Database</h1>
+                        <p className="text-sm text-secondary mt-1">View and manage all candidates categorized by their deliberation decisions.</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => exportDecisionsSpreadsheet(candidates)}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors shadow-sm"
+                        title="Export decisions to spreadsheet"
+                    >
+                        <Download className="w-4 h-4" />
+                        Export Spreadsheet
+                    </button>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -441,15 +452,6 @@ export function DatabasePage() {
                             title={lastRefreshed ? `Last refreshed: ${lastRefreshed.toLocaleTimeString()}` : 'Refresh data'}
                         >
                             <RefreshCw className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => exportDecisionsSpreadsheet(candidates)}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm bg-accent text-white rounded-sm hover:bg-accent/90 transition-colors shrink-0"
-                            title="Export decisions to spreadsheet"
-                        >
-                            <Download className="w-3.5 h-3.5" />
-                            Export
                         </button>
                     </div>
                 </div>
