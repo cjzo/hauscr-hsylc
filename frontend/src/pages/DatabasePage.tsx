@@ -9,7 +9,7 @@ import { TierSelect } from '../components/ui/TierSelect';
 import { useConfirm } from '../components/ui/ConfirmModal';
 import { standardizeCategory } from '../utils/categories';
 import { TIER_COLOR, TIER_LABEL, getConsensusTier } from '../utils/tiers';
-import { exportDecisionsSpreadsheet } from '../utils/exportSpreadsheet';
+import { exportDecisionsSpreadsheet, type ExportScope } from '../utils/exportSpreadsheet';
 import { useAuth } from '../context/AuthContext';
 import {
     Search,
@@ -50,6 +50,7 @@ export function DatabasePage() {
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [candidateTypeFilter, setCandidateTypeFilter] = useState<'all' | 'New' | 'Returning'>('all');
     const [tierFilter, setTierFilter] = useState<string>('all');
+    const [exportScope, setExportScope] = useState<ExportScope>('all');
     const [interviewerFilter, setInterviewerFilter] = useState<string>('all');
     const [writtenScoreRange, setWrittenScoreRange] = useState<string>('all');
     const [interviewScoreRange, setInterviewScoreRange] = useState<string>('all');
@@ -392,15 +393,29 @@ export function DatabasePage() {
                         <h1 className="text-2xl font-bold text-primary tracking-tight">Candidate Database</h1>
                         <p className="text-sm text-secondary mt-1">View and manage all candidates categorized by their deliberation decisions.</p>
                     </div>
-                    <button
-                        type="button"
-                        onClick={() => exportDecisionsSpreadsheet(candidates)}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors shadow-sm"
-                        title="Export decisions to spreadsheet"
-                    >
-                        <Download className="w-4 h-4" />
-                        Export Spreadsheet
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <div className="w-36 shrink-0">
+                            <Select
+                                value={exportScope}
+                                onChange={(val) => setExportScope(val as ExportScope)}
+                                options={[
+                                    { value: 'all', label: 'All' },
+                                    { value: 'approved', label: 'Accepted' },
+                                    { value: 'waitlisted', label: 'Waitlisted' },
+                                    { value: 'rejected', label: 'Rejected' },
+                                ]}
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => exportDecisionsSpreadsheet(candidates, exportScope)}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors shadow-sm"
+                            title="Export decisions to spreadsheet"
+                        >
+                            <Download className="w-4 h-4" />
+                            Export
+                        </button>
+                    </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -627,12 +642,28 @@ export function DatabasePage() {
                         <div>
                             <h2 className="text-lg font-semibold text-primary">Export Decisions</h2>
                             <p className="text-sm text-secondary mt-2">
-                                Download a spreadsheet with name, email, seminar info, scores, and rankings for all {candidates.length} candidates. Separate tabs for Accepted, Waitlisted, and Rejected.
+                                {exportScope === 'all'
+                                    ? `Download a spreadsheet with name, email, seminar info, scores, and rankings for all ${candidates.length} candidates. Separate tabs for Accepted, Waitlisted, and Rejected.`
+                                    : `Export ${candidates.filter(c => c.deliberation_status === (exportScope === 'approved' ? 'approved' : exportScope === 'waitlisted' ? 'waitlisted' : 'rejected')).length} ${exportScope === 'approved' ? 'accepted' : exportScope === 'waitlisted' ? 'waitlisted' : 'rejected'} candidates.`}
                             </p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row items-center gap-4 w-full max-w-xs">
+                            <label className="text-sm font-medium text-primary shrink-0">Export:</label>
+                            <Select
+                                value={exportScope}
+                                onChange={(val) => setExportScope(val as ExportScope)}
+                                options={[
+                                    { value: 'all', label: 'All (Accepted, Waitlisted, Rejected)' },
+                                    { value: 'approved', label: 'Accepted only' },
+                                    { value: 'waitlisted', label: 'Waitlisted only' },
+                                    { value: 'rejected', label: 'Rejected only' },
+                                ]}
+                                className="flex-1 w-full"
+                            />
                         </div>
                         <button
                             type="button"
-                            onClick={() => exportDecisionsSpreadsheet(candidates)}
+                            onClick={() => exportDecisionsSpreadsheet(candidates, exportScope)}
                             className="inline-flex items-center gap-2 px-6 py-3 text-base font-medium bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors shadow-sm"
                         >
                             <Download className="w-5 h-5" />

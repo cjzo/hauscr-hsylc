@@ -151,7 +151,9 @@ function addSheet(workbook: ExcelJS.Workbook, name: string, candidates: any[]) {
     sheet.autoFilter = { from: 'A1', to: `${String.fromCharCode(64 + COLUMNS.length)}1` };
 }
 
-export async function exportDecisionsSpreadsheet(allCandidates: any[]) {
+export type ExportScope = 'all' | 'approved' | 'waitlisted' | 'rejected';
+
+export async function exportDecisionsSpreadsheet(allCandidates: any[], scope: ExportScope = 'all') {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'HAUSCR Deliberation';
     workbook.created = new Date();
@@ -161,56 +163,68 @@ export async function exportDecisionsSpreadsheet(allCandidates: any[]) {
     const rejected = allCandidates.filter(c => c.deliberation_status === 'rejected');
     const pending = allCandidates.filter(c => c.deliberation_status === 'pending');
 
-    addSheet(workbook, 'Approved', approved);
-    addSheet(workbook, 'Waitlisted', waitlisted);
-    addSheet(workbook, 'Rejected', rejected);
-    if (pending.length > 0) {
-        addSheet(workbook, 'Pending', pending);
+    let candidatesToExport = allCandidates;
+    let sheetName = 'All Candidates';
+    let fileNameSuffix = 'Decisions';
+
+    if (scope === 'approved') {
+        candidatesToExport = approved;
+        sheetName = 'Accepted';
+        fileNameSuffix = 'Accepted';
+    } else if (scope === 'waitlisted') {
+        candidatesToExport = waitlisted;
+        sheetName = 'Waitlisted';
+        fileNameSuffix = 'Waitlisted';
+    } else if (scope === 'rejected') {
+        candidatesToExport = rejected;
+        sheetName = 'Rejected';
+        fileNameSuffix = 'Rejected';
     }
 
-    const allSheet = workbook.addWorksheet('All Candidates');
-    allSheet.columns = [
-        { header: 'Decision', key: 'decision', width: 14 },
-        ...COLUMNS.map(c => ({ header: c.header, key: c.key, width: c.width })),
-    ];
-
-    const allHeaderRow = allSheet.getRow(1);
-    allHeaderRow.eachCell(cell => {
-        cell.fill = HEADER_FILL;
-        cell.font = HEADER_FONT;
-        cell.border = HEADER_BORDER;
-        cell.alignment = { vertical: 'middle', horizontal: 'center' };
-    });
-    allHeaderRow.height = 28;
-
-    for (const cand of allCandidates) {
-        const data = buildRow(cand);
-        const status = cand.deliberation_status || 'pending';
-        const row = allSheet.addRow({ decision: status.charAt(0).toUpperCase() + status.slice(1), ...data });
-
-        const decisionCell = row.getCell('decision');
-        if (STATUS_FILLS[status]) {
-            decisionCell.fill = STATUS_FILLS[status];
-        }
-        decisionCell.font = { bold: true };
-
-        if (data._consensus_key && TIER_FILLS[data._consensus_key]) {
-            const tierCell = row.getCell('consensus_tier');
-            tierCell.fill = TIER_FILLS[data._consensus_key];
-            tierCell.font = TIER_FONTS[data._consensus_key] || {};
+    if (scope === 'all') {
+        addSheet(workbook, 'Approved', approved);
+        addSheet(workbook, 'Waitlisted', waitlisted);
+        addSheet(workbook, 'Rejected', rejected);
+        if (pending.length > 0) {
+            addSheet(workbook, 'Pending', pending);
         }
 
-        row.eachCell(cell => {
-            cell.alignment = { vertical: 'middle', wrapText: true };
-            cell.border = {
-                bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-            };
+        const allSheet = workbook.addWorksheet('All Candidates');
+        allSheet.columns = [
+            { header: 'Decision', key: 'decision', width: 14 },
+            ...COLUMNS.map(c => ({ header: c.header, key: c.key, width: c.width })),
+        ];
+        const allHeaderRow = allSheet.getRow(1);
+        allHeaderRow.eachCell(cell => {
+            cell.fill = HEADER_FILL;
+            cell.font = HEADER_FONT;
+            cell.border = HEADER_BORDER;
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
         });
+        allHeaderRow.height = 28;
+        for (const cand of allCandidates) {
+            const data = buildRow(cand);
+            const status = cand.deliberation_status || 'pending';
+            const row = allSheet.addRow({ decision: status.charAt(0).toUpperCase() + status.slice(1), ...data });
+            const decisionCell = row.getCell('decision');
+            if (STATUS_FILLS[status]) decisionCell.fill = STATUS_FILLS[status];
+            decisionCell.font = { bold: true };
+            if (data._consensus_key && TIER_FILLS[data._consensus_key]) {
+                const tierCell = row.getCell('consensus_tier');
+                tierCell.fill = TIER_FILLS[data._consensus_key];
+                tierCell.font = TIER_FONTS[data._consensus_key] || {};
+            }
+            row.eachCell(cell => {
+                cell.alignment = { vertical: 'middle', wrapText: true };
+                cell.border = { bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } } };
+            });
+        }
+        allSheet.autoFilter = { from: 'A1', to: `${String.fromCharCode(65 + COLUMNS.length)}1` };
+    } else {
+        addSheet(workbook, sheetName, candidatesToExport);
     }
-
-    allSheet.autoFilter = { from: 'A1', to: `${String.fromCharCode(65 + COLUMNS.length)}1` };
 
     const buffer = await workbook.xlsx.writeBuffer();
     const date = new Date().toISOString().slice(0, 10);
-    saveAs(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `HAUSCR_Decisions_${date}.xlsx`);
+    saveAs(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `HAUSCR_${fileNameSuffix}_${date}.xlsx`);
 }
