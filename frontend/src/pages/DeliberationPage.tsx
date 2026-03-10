@@ -501,8 +501,8 @@ export function DeliberationPage() {
             const tiersB = getTiers(b);
 
             if (tierFilter !== 'all' && tierFilter !== 'unranked') {
-                const countA = tiersA.filter(t => t === tierFilter).length;
-                const countB = tiersB.filter(t => t === tierFilter).length;
+                const countA = tiersA.filter((t: string) => t === tierFilter).length;
+                const countB = tiersB.filter((t: string) => t === tierFilter).length;
                 if (countA !== countB) return countB - countA;
             }
 

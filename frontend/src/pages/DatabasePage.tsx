@@ -44,7 +44,7 @@ export function DatabasePage() {
     const [candidates, setCandidates] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'waitlisted' | 'rejected'>('pending');
+    const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'waitlisted' | 'rejected' | 'export'>('pending');
     const [selectedCandidate, setSelectedCandidate] = useState<any | null>(null);
     const [settingCurrentId, setSettingCurrentId] = useState<string | null>(null);
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -224,7 +224,7 @@ export function DatabasePage() {
     }, [candidates]);
 
     const filteredCandidates = candidates.filter((cand) => {
-        const matchesTab = cand.deliberation_status === activeTab;
+        const matchesTab = activeTab === 'export' ? false : cand.deliberation_status === activeTab;
         const searchInput = searchQuery.toLowerCase();
         const matchesSearch =
             (cand.full_name?.toLowerCase().includes(searchInput)) ||
@@ -314,6 +314,7 @@ export function DatabasePage() {
         { id: 'approved', label: 'Accepted', icon: CheckCircle, color: 'text-emerald-500' },
         { id: 'waitlisted', label: 'Waitlisted', icon: PauseCircle, color: 'text-amber-500' },
         { id: 'rejected', label: 'Rejected', icon: XCircle, color: 'text-red-500' },
+        { id: 'export', label: 'Export', icon: Download, color: 'text-accent' },
     ];
 
     const closeDetails = () => setSelectedCandidate(null);
@@ -427,7 +428,7 @@ export function DatabasePage() {
                                     <span className="whitespace-nowrap">{tab.label}</span>
                                     <span className={`ml-1.5 px-2 py-0.5 rounded-full text-xs transition-colors ${activeTab === tab.id ? 'bg-black/5 dark:bg-white/10' : 'bg-transparent'
                                         }`}>
-                                        {candidates.filter(c => c.deliberation_status === tab.id).length}
+                                        {tab.id === 'export' ? candidates.length : candidates.filter(c => c.deliberation_status === tab.id).length}
                                     </span>
                                 </div>
                             </button>
@@ -456,6 +457,7 @@ export function DatabasePage() {
                     </div>
                 </div>
 
+                {activeTab !== 'export' && (
                 <div className="space-y-3">
                     <div className="flex items-center gap-2 text-xs font-semibold text-secondary uppercase tracking-wider">
                         <SlidersHorizontal className="w-4 h-4" />
@@ -613,8 +615,32 @@ export function DatabasePage() {
                         </div>
                     </div>
                 </div>
-            </div>
+                )}
+                </div>
 
+            {activeTab === 'export' ? (
+                <Card className="flex-1 flex flex-col p-6">
+                    <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto space-y-6">
+                        <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center">
+                            <Download className="w-7 h-7 text-accent" />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-semibold text-primary">Export Decisions</h2>
+                            <p className="text-sm text-secondary mt-2">
+                                Download a spreadsheet with name, email, seminar info, scores, and rankings for all {candidates.length} candidates. Separate tabs for Accepted, Waitlisted, and Rejected.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => exportDecisionsSpreadsheet(candidates)}
+                            className="inline-flex items-center gap-2 px-6 py-3 text-base font-medium bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors shadow-sm"
+                        >
+                            <Download className="w-5 h-5" />
+                            Export to Spreadsheet
+                        </button>
+                    </div>
+                </Card>
+            ) : (
             <Card className="flex-1 flex flex-col overflow-hidden p-0">
                 <div className="flex-1 overflow-y-auto">
                     <table className="w-full text-left text-sm">
@@ -758,6 +784,7 @@ export function DatabasePage() {
                     </table>
                 </div>
             </Card>
+            )}
 
             {selectedCandidate && (
                 <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
